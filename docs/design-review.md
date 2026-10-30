@@ -58,7 +58,7 @@
 
 ## 复核方式
 
-所有界面都拆成无状态 `XxxContent`，由 Robolectric（`@GraphicsMode(NATIVE)`，411×891dp）渲染成 PNG，存于 `docs/screenshots/`，浅色 / 深色各一张：
+所有界面都拆成无状态 `XxxContent`，由 Robolectric（`@GraphicsMode(NATIVE)`）渲染成 PNG，存于 `docs/screenshots/`，浅色 / 深色各一张。常规页面为 411×891dp，时刻表另有 360×800dp 窄屏用例，覆盖四列时间网格：
 
 ```sh
 ./build.sh :app:testDebugUnitTest --tests '*ScreenshotTest*'

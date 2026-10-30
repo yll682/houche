@@ -30,7 +30,7 @@
 | --- | --- | --- | --- |
 | [浅色](docs/screenshots/search-results-light.png) / [深色](docs/screenshots/search-results-dark.png) | [浅色](docs/screenshots/timetable-light.png) / [深色](docs/screenshots/timetable-dark.png) | [浅色](docs/screenshots/city-picker-light.png) / [深色](docs/screenshots/city-picker-dark.png) | [浅色](docs/screenshots/settings-light.png) / [深色](docs/screenshots/settings-dark.png) |
 
-另外还有加载态、错误态、未授权定位、收藏空态与长站名挤压等边界截图，见同一目录。
+另外还有加载态、错误态、未授权定位、收藏空态、长站名挤压，以及 360dp 窄屏时刻表等边界截图，见同一目录。
 
 ```sh
 # 重新生成全部截图

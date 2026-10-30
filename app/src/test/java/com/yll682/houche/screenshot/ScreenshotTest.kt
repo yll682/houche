@@ -82,6 +82,13 @@ class ScreenshotTest {
     private val longStop = Station("天安门东（地铁站）", distance = 44.0, lines = listOf(LineSummary("地铁1号线八通线", "1", to = "环球度假区（地铁站）"), LineSummary("地铁1号线八通线", "2", to = "福寿岭（地铁站）")))
     private val live = VehicleResults(listOf(Vehicle("京A·01236", 1, "at-stop", currentStation = "四惠枢纽站", dataTime = "08:26:00"), Vehicle("京A·03591", 2, "between", segmentDistance = 320.0)), "车辆位置仅供参考，请提前候车")
     private val home = HomeData(stations = listOf(stop), arrivals = mapOf(0 to arrivals), position = Position(24.48, 118.13), cityResolved = true, favoriteLines = listOf(SavedLine(city, LineSummary("91路", "1", route.from, route.to))), favoriteStations = listOf(SavedStation(city, stop)))
+    private val timetableData = TimetableData(
+        Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"),
+        listOf(
+            TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }),
+            TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })
+        )
+    )
 
     @Composable private fun Home(state: UiState<HomeData>, segment: Int = 0, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
     @Composable private fun Line(panel: Int) = LineContent(UiState.Success(LineData(lineRoute, beijingStops[1], live, listOf(Arrival(remainingStations = 1, timeText = "约3分钟", name = "1路", direction = "1")))), beijing, panel, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
@@ -100,7 +107,7 @@ class ScreenshotTest {
         return bitmap.asImageBitmap()
     }
 
-    private fun capture(name: String, dark: Boolean, content: @Composable () -> Unit) {
+    private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, content: @Composable () -> Unit) {
         compose.setContent {
             MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
@@ -108,8 +115,8 @@ class ScreenshotTest {
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
-        assertEquals(1233, bitmap.width)
-        assertEquals(2673, bitmap.height)
+        assertEquals(expectedWidth, bitmap.width)
+        assertEquals(expectedHeight, bitmap.height)
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         val luminance = pixels.asSequence().filterIndexed { i, _ -> i % 16 == 0 }.map { p -> (((p shr 16) and 255) * .2126 + ((p shr 8) and 255) * .7152 + (p and 255) * .0722) }.toList()
@@ -135,8 +142,12 @@ class ScreenshotTest {
     @Test fun scene5_dark() = capture("line-vehicles", true) { Line(1) }
     @Test fun scene6_light() = capture("station", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene6_dark() = capture("station", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
-    @Test fun scene7_light() = capture("timetable", false) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
-    @Test fun scene7_dark() = capture("timetable", true) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
+    @Test fun scene7_light() = capture("timetable", false) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }
+    @Test fun scene7_dark() = capture("timetable", true) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun timetableNarrow_light() = capture("timetable-narrow", false, 1080, 2400) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun timetableNarrow_dark() = capture("timetable-narrow", true, 1080, 2400) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }
     @Test fun scene8_light() = capture("city-picker", false) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
     @Test fun scene8_dark() = capture("city-picker", true) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
     @Test fun scene9_light() = capture("settings", false) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
