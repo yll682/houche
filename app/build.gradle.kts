@@ -54,6 +54,8 @@ android {
         jvmTarget = "17"
     }
 
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -66,6 +68,11 @@ android {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
+    testImplementation(composeBom)
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(composeBom)
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.9.3")
@@ -94,6 +101,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 android.testOptions.unitTests.all { test ->
     test.apply {
         classpath += bundledTestTools
+        systemProperty("screenshots.dir", rootProject.file("docs/screenshots").absolutePath)
+        if (name == "testDebugUnitTest") outputs.dir(rootProject.file("docs/screenshots"))
         systemProperty("live", System.getProperty("live", "false"))
         // 默认带 @Ignore；显式联网时运行忽略用例，普通测试仍完全离线。
         testLogging { showStandardStreams = true }
