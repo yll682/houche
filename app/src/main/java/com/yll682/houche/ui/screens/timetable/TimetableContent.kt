@@ -1,56 +1,131 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.yll682.houche.ui.screens.timetable
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
+import com.yll682.houche.core.Route
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
+import com.yll682.houche.ui.theme.CardShape
+import com.yll682.houche.ui.theme.Capsule
 
-@Composable fun TimetableContent(state: UiState<TimetableData>, route: com.yll682.houche.core.Route, collapsed: Set<Int>, toggle: (Int) -> Unit, back: () -> Unit, retry: () -> Unit, modifier: Modifier = Modifier) {
+@Composable fun TimetableContent(
+    state: UiState<TimetableData>, route: Route, collapsed: Set<Int>, toggle: (Int) -> Unit,
+    back: () -> Unit, retry: () -> Unit, modifier: Modifier = Modifier
+) {
     val data = state.data ?: TimetableData()
-    Page(stringResource(R.string.timetable), back, modifier = modifier) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { Card(shape = MaterialTheme.shapes.large) { Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LineBadge(route.name)
-                Text(stringResource(R.string.to, route.to), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.service_times, route.first, route.last))
-                data.table?.nextDeparture?.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.next_departure, it), color = MaterialTheme.colorScheme.primary) }
-            } } }
+    Page(stringResource(R.string.timetable), back, modifier) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             feedback(state) { retry() }
-            if (state is UiState.Empty) item { EmptyState(stringResource(R.string.no_timetable)) }
-            itemsIndexed(data.groups) { index, group ->
-                val expanded = index !in collapsed
-                Card(modifier = Modifier.animateItem(), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = if (group.current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
-                    Column(Modifier.padding(16.dp)) {
-                        val title = group.name.ifBlank { stringResource(R.string.timetable) }
-                        Row(Modifier.fillMaxWidth().touch(title).clickable { toggle(index) }, verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium); if (group.current) Text(stringResource(R.string.current_period), style = MaterialTheme.typography.labelMedium) }
-                            Text(stringResource(R.string.departures, group.times.size))
-                            Icon(Icons.Default.ExpandMore, stringResource(R.string.expand_group))
+            item {
+                CardSurface {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        LineBadge(route.name)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.to, route.to), style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                            Text(
+                                stringResource(R.string.service_times, route.first.ifBlank { stringResource(R.string.no_time) }, route.last.ifBlank { stringResource(R.string.no_time) }),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        if (expanded) {
-                            group.times.chunked(4).forEach { row ->
-                                Row(Modifier.fillMaxWidth()) {
-                                    row.forEach { departure ->
-                                        Surface(Modifier.weight(1f).padding(4.dp), shape = MaterialTheme.shapes.small, color = if (departure.status == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh) { Text(departure.time, Modifier.padding(vertical = 12.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium) }
-                                    }
-                                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-                                }
-                            }
-                            group.times.filter { it.notes.isNotBlank() }.forEach { Text(stringResource(R.string.time_notes, it.time, it.notes), style = MaterialTheme.typography.bodySmall) }
-                        }
+                        data.table?.nextDeparture?.takeIf { it.isNotBlank() }?.let { MetaPill(stringResource(R.string.next_departure, it), emphasised = true) }
                     }
                 }
             }
-            data.table?.tips?.takeIf { it.isNotBlank() }?.let { tips -> item { Text(tips, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) } }
+            if (data.groups.isEmpty() && state !is UiState.Loading) {
+                item { EmptyState(stringResource(R.string.no_timetable)) }
+            }
+            itemsIndexed(data.groups) { index, group ->
+                val open = index !in collapsed
+                GroupCard(
+                    group = group,
+                    open = open,
+                    nextDeparture = data.table?.nextDeparture,
+                    onToggle = { toggle(index) }
+                )
+            }
+            data.table?.tips?.takeIf { it.isNotBlank() }?.let { tips ->
+                item {
+                    Text(
+                        tips,
+                        Modifier.padding(top = 4.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun GroupCard(group: TimeGroup, open: Boolean, nextDeparture: String?, onToggle: () -> Unit) {
+    val rotation by animateFloatAsState(if (open) 180f else 0f, label = "折叠箭头")
+    CardSurface {
+        Row(
+            Modifier.fillMaxWidth().touch(group.name).clickable(onClick = onToggle).padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    group.name.ifBlank { stringResource(R.string.all_day) },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (group.current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                if (group.current) {
+                    Text(stringResource(R.string.current_period), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            Text(stringResource(R.string.departures, group.times.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Default.ExpandMore, stringResource(R.string.expand_group), Modifier.size(20.dp).rotate(rotation), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (open) {
+            Hairline()
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                group.times.chunked(4).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { departure ->
+                            val highlight = !nextDeparture.isNullOrBlank() && departure.time == nextDeparture
+                            Surface(
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = if (highlight) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        departure.time,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                        color = if (highlight) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                        repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
         }
     }
 }

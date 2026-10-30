@@ -102,7 +102,6 @@ android.testOptions.unitTests.all { test ->
     test.apply {
         classpath += bundledTestTools
         systemProperty("screenshots.dir", rootProject.file("docs/screenshots").absolutePath)
-        if (name == "testDebugUnitTest") outputs.dir(rootProject.file("docs/screenshots"))
         systemProperty("live", System.getProperty("live", "false"))
         // 默认带 @Ignore；显式联网时运行忽略用例，普通测试仍完全离线。
         testLogging { showStandardStreams = true }

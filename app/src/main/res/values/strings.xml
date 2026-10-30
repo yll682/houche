@@ -77,7 +77,7 @@
     <string name="live_note">到站数据每 20 秒更新，预计时间受路况与调度影响，请提前候车。</string>
     <string name="no_route_stops">当前方向没有站点资料</string>
     <string name="platform">站台 %1$s</string>
-    <string name="platform_index">同名站台 %1$d</string>
+    <string name="platform_index">站台 %1$d</string>
     <string name="passing_lines">经过线路</string>
     <string name="no_lines">暂无经过线路</string>
     <string name="next_departure">下一班 %1$s</string>
@@ -109,4 +109,7 @@
     <string name="vehicle_distance">距站 %1$s</string>
     <string name="time_notes">%1$s：%2$s</string>
     <string name="collapse_fare">展开或收起票价说明</string>
+    <string name="first_bus">首班</string>
+    <string name="last_bus">末班</string>
+    <string name="all_day">全天</string>
 </resources>

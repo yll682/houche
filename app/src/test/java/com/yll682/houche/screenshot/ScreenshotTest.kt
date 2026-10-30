@@ -117,36 +117,36 @@ class ScreenshotTest {
         val variance = luminance.sumOf { (it - mean) * (it - mean) } / luminance.size
         assertTrue("截图应含有可见内容，实际方差=$variance", variance > 100.0)
         val dir = File(requireNotNull(System.getProperty("screenshots.dir"))).apply { mkdirs() }
-        val file = File(dir, "$name-${if (dark) "深色" else "浅色"}.png")
+        val file = File(dir, "$name-${if (dark) "dark" else "light"}.png")
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         assertTrue("单张 PNG 不超过 400KB：${file.length()}", file.length() <= 400 * 1024)
     }
-    @Test fun scene0_light() = capture("首页附近", false) { Home(UiState.Success(home)) }
-    @Test fun scene0_dark() = capture("首页附近", true) { Home(UiState.Success(home)) }
-    @Test fun scene1_light() = capture("首页收藏", false) { Home(UiState.Success(home), segment = 1) }
-    @Test fun scene1_dark() = capture("首页收藏", true) { Home(UiState.Success(home), segment = 1) }
-    @Test fun scene2_light() = capture("首页未授权", false) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
-    @Test fun scene2_dark() = capture("首页未授权", true) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
-    @Test fun scene3_light() = capture("搜索结果", false) { SearchContent(UiState.Success(SearchData("91路", SearchResults(listOf(LineSummary("91路", "1", route.from, route.to)), listOf(stop)))), {}, {}, {}, {}, {}, {}, {}, {}) }
-    @Test fun scene3_dark() = capture("搜索结果", true) { SearchContent(UiState.Success(SearchData("91路", SearchResults(listOf(LineSummary("91路", "1", route.from, route.to)), listOf(stop)))), {}, {}, {}, {}, {}, {}, {}, {}) }
-    @Test fun scene4_light() = capture("线路站点", false) { Line(0) }
-    @Test fun scene4_dark() = capture("线路站点", true) { Line(0) }
-    @Test fun scene5_light() = capture("线路车辆", false) { Line(1) }
-    @Test fun scene5_dark() = capture("线路车辆", true) { Line(1) }
-    @Test fun scene6_light() = capture("站点", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
-    @Test fun scene6_dark() = capture("站点", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
-    @Test fun scene7_light() = capture("时刻表", false) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
-    @Test fun scene7_dark() = capture("时刻表", true) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
-    @Test fun scene8_light() = capture("城市选择", false) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
-    @Test fun scene8_dark() = capture("城市选择", true) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
-    @Test fun scene9_light() = capture("设置", false) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
-    @Test fun scene9_dark() = capture("设置", true) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
-    @Test fun scene10_light() = capture("首页加载", false) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
-    @Test fun scene10_dark() = capture("首页加载", true) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
-    @Test fun scene11_light() = capture("首页错误", false) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
-    @Test fun scene11_dark() = capture("首页错误", true) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
-    @Test fun scene12_light() = capture("收藏空状态", false) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
-    @Test fun scene12_dark() = capture("收藏空状态", true) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
-    @Test fun longStation_light() = capture("首页长站名", false) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
-    @Test fun longStation_dark() = capture("首页长站名", true) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
+    @Test fun scene0_light() = capture("home-nearby", false) { Home(UiState.Success(home)) }
+    @Test fun scene0_dark() = capture("home-nearby", true) { Home(UiState.Success(home)) }
+    @Test fun scene1_light() = capture("home-favorites", false) { Home(UiState.Success(home), segment = 1) }
+    @Test fun scene1_dark() = capture("home-favorites", true) { Home(UiState.Success(home), segment = 1) }
+    @Test fun scene2_light() = capture("home-permission", false) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
+    @Test fun scene2_dark() = capture("home-permission", true) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
+    @Test fun scene3_light() = capture("search-results", false) { SearchContent(UiState.Success(SearchData("91路", SearchResults(listOf(LineSummary("91路", "1", route.from, route.to)), listOf(stop)))), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun scene3_dark() = capture("search-results", true) { SearchContent(UiState.Success(SearchData("91路", SearchResults(listOf(LineSummary("91路", "1", route.from, route.to)), listOf(stop)))), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun scene4_light() = capture("line-stops", false) { Line(0) }
+    @Test fun scene4_dark() = capture("line-stops", true) { Line(0) }
+    @Test fun scene5_light() = capture("line-vehicles", false) { Line(1) }
+    @Test fun scene5_dark() = capture("line-vehicles", true) { Line(1) }
+    @Test fun scene6_light() = capture("station", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
+    @Test fun scene6_dark() = capture("station", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
+    @Test fun scene7_light() = capture("timetable", false) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
+    @Test fun scene7_dark() = capture("timetable", true) { TimetableContent(UiState.Success(TimetableData(Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"), listOf(TimeGroup("06:00–07:59", false, listOf("06:30", "06:45", "07:00", "07:15", "07:30", "07:45").map { Departure(it) }), TimeGroup("08:00–09:59", true, listOf("08:00", "08:13", "08:26", "08:40", "08:55", "09:11", "09:28", "09:44", "09:58").map { Departure(it, status = if (it == "08:26") 2 else null) })))), route, emptySet(), {}, {}, {}) }
+    @Test fun scene8_light() = capture("city-picker", false) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
+    @Test fun scene8_dark() = capture("city-picker", true) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
+    @Test fun scene9_light() = capture("settings", false) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
+    @Test fun scene9_dark() = capture("settings", true) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
+    @Test fun scene10_light() = capture("home-loading", false) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
+    @Test fun scene10_dark() = capture("home-loading", true) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
+    @Test fun scene11_light() = capture("home-error", false) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
+    @Test fun scene11_dark() = capture("home-error", true) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
+    @Test fun scene12_light() = capture("favorites-empty", false) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
+    @Test fun scene12_dark() = capture("favorites-empty", true) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
+    @Test fun longStation_light() = capture("home-long-station", false) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
+    @Test fun longStation_dark() = capture("home-long-station", true) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
 }

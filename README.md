@@ -18,7 +18,24 @@
 
 页面使用 `sealed interface Screen` 和 `SnapshotStateList` 手写返回栈，没有引入 navigation-compose 或其他新依赖。首页连续两秒内再次返回可退出。收藏、当前城市和搜索历史通过 DataStore 保存；页面切换使用淡入与上移 8dp、180ms 动画。
 
-界面截图占位：**待补充**（首页、搜索、线路、站点、时刻表、城市选择、设置；浅色 / 深色）。
+## 界面预览
+
+深浅色各一套真实渲染截图（Robolectric 渲染，非设计稿），位于 `docs/screenshots/`。设计规则见 [设计说明](docs/design-review.md)。
+
+| 首页 | 线路（站点） | 线路（车辆） | 站点 |
+| --- | --- | --- | --- |
+| [浅色](docs/screenshots/home-nearby-light.png) / [深色](docs/screenshots/home-nearby-dark.png) | [浅色](docs/screenshots/line-stops-light.png) / [深色](docs/screenshots/line-stops-dark.png) | [浅色](docs/screenshots/line-vehicles-light.png) / [深色](docs/screenshots/line-vehicles-dark.png) | [浅色](docs/screenshots/station-light.png) / [深色](docs/screenshots/station-dark.png) |
+
+| 搜索 | 时刻表 | 城市选择 | 设置 |
+| --- | --- | --- | --- |
+| [浅色](docs/screenshots/search-results-light.png) / [深色](docs/screenshots/search-results-dark.png) | [浅色](docs/screenshots/timetable-light.png) / [深色](docs/screenshots/timetable-dark.png) | [浅色](docs/screenshots/city-picker-light.png) / [深色](docs/screenshots/city-picker-dark.png) | [浅色](docs/screenshots/settings-light.png) / [深色](docs/screenshots/settings-dark.png) |
+
+另外还有加载态、错误态、未授权定位、收藏空态与长站名挤压等边界截图，见同一目录。
+
+```sh
+# 重新生成全部截图
+./build.sh :app:testDebugUnitTest --tests '*ScreenshotTest*'
+```
 
 ## 构建
 

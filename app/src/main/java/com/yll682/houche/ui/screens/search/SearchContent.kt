@@ -12,35 +12,149 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.focus.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
+import com.yll682.houche.ui.theme.Capsule
+import com.yll682.houche.ui.theme.FieldShape
 
-@Composable fun SearchContent(state: UiState<SearchData>, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit, query: (String) -> Unit, search: (String) -> Unit, submit: () -> Unit, clear: () -> Unit, remove: (String) -> Unit, modifier: Modifier = Modifier, inputModifier: Modifier = Modifier) {
+@Composable fun SearchContent(
+    state: UiState<SearchData>, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit,
+    query: (String) -> Unit, search: (String) -> Unit, submit: () -> Unit, clear: () -> Unit,
+    remove: (String) -> Unit, modifier: Modifier = Modifier, inputModifier: Modifier = Modifier
+) {
     val data = state.data ?: SearchData()
-    Scaffold(modifier = modifier, topBar = { Row(Modifier.statusBarsPadding().padding(horizontal = 4.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
-        OutlinedTextField(data.query, query, Modifier.weight(1f).touch(stringResource(R.string.search_label)).then(inputModifier), singleLine = true, label = { Text(stringResource(R.string.search_hint)) }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { search(data.query); submit() }))
-        TextButton(back, Modifier.touch(stringResource(R.string.cancel))) { Text(stringResource(R.string.cancel)) }
-    } }, containerColor = MaterialTheme.colorScheme.background) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).imePadding(), contentPadding = PaddingValues(16.dp)) {
-            if (data.query.isBlank()) {
-                item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.weight(1f)) { SectionHeader(stringResource(R.string.recent_searches)) }; TextButton(clear, Modifier.touch(stringResource(R.string.clear))) { Text(stringResource(R.string.clear)) } } }
-                items(data.history) { text ->
-                    ListItem(headlineContent = { Text(text) }, leadingContent = { Icon(Icons.Default.History, stringResource(R.string.recent_searches)) }, trailingContent = { ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search)) { remove(text) } }, modifier = Modifier.animateItem().touch(text).clickable { search(text) })
+    val typed = data.query.isNotBlank()
+
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Row(
+            Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back, tint = MaterialTheme.colorScheme.onSurface)
+            OutlinedTextField(
+                value = data.query,
+                onValueChange = query,
+                modifier = inputModifier.fillMaxWidth().weight(1f).height(52.dp),
+                singleLine = true,
+                shape = FieldShape,
+                placeholder = { Text(stringResource(R.string.search_hint), style = MaterialTheme.typography.bodyLarge) },
+                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                trailingIcon = {
+                    if (typed) IconButton({ clear() }, Modifier.size(40.dp)) {
+                        Icon(Icons.Default.Close, stringResource(R.string.clear), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { submit() }),
+                textStyle = MaterialTheme.typography.bodyLarge,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+            TextButton(back, Modifier.touch(stringResource(R.string.cancel)), contentPadding = PaddingValues(horizontal = 10.dp)) {
+                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.labelLarge)
+            }
+        }
+        Hairline()
+
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            feedback(state) { submit() }
+            if (!typed) {
+                if (data.history.isNotEmpty()) {
+                    item {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            SectionHeader(stringResource(R.string.recent_searches))
+                        }
+                    }
+                    item {
+                        CardSurface {
+                            data.history.forEachIndexed { index, keyword ->
+                                if (index > 0) Hairline()
+                                Row(
+                                    Modifier.fillMaxWidth().touch(keyword).clickable { search(keyword) }.padding(start = 16.dp, end = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.History, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        keyword,
+                                        Modifier.weight(1f).padding(vertical = 14.dp),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        TextButton({ clear() }, Modifier.touch(stringResource(R.string.clear)), contentPadding = PaddingValues(horizontal = 4.dp)) {
+                            Text(stringResource(R.string.clear), style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                } else {
+                    item { EmptyState(stringResource(R.string.search_hint), stringResource(R.string.search_tip)) }
                 }
             } else {
-                feedback(state) { search(data.query) }
-                if (state is UiState.Empty) item { EmptyState(stringResource(R.string.search_empty), stringResource(R.string.search_tip)) }
-                item { SectionHeader(stringResource(R.string.lines), data.result.lines.size) }
-                items(data.result.lines) { summary -> Box(Modifier.animateItem()) { LineRow(summary) { line(summary) } } }
-                item { SectionHeader(stringResource(R.string.stations), data.result.stations.size) }
-                items(data.result.stations) { stop -> ListItem(headlineContent = { Text(stop.name) }, supportingContent = { Text(if (stop.lines.isEmpty()) stringResource(R.string.click_view) else stringResource(R.string.station_count, stop.lines.size)) }, leadingContent = { Icon(Icons.Default.Place, stop.name) }, modifier = Modifier.animateItem().touch(stop.name).clickable { station(stop) }) }
+                val lines = data.result.lines
+                val stations = data.result.stations
+                if (lines.isEmpty() && stations.isEmpty() && state !is UiState.Loading) {
+                    item { EmptyState(stringResource(R.string.search_empty), stringResource(R.string.search_tip)) }
+                }
+                if (lines.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.lines), lines.size) }
+                    item {
+                        CardSurface {
+                            lines.forEachIndexed { index, summary ->
+                                if (index > 0) Hairline()
+                                LineRow(summary) { line(summary) }
+                            }
+                        }
+                    }
+                }
+                if (stations.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.stations), stations.size) }
+                    item {
+                        CardSurface {
+                            stations.forEachIndexed { index, stop ->
+                                if (index > 0) Hairline()
+                                Row(
+                                    Modifier.fillMaxWidth().touch(stop.name).clickable { station(stop) }.padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        Modifier.size(34.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                        contentAlignment = Alignment.Center
+                                    ) { Icon(Icons.Default.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(stop.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        if (stop.lines.isNotEmpty()) {
+                                            Text(stringResource(R.string.station_count, stop.lines.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
