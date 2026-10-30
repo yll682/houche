@@ -47,7 +47,7 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
     else -> stringResource(R.string.arrival_unknown)
 }
 @Composable fun ArrivalText(arrival: Arrival?, large: Boolean = false) {
-    val color = when { arrival == null || arrival.waiting || (arrival.remainingStations == null && arrival.timeText.isBlank() && arrival.statusText.replace(" ", "") in setOf("", "-", "--")) || arrival.statusText.contains("等待") || arrival.statusText.contains("未发车") || arrival.statusText.contains("非运营") -> MaterialTheme.colorScheme.onSurfaceVariant; arrival.remainingStations == 0 || arrival.statusText.contains("已到") || arrival.statusText.contains("即将到") -> ArrivedGreen; else -> MovingBlue }
+    val color = when { arrival == null || arrival.waiting || (arrival.remainingStations == null && arrival.timeText.isBlank() && arrival.statusText.replace(" ", "") in setOf("", "-", "--")) || arrival.statusText.contains("等待") || arrival.statusText.contains("未发车") || arrival.statusText.contains("非运营") -> MaterialTheme.colorScheme.onSurfaceVariant; arrival.remainingStations == 0 || arrival.statusText.contains("已到") || arrival.statusText.contains("即将到") -> MaterialTheme.colorScheme.primary; else -> MaterialTheme.colorScheme.tertiary }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.size(8.dp).clip(Capsule).background(color))
         Column {
@@ -65,7 +65,7 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
 }
 @Composable fun distanceLabel(distance: Double?): String = when { distance == null -> stringResource(R.string.distance_unknown); distance >= 1000 -> stringResource(R.string.distance_km, distance / 1000); else -> stringResource(R.string.distance_m, distance.toInt()) }
 @Composable fun DistanceChip(distance: Double?) {
-    Surface(shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) { Text(distanceLabel(distance), Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium) }
+    Surface(shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) { Text(distanceLabel(distance), Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium) }
 }
 @Composable fun LoadingSkeleton() {
     val transition = rememberInfiniteTransition(label = "加载微光")
@@ -87,7 +87,7 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
     Column(Modifier.fillMaxWidth().padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Icon(Icons.Default.DirectionsBus, title, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
         Text(title, style = MaterialTheme.typography.titleMedium)
-        subtitle?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        subtitle?.let { Text(it, Modifier.widthIn(max = 280.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         action?.let { Button(onClick, Modifier.touch(it), shape = Capsule) { Text(it) } }
     }
 }
@@ -104,8 +104,8 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
         else -> Unit
     }
 }
-@Composable fun Page(title: String, back: () -> Unit, actions: @Composable RowScope.() -> Unit = {}, content: @Composable (PaddingValues) -> Unit) {
-    Scaffold(topBar = { TopAppBar(title = { Text(title) }, navigationIcon = { ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back) }, actions = actions) }, containerColor = MaterialTheme.colorScheme.background, content = content)
+@Composable fun Page(title: String, back: () -> Unit, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}, content: @Composable (PaddingValues) -> Unit) {
+    Scaffold(modifier = modifier, topBar = { TopAppBar(title = { Text(title) }, navigationIcon = { ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back) }, actions = actions) }, containerColor = MaterialTheme.colorScheme.background, content = content)
 }
 @Composable fun Segments(labels: List<String>, selected: Int, select: (Int) -> Unit) {
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -114,10 +114,18 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
 }
 @Composable fun LineRow(line: LineSummary, arrival: Arrival? = null, onClick: () -> Unit) {
     val label = stringResource(R.string.to, line.to)
-    Row(Modifier.fillMaxWidth().touch(line.name + label).clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        LineBadge(line.name)
-        Column(Modifier.weight(1f)) { Text(label, style = MaterialTheme.typography.titleMedium); if (line.from.isNotBlank()) Text(stringResource(R.string.endpoints, line.from, line.to), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (arrival != null) Box(Modifier.widthIn(max = 140.dp)) { ArrivalText(arrival) }
+    Column(Modifier.fillMaxWidth().touch(line.name + label).clickable(onClick = onClick).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // 长线路名独占一行，方向和实时信息保留完整的横向空间。
+        val longName = line.name.length > 6
+        if (longName) LineBadge(line.name)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (!longName) LineBadge(line.name)
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                if (line.from.isNotBlank()) Text(stringResource(R.string.endpoints, line.from, line.to), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
+            if (arrival != null) Box(Modifier.widthIn(max = 104.dp)) { ArrivalText(arrival) }
+        }
     }
 }
 @Composable fun PollEvery20Seconds(enabled: Boolean = true, refresh: suspend () -> Unit) {

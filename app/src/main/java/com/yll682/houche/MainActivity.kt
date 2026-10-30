@@ -27,7 +27,7 @@ import com.yll682.houche.ui.screens.search.*
 import com.yll682.houche.ui.screens.line.*
 import com.yll682.houche.ui.screens.station.*
 import com.yll682.houche.ui.screens.timetable.*
-import com.yll682.houche.ui.screens.city.CitySheet
+import com.yll682.houche.ui.screens.city.CityRoute
 import com.yll682.houche.ui.screens.settings.SettingsScreen
 import com.yll682.houche.ui.theme.HoucheTheme
 import kotlinx.coroutines.*
@@ -116,17 +116,17 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(entry) { onDispose { navigation.release(entry) } }
                 CompositionLocalProvider(LocalViewModelStoreOwner provides entry) {
                     when (val screen = entry.screen) {
-                        Screen.Home -> HomeScreen(model(key = city.key) { HomeViewModel(graph, city) }, { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true }, { navigation.push(Screen.Settings) }, { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) })
-                        is Screen.Search -> SearchScreen(model { SearchViewModel(graph, screen.city) }, navigation::pop, { navigation.push(Screen.Line(screen.city, it)) }, { navigation.push(Screen.Stop(screen.city, it)) })
-                        is Screen.Line -> LineScreen(model { LineViewModel(graph, screen.city, screen.line, screen.station) }, navigation::pop, { navigation.push(Screen.Times(screen.city, it)) })
-                        is Screen.Stop -> StationScreen(model { StationViewModel(graph, screen.city, screen.station) }, navigation::pop, { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) })
-                        is Screen.Times -> TimetableScreen(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
-                        Screen.Settings -> SettingsScreen(graph, city, navigation::pop) { navigation.cityVisible = true }
+                        Screen.Home -> HomeRoute(model(key = city.key) { HomeViewModel(graph, city) }, { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true }, { navigation.push(Screen.Settings) }, { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) })
+                        is Screen.Search -> SearchRoute(model { SearchViewModel(graph, screen.city) }, navigation::pop, { navigation.push(Screen.Line(screen.city, it)) }, { navigation.push(Screen.Stop(screen.city, it)) })
+                        is Screen.Line -> LineRoute(model { LineViewModel(graph, screen.city, screen.line, screen.station) }, navigation::pop, { navigation.push(Screen.Times(screen.city, it)) })
+                        is Screen.Stop -> StationRoute(model { StationViewModel(graph, screen.city, screen.station) }, navigation::pop, { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) })
+                        is Screen.Times -> TimetableRoute(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
+                        Screen.Settings -> SettingsScreen(model { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) }, navigation::pop) { navigation.cityVisible = true }
                     }
                 }
             }
             if (state is UiState.Error && !navigation.cityVisible) Box(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) { ErrorCard((state as UiState.Error).message) { root.load() } }
-            if (navigation.cityVisible) CitySheet(data.cities, located, { navigation.cityVisible = false }, error = (state as? UiState.Error)?.message, failed = state is UiState.Error, retry = { root.load() }) { chosen -> root.city(chosen) { navigation.cityVisible = false; navigation.home() } }
+            if (navigation.cityVisible) CityRoute(data.cities, located, { navigation.cityVisible = false }, error = (state as? UiState.Error)?.message, failed = state is UiState.Error, retry = { root.load() }) { chosen -> root.city(chosen) { navigation.cityVisible = false; navigation.home() } }
         }
     }
 }
