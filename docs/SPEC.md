@@ -38,7 +38,7 @@
 
 ```
 app/src/main/java/com/yll682/houche/
-├── MainActivity.kt            // 单 Activity + Compose NavHost
+├── MainActivity.kt            // 单 Activity + Screen / SnapshotStateList 手写页面栈
 ├── HoucheApp.kt               // Application，持有 AppGraph
 ├── core/                      // 纯 Kotlin，禁止 import android.*（除 core/platform）
 │   ├── Cities.kt              // 城市表加载与检索
@@ -175,11 +175,11 @@ JSON body `{cityName, keyword, searchType: "searchLine"|"searchStation", serverT
 
 ### 4.6 定位
 
-`LocationProvider`：优先 `FUSED` 不存在 → 用 `GPS_PROVIDER` + `NETWORK_PROVIDER` 中最后已知位置，再请求一次性更新（`requestSingleUpdate` 在 API 30+ 移除，需用 `requestLocationUpdates` + `LocationListener` + 超时 15 秒兜底）。
+`LocationProvider`：优先 `FUSED` 不存在 → 用 `GPS_PROVIDER` + `NETWORK_PROVIDER` 中最后已知位置，再请求一次性更新（`requestSingleUpdate` 自 API 30 起弃用，需用 `requestLocationUpdates` + `LocationListener` + 超时 15 秒兜底）。
 
 坐标是 WGS84，上游厦门接口用 GCJ02。**必须实现 WGS84 → GCJ02 转换**（`coordtransform.wgs84togcj02`，参考 `/data/repos/bus-query/web/src/coordtransform.d.ts` 与 npm 包算法；把算法直接写成 Kotlin，含 out-of-China 判断）。
 
-城市识别：用定位到的 GCJ02 坐标请求「厦门市」的 `nearestExactStation`；若无结果或距离 > 30 km，则回退到上次选择/默认城市，并在 UI 上提示「已按定位城市查询」。
+城市识别：用定位到的 GCJ02 坐标请求「厦门市」的 `nearestExactStation`；若无结果或距离 > 30 km，则回退到上次选择/默认城市，并在 UI 上提示「未识别定位城市，正在使用所选城市」；仅成功识别并使用厦门时提示「已按定位城市查询」。
 
 ---
 
@@ -229,7 +229,7 @@ JSON body `{cityName, keyword, searchType: "searchLine"|"searchStation", serverT
 
 - 顶部：返回 + 收藏星标 + 分享（分享为纯文本，调 `Intent.ACTION_SEND`）。
 - **线路头卡**：大号线路号徽章（如 `91`），右侧「开往 终点站」；第二行 `首班 06:00 · 末班 22:30`；第三行可展开的票价说明（`ⓘ`）；右上角方向切换按钮（图标 + 「反向」），切换时重新请求。
-- **下一班卡片**：若已选乘车站，显示大号「4 分钟 / 3 站」+「高峰约 5 分钟一班」之类状态文字；未选站时显示「点击下方站点选择乘车站」。
+- **下一班卡片**：若已选乘车站，显示大号「4 分钟 / 3 站」+上游返回的状态文字（如提供班距，可展示「高峰约 5 分钟一班」；未提供时不推算）；未选站时显示「点击下方站点选择乘车站」。
 - **站点时间轴**：竖排列表，左侧序号+连接线；每站显示站名，已过站次要弱化；车辆用彩色圆点定位在对应站（绿=已到站、蓝=途中，附车牌与「两站之间」说明）；点击站点 → 底部 `ModalBottomSheet`：该站到站信息 + 「设为乘车站」。
 - **车辆列表**：时间轴上方一个双段切换「站点 / 车辆」，车辆模式列出全部车辆：车牌、状态（已到某站 / 两站之间途中）、距乘车站站数与距离、数据时间。
 - **时刻表入口**：若 `showTimetable`，头部右上角「时刻表」按钮 → 时刻表页。
@@ -245,7 +245,7 @@ JSON body `{cityName, keyword, searchType: "searchLine"|"searchStation", serverT
 ### 5.6 时刻表页（`TimetableScreen`）
 
 - 头卡：线路号 + 方向 + 「首班/末班」+ 下一班时间。
-- 分组折叠列表（`Anytime` 时段标题如「06:00-08:00」），每组内 4 列时间网格；当前时段高亮。
+- 分组折叠列表（上游分组时段标题如「06:00-08:00」），每组内 4 列时间网格；当前时段高亮。厦门上游只返回时间列表时，以两小时为一组展示；未提供下一班时间时不推算。
 - 底部灰色说明文字（来自上游 tips）。
 
 ### 5.7 城市选择（`CitySheet`，全屏 dialog）
@@ -271,6 +271,7 @@ JSON body `{cityName, keyword, searchType: "searchLine"|"searchStation", serverT
 2. `app/src/test/java/.../LiveApiTest.kt`：联网自检，默认 `@Ignore`，通过 `-Dlive=true` 启用。至少覆盖：
    - 厦门市：`search("厦门市","91路")` 非空；`lineDetail` 站点数 > 5；`nearby(24.48,118.13)` 非空
    - 北京市：`search("北京市","1路")` 非空
+   - UI 接口扩展：厦门 `stationLineBus`、`busList`、`timeTable` 与线路到站 CMD 104；北京 CMD 115、104、207，并覆盖站台切换 CMD 209、附近站点 CMD 106。真实响应允许空车辆 / 空班次，必须记录原始结果与失败原因。
 3. `./gradlew :app:assembleDebug` 必须零警告级错误通过；`./gradlew :app:testDebugUnitTest` 通过。
 4. 生成 `README.md`：功能说明、截图占位、如何构建（`ANDROID_HOME`、`./gradlew assembleRelease`）、签名说明、免责声明（数据来自公开的公交查询接口，仅供个人使用）。
 
@@ -284,3 +285,13 @@ JSON body `{cityName, keyword, searchType: "searchLine"|"searchStation", serverT
 - 上游 JSON 解析：用 `JsonElement` 逐字段安全读取（上游字段类型不稳定，如 `stationOrder` 有时是字符串），**不要**写死强类型 data class 去硬映射整个响应体。
 - 所有对用户可见的字符串放 `res/values/strings.xml`（中文默认）。
 - 不允许吞异常：捕获后包装成 `BusException`，日志用 `android.util.Log` 打 tag `Houche`。
+
+## 8. 本轮实现与验收记录（2026-10-30）
+
+- 已实现第 3 节的七类界面、主题、通用组件、五个业务 ViewModel、Application / AppGraph；`core/` 与 `data/` 保持上一轮实现，无新增第三方依赖。
+- 页面返回栈采用手写 `Screen` + `SnapshotStateList`，每个栈项独立持有 ViewModelStore；配置重建保留栈，进程死亡后回到首页，收藏与设置继续由 DataStore 保存。
+- 线路页面未选择乘车站前不查询车辆；选站弹层先获取该站真实到站资料，点击「设为乘车站」后启动页面前台轮询。轮询失败保留内容并提供重试。
+- 搜索结果中的站点没有上游线路数量时显示「点击查看」，不把未知数量当作零条线路。
+- 定位仅能识别厦门覆盖范围，城市窗口在尚未识别定位城市时明确显示「定位城市尚未识别」。
+- 构建与 APK 元信息见 README 的「构建」小节；联网执行的完整输出与失败原因追加在 `docs/live-check.md`。
+- 当前环境没有连接 Android 设备：真实权限、定位硬件、TalkBack、显示与手势验收尚未完成；不以 JVM 联网测试替代这些验收要求。
