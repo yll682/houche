@@ -43,4 +43,67 @@ class LiveApiTest {
         record("北京市 搜索 1路：线路=${result.lines.size}，站点=${result.stations.size}，样例=${result.lines.firstOrNull()}")
         Assert.assertTrue(result.lines.isNotEmpty())
     }
+
+    private suspend fun <T> probe(label: String, block: suspend () -> T): T {
+        record("开始 $label")
+        try { return block().also { record("$label：$it") } }
+        catch (error: Exception) { record("$label：失败 ${error.javaClass.simpleName}: ${error.message}；原因=${error.cause}"); throw error }
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun xiamenStationRealtime() = runBlocking {
+        val station = repository.stationDetail(xm, "实验幼儿园", "SM000170", 24.48214279, 118.12726919)
+        Assert.assertTrue(station.lines.isNotEmpty())
+        probe("厦门 stationLineBus（同时补 CMD 115 时间）") { repository.stationBuses(xm, station) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun beijingStationRealtime() = runBlocking {
+        val station = repository.stationDetail(bj, "天安门东", lat = 39.9074, lng = 116.4014)
+        record("北京站点实时使用 CMD 209 选中的坐标：${station.lat}, ${station.lng}")
+        probe("北京 CMD 115 站点实时") { repository.stationBuses(bj, station) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun beijingPlatforms() = runBlocking {
+        probe("北京 CMD 209 站台详情（补 CMD 115）") { repository.stationDetail(bj, "天安门东", lat = 39.9074, lng = 116.4014) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun xiamenVehicles() = runBlocking {
+        val route = repository.lineDetail(xm, "91路", "1")
+        Assert.assertTrue(route.stations.isNotEmpty())
+        probe("厦门 busList 车辆") { repository.vehicles(xm, route, route.stations[route.stations.size / 2]) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun xiamenArrivals() = runBlocking {
+        probe("厦门线路 CMD 104 到站") { repository.arrivals(xm, "91路", "1", 16) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun beijingVehicles() = runBlocking {
+        val route = repository.lineDetail(bj, "1路", "1")
+        record("北京 CMD 103 详情：$route")
+        Assert.assertTrue(route.stations.isNotEmpty())
+        probe("北京 CMD 104 车辆和到站") { repository.vehicles(bj, route, route.stations[route.stations.size / 2]) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun xiamenTimetable() = runBlocking {
+        val route = repository.lineDetail(xm, "91路", "1")
+        probe("厦门 timeTable 时刻表") { repository.timetable(xm, route) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun beijingTimetable() = runBlocking {
+        val route = repository.lineDetail(bj, "1路", "1")
+        Assert.assertTrue(route.id.isNotBlank())
+        probe("北京 CMD 207 时刻表") { repository.timetable(bj, route) }
+        Unit
+    }
+    @Ignore("联网测试默认关闭，使用 -Dlive=true 启用")
+    @Test fun beijingNearby() = runBlocking {
+        val stations = probe("北京 CMD 106 附近站点及前三站 CMD 115") { repository.nearby(bj, 39.9074, 116.4014) }
+        Assert.assertTrue(stations.isNotEmpty())
+    }
 }

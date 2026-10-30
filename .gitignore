@@ -16,3 +16,5 @@ keystore.properties
 .DS_Store
 Thumbs.db
 *.log
+# Kotlin 编译会话
+.kotlin/
