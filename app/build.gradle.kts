@@ -83,3 +83,20 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
+// 只为测试任务加入 Gradle 自带工具库，保持原有依赖声明不变。
+val bundledTestTools = files(
+    "${gradle.gradleHomeDir}/lib/junit-4.13.2.jar",
+    "${gradle.gradleHomeDir}/lib/hamcrest-core-1.3.jar"
+)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    if (name.contains("UnitTest")) libraries.from(bundledTestTools)
+}
+android.testOptions.unitTests.all { test ->
+    test.apply {
+        classpath += bundledTestTools
+        systemProperty("live", System.getProperty("live", "false"))
+        // 默认带 @Ignore；显式联网时运行忽略用例，普通测试仍完全离线。
+        testLogging { showStandardStreams = true }
+        outputs.upToDateWhen { System.getProperty("live") != "true" }
+    }
+}
