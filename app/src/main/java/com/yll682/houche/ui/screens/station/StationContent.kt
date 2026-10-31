@@ -45,13 +45,18 @@ import com.yll682.houche.ui.theme.Capsule
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
+                    // 站名独占一行，距离与站台数并排放在下面，右侧不再竖着堆两块信息。
                     CardSurface {
-                        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stop.name, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Spacer(Modifier.width(8.dp))
-                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                            Text(stop.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 DistanceChip(stop.distance)
-                                MetaPill(stringResource(R.string.platform_count, maxOf(1, stop.platformNumbers.distinct().size, stop.platforms.size)))
+                                val platforms = maxOf(1, stop.platformNumbers.distinct().size, stop.platforms.size)
+                                if (platforms > 1) {
+                                    Spacer(Modifier.width(10.dp))
+                                    MetaPill(stringResource(R.string.platform_count, platforms))
+                                }
                             }
                         }
                     }
