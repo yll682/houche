@@ -76,7 +76,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                             if (data.position == null) {
                                 Text(
                                     stringResource(if (granted && data.permissionDenied) R.string.open_settings else R.string.enable_location),
-                                    Modifier.clickable { locate() }.padding(horizontal = 4.dp),
+                                    Modifier.touch(stringResource(R.string.enable_location)).clickable { locate() }.padding(horizontal = 4.dp).wrapContentHeight(),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -103,7 +103,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                 } else {
                     feedback(state) { locate() }
                     if (data.favoriteLines.isEmpty() && data.favoriteStations.isEmpty()) {
-                        item { EmptyState(stringResource(R.string.no_favorites), stringResource(R.string.favorite_tip), stringResource(R.string.search_action), search) }
+                        item { EmptyState(stringResource(R.string.no_favorites), action = stringResource(R.string.search_action), onClick = search) }
                     }
                     if (data.favoriteLines.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.favorite_lines), data.favoriteLines.size) }
@@ -181,7 +181,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White, letterSpacing = 1.sp)
             }
-            IconButton(locate, Modifier.size(44.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }
+            IconButton(locate, Modifier.size(48.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }
         }
         Surface(
             onClick = search,
@@ -296,12 +296,6 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Text(stringResource(R.string.location_title), style = MaterialTheme.typography.titleMedium)
             }
             Spacer(Modifier.height(10.dp))
-            Text(
-                stringResource(if (denied) R.string.location_denied else R.string.location_explain),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(12.dp))
             val label = stringResource(if (denied) R.string.open_settings else R.string.allow_location)
             Button(locate, Modifier.touch(label), shape = Capsule, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)) { Text(label) }
         }
@@ -342,10 +336,10 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Hairline()
                 TextButton(
                     onOpen,
-                    Modifier.fillMaxWidth().touch(stringResource(R.string.click_view)),
+                    Modifier.fillMaxWidth().touch(stringResource(R.string.passing_lines)),
                     shape = MaterialTheme.shapes.large,
                     contentPadding = PaddingValues(vertical = 8.dp)
-                ) { Text(stringResource(R.string.click_view), style = MaterialTheme.typography.labelLarge) }
+                ) { Text(stringResource(R.string.passing_lines), style = MaterialTheme.typography.labelLarge) }
             }
         }
         station.linesError?.let {

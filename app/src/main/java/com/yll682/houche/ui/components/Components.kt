@@ -6,6 +6,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -14,12 +17,15 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,6 +40,8 @@ import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.theme.BadgeShape
 import com.yll682.houche.ui.theme.Capsule
 import com.yll682.houche.ui.theme.CardShape
+import com.yll682.houche.ui.theme.FieldShape
+import com.yll682.houche.ui.theme.ArrivedGreen
 import com.yll682.houche.ui.theme.HeaderBottom
 import com.yll682.houche.ui.theme.HeaderBottomDark
 import com.yll682.houche.ui.theme.HeaderTop
@@ -132,10 +140,18 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 @Composable fun arrivalLabel(arrival: Arrival?): String = arrivalParts(arrival).first
 
 /** 右侧到站列：宽度固定，单行省略，避免把行高撑起来。 */
+@Composable fun arrivalColor(arrival: Arrival?): Color = when {
+    arrival == null || arrival.waiting -> MaterialTheme.colorScheme.outline
+    arrival.remainingStations?.let { it <= 0 } == true || arrival.statusText == stringResource(R.string.arrived) ->
+        if (isSystemInDarkTheme()) Color(0xFF35C79A) else ArrivedGreen
+    arrival.remainingStations == 1 || arrival.statusText.contains(stringResource(R.string.arriving_soon)) || arrival.timeText.contains(stringResource(R.string.arriving_soon)) -> MaterialTheme.colorScheme.tertiary
+    arrival.remainingStations != null -> MaterialTheme.colorScheme.primary
+    else -> MaterialTheme.colorScheme.outline
+}
+
 @Composable fun ArrivalText(arrival: Arrival?, large: Boolean = false) {
     val (primary, secondary) = arrivalParts(arrival)
-    val emphasised = primary.contains("已到站") || primary.contains("即将") || primary.startsWith("1 站") || primary.startsWith("0 站")
-    val color = if (emphasised) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val color = arrivalColor(arrival)
     Column(horizontalAlignment = Alignment.End) {
         Text(
             primary,
@@ -166,17 +182,16 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 }
 
 /** 小号信息胶囊，用于站台数量、分组计数等辅助信息。 */
-@Composable fun MetaPill(text: String, emphasised: Boolean = false) {
+@Composable fun MetaPill(text: String, emphasised: Boolean = false, tint: Color? = null) {
     Surface(
         shape = Capsule,
-        color = if (emphasised) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = if (emphasised) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .35f)) else null
+        color = tint?.copy(alpha = .10f) ?: if (emphasised) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Text(
             text,
             Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
             style = MaterialTheme.typography.labelMedium,
-            color = if (emphasised) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            color = tint ?: if (emphasised) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -207,9 +222,9 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
             Icon(Icons.Default.ErrorOutline, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
             Spacer(Modifier.width(10.dp))
             Text(
-                message ?: stringResource(R.string.error_generic),
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
+                stringResource(R.string.error_generic),
+                Modifier.weight(1f).semantics { contentDescription = message.orEmpty() },
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
             TextButton(retry, Modifier.touch(stringResource(R.string.retry))) { Text(stringResource(R.string.retry)) }
@@ -217,7 +232,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-@Composable fun EmptyState(title: String, subtitle: String? = null, action: String? = null, onClick: () -> Unit = {}) {
+@Composable fun EmptyState(title: String, action: String? = null, onClick: () -> Unit = {}) {
     Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier.size(64.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -225,10 +240,6 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         ) { Icon(Icons.Default.DirectionsBus, title, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        subtitle?.let {
-            Spacer(Modifier.height(6.dp))
-            Text(it, Modifier.widthIn(max = 280.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        }
         action?.let {
             Spacer(Modifier.height(20.dp))
             Button(onClick, Modifier.touch(it), shape = Capsule, contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)) { Text(it) }
@@ -236,17 +247,16 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-/** 分组标题：小号字 + 计数 + 下方发丝线。 */
+/** 计数紧跟标题，保持辅助层级。 */
 @Composable fun SectionHeader(title: String, count: Int? = null) {
     // 计数紧跟标题，避免右侧孤立的数字看起来像另一个条目。
-    val text = if (count == null) title else "$title · $count"
+    val text = if (count == null) title else stringResource(R.string.group_count, title, count)
     Text(
         text,
-        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp),
+        Modifier.fillMaxWidth(),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Hairline()
 }
 
 @Composable fun PullToRefresh(refreshing: Boolean, onRefresh: () -> Unit, content: @Composable BoxScope.() -> Unit) {
@@ -289,35 +299,27 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     )
 }
 
-/** 单层分段控件：描边容器 + 选中项实心填充，不做胶囊套胶囊。 */
 @Composable fun Segments(labels: List<String>, selected: Int, select: (Int) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().height(40.dp).clip(Capsule)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, Capsule)
-            .padding(3.dp)
-    ) {
-        labels.forEachIndexed { index, label ->
-            val active = index == selected
-            Box(
-                Modifier.weight(1f).fillMaxHeight().clip(Capsule)
-                    .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .clickable { select(index) }
-                    .semantics { contentDescription = label },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    Box(Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(36.dp).clip(Capsule).background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, Capsule))
+        Row(Modifier.fillMaxWidth()) {
+            labels.forEachIndexed { index, label ->
+                val active = index == selected
+                Box(Modifier.weight(1f).height(48.dp).clickable(role = Role.Tab) { select(index) }
+                    .semantics { contentDescription = label; this.selected = active }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 3.dp).height(30.dp).clip(Capsule)
+                        .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else Color.Transparent), contentAlignment = Alignment.Center) {
+                        Text(label, style = MaterialTheme.typography.labelLarge, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
     }
 }
 
 /** 线路行：徽章 + 开往方向 + 起点终点 + 右侧到站，行间由调用方补发丝线。 */
-@Composable fun LineRow(line: LineSummary, arrival: Arrival? = null, onClick: () -> Unit) {
+@Composable fun LineRow(line: LineSummary, arrival: Arrival? = null, extraArrivals: List<Arrival> = emptyList(), onClick: () -> Unit) {
     val label = stringResource(R.string.to, line.to)
     Row(
         Modifier.fillMaxWidth().touch(line.name + label).clickable(onClick = onClick)
@@ -340,7 +342,10 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         }
         if (arrival != null) {
             Spacer(Modifier.width(12.dp))
-            Box(Modifier.widthIn(min = 76.dp, max = 96.dp)) { ArrivalText(arrival) }
+            Column(Modifier.widthIn(min = 76.dp, max = 96.dp), horizontalAlignment = Alignment.End) {
+                ArrivalText(arrival)
+                extraArrivals.take(1).forEach { ArrivalText(it) }
+            }
         }
     }
 }
@@ -356,4 +361,29 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-fun LazyListScope.feedback(state: UiState<*>, retry: () -> Unit) { item { StateFeedback(state, retry) } }
+fun LazyListScope.feedback(state: UiState<*>, retry: () -> Unit) {
+    if (state is UiState.Loading || state is UiState.Error) item { StateFeedback(state, retry) }
+}
+
+@Composable fun HeaderSearchField(
+    value: String, change: (String) -> Unit, hint: String, clear: () -> Unit,
+    modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
+    Box(modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+        Surface(shape = FieldShape, color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().height(44.dp)) {}
+        Row(Modifier.fillMaxWidth().height(48.dp).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(8.dp))
+            BasicTextField(value, change, Modifier.weight(1f).height(48.dp).wrapContentHeight()
+                .semantics { contentDescription = hint }, singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), keyboardOptions = keyboardOptions, keyboardActions = keyboardActions,
+                decorationBox = { field ->
+                    Box { if (value.isEmpty()) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); field() }
+                })
+            if (value.isNotEmpty()) ActionIcon(Icons.Default.Close, stringResource(R.string.clear), clear)
+            else Spacer(Modifier.width(12.dp))
+        }
+    }
+}
