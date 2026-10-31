@@ -6,9 +6,9 @@
 
 | 页面 | 功能 |
 | --- | --- |
-| 首页 | 定位说明与用户主动授权、附近站点、距离、附近 / 收藏分段、收藏线路 / 站点、下拉重新定位、前三站前台每 20 秒更新到站 |
+| 首页 | 顶栏唯一搜索入口、定位与用户主动授权、附近站点、距离、附近 / 收藏分段、收藏线路 / 站点、下拉重新定位、前三站前台每 20 秒更新到站 |
 | 搜索 | 300ms 防抖、线路 / 站点分组、键盘立即查询、最近 10 条搜索及删除 / 清空 |
-| 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆、乘车站到站结论、横向站点图、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
+| 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆、乘车站到站结论、横向站点图（车辆位置即到站 / 途中）、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
 | 站点 | 同名 / 反向站台切换、经过线路及实时到站、收藏、下拉刷新、前台每 20 秒更新 |
 | 时刻表 | 线路方向、首末班、上游下一班、时段折叠、四列时间网格、当前时段高亮及上游说明 |
 | 城市选择 | 全屏窗口、已识别定位城市置顶、省 → 市、城市名 / 拼音检索与匹配高亮 |
@@ -65,12 +65,12 @@
 
 本轮 Debug / Release 构建、离线测试、Lint 和 APK 核验结果见下方记录；真实联网输出与失败原因见 [docs/live-check.md](docs/live-check.md)。
 
-实际验证（2026-10-30）：
+实际验证（2026-10-31，`041efd0`）：
 
-- `./build.sh :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug` 已真实通过；离线单测 8 项通过，13 项联网用例默认跳过。
+- `./build.sh :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` 已真实通过；离线单测 62 项，0 失败，13 项联网用例默认按 `@Ignore` 跳过。
 - 最终源码再次执行 `./build.sh :app:assembleDebug :app:assembleRelease :app:lintDebug --no-daemon`，`BUILD SUCCESSFUL in 2m 46s`；两个最终 APK 已重新核验。
 - 本轮显式联网首轮 12 项中 11 通过、北京搜索 1 项超时失败；另两项北京坐标流程 / 附近站点补测通过，真实输出完整保留在联网记录中。
-- `lintDebug` 无错误，剩余 8 条告警为固定依赖版本更新建议、已有图标目录及未用颜色资源；没有为消除提示升级依赖。
+- `lintDebug` 无错误，剩余 7 条告警为固定依赖版本更新建议（`GradleDependency` ×6）与 `ObsoleteSdkInt`；没有为消除提示升级依赖。
 - 一次增量重打包出现 Gradle daemon 异常退出。降低 Gradle 堆内存、限制为两名 worker，并改用进程内 Kotlin 编译后，Debug / Release 重新打包通过。
 
 实际执行 APK 核验命令（Debug 同样核对）：
@@ -83,12 +83,12 @@
 `aapt2` 输出关键字段：
 
 ```text
-package: name='com.yll682.houche' versionCode='1' versionName='1.0.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.yll682.houche' versionCode='3' versionName='1.2.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 minSdkVersion:'26'
 targetSdkVersion:'35'
 ```
 
-Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.0.0`、`versionCode=1`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
+Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.2.0`、`versionCode=3`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
 
 ## 签名
 
@@ -105,7 +105,7 @@ keyPassword=自行填写
 
 ## 数据与实现说明
 
-本轮基于 `f6e9c97`，保留进页即查询全线车辆、未选站不生成到站结论、选站不清空车辆的行为；未修改 `core/` 与 `data/`，未新增依赖。Application 初始化手写 `AppGraph`，城市表在 IO 加载，固定设备编号保存在 DataStore，两个客户端共享 HttpClient。查询缓存 TTL 为 15 秒，最多 512 条。
+本轮基于 `041efd0`，保留进页即查询全线车辆、未选站不生成到站结论、选站不清空车辆的行为；未修改 `core/` 与 `data/`，未新增依赖。Application 初始化手写 `AppGraph`，城市表在 IO 加载，固定设备编号保存在 DataStore，两个客户端共享 HttpClient。查询缓存 TTL 为 15 秒，最多 512 条。
 
 定位采用 Android LocationManager，支持最近已知位置兜底和 WGS84 → GCJ02 转换。定位城市只识别厦门覆盖区（最近站点距离不超过 30 km），其他地区使用上次选择 / 厦门默认值，不具备全国逆地理编码能力。
 
@@ -115,9 +115,9 @@ keyPassword=自行填写
 
 ### 模拟器真机渲染核对（2026-10-31）
 
-此前的模拟器记录只覆盖旧版界面。本轮未启动 Android 模拟器，内页版式全部用 Robolectric 的真实 Compose 渲染截图核对；覆盖已选站与未选站、两辆车、六字竖排站名、深浅色和 360dp 窄屏。横向站点列至少 152dp，内容自然增高；站点行自然测量，整行只有一个点击语义节点。截图测试同时设置系统夜间模式，保证深色实时卡与渐变顶栏走实际深色分支。
+此前的模拟器记录只覆盖旧版界面。本轮未启动 Android 模拟器，内页版式全部用 Robolectric 的真实 Compose 渲染截图核对；覆盖已选站与未选站、两辆车、六字竖排站名、深浅色和 360dp 窄屏。横向站点列 136dp，内容自然增高；车辆图标在站点正上方表示已到站、在两站之间表示途中；站点行自然测量，整行只有一个点击语义节点。截图测试同时设置系统夜间模式，保证深色实时卡与渐变顶栏走实际深色分支。
 
-本轮标准 `assembleDebug` / `testDebugUnitTest` / `lintDebug` 均尝试执行，但当前沙箱禁止 Gradle 的本机 socket，未能启动任务。缓存副本解决了默认 Gradle 目录只读问题，`--no-daemon` 的单次 daemon 仍被阻挡；不把此前的构建结果当成本轮通过。离线替代验证及完整限制见 [本轮验收记录](docs/inner-pages-validation.md)。真机手势、TalkBack 与权限弹窗仍需设备实测。
+此前的沙箱限制已解除：Codex 一侧仍无法执行 Gradle，但主进程可直接运行 `./build.sh`，构建、单测与 Lint 均在沙箱内通过。真机手势、TalkBack 与权限弹窗仍需设备实测。
 
 ## 数据免责声明
 
