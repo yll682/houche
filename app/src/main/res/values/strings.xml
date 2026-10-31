@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="order_unknown">序号未提供</string>
     <string name="app_name">候车</string>
     <string name="back">返回</string>
     <string name="cancel">取消</string>
@@ -28,7 +27,6 @@
     <string name="open_settings">前往应用设置</string>
     <string name="location_denied">定位权限未开启，请到应用设置中允许定位。</string>
     <string name="locating">附近站点 · 正在定位</string>
-    <string name="located">附近站点 · 已定位</string>
     <string name="last_location">使用上次已知位置，距离仅供参考</string>
     <string name="location_fallback">未识别定位城市，正在使用所选城市</string>
     <string name="location_city">已按定位城市查询</string>
@@ -52,7 +50,6 @@
     <string name="distance_m">%1$d 米</string>
     <string name="distance_km">%1$.1f 公里</string>
     <string name="distance_unknown">距离未提供</string>
-    <string name="section_count">%1$s · %2$d</string>
     <string name="favorite">收藏</string>
     <string name="unfavorite">取消收藏</string>
     <string name="share">分享线路</string>
@@ -76,7 +73,6 @@
     <string name="no_plate">车牌未提供</string>
     <string name="live_note">到站数据每 20 秒更新，预计时间受路况与调度影响，请提前候车。</string>
     <string name="no_route_stops">当前方向没有站点资料</string>
-    <string name="platform">站台 %1$s</string>
     <string name="platform_index">站台 %1$d</string>
     <string name="passing_lines">经过线路</string>
     <string name="no_lines">暂无经过线路</string>
@@ -102,14 +98,13 @@
     <string name="no_time">未提供</string>
     <string name="current_stop">当前乘车站</string>
     <string name="station_arrivals">该站到站信息</string>
-    <string name="search_label">搜索线路或站点</string>
     <string name="city_note">省份资料来自公交城市配置，服务覆盖以查询结果为准。</string>
-    <string name="location_not_available">定位城市尚未识别</string>
-    <string name="permission_note">定位权限说明</string>
     <string name="vehicle_distance">距站 %1$s</string>
-    <string name="time_notes">%1$s：%2$s</string>
-    <string name="collapse_fare">展开或收起票价说明</string>
     <string name="first_bus">首班</string>
     <string name="last_bus">末班</string>
     <string name="all_day">全天</string>
+    <string name="home">首页</string>
+    <string name="search">搜索</string>
+    <string name="quick_search">查公交</string>
+    <string name="from_stop">起点 %1$s</string>
 </resources>

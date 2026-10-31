@@ -22,6 +22,8 @@
 
 深浅色各一套真实渲染截图（Robolectric 渲染，非设计稿），位于 `docs/screenshots/`。设计规则见 [设计说明](docs/design-review.md)。
 
+版式对标厦门公交官方 App，参考截图（应用商店公开图）存于 `docs/reference/`。
+
 | 首页 | 线路（站点） | 线路（车辆） | 站点 |
 | --- | --- | --- | --- |
 | [浅色](docs/screenshots/home-nearby-light.png) / [深色](docs/screenshots/home-nearby-dark.png) | [浅色](docs/screenshots/line-stops-light.png) / [深色](docs/screenshots/line-stops-dark.png) | [浅色](docs/screenshots/line-vehicles-light.png) / [深色](docs/screenshots/line-vehicles-dark.png) | [浅色](docs/screenshots/station-light.png) / [深色](docs/screenshots/station-dark.png) |
@@ -106,6 +108,12 @@ keyPassword=自行填写
 时刻表优先使用上游分组；厦门未提供分组时按两小时时段展示。上游未提供下一班、车辆、分钟数或发车时间时显示相应空态，不推算或补造数据。搜索接口未返回线路数量的站点显示「点击查看」。北京 1 路本次返回 `hasReal=0` 和空时刻表；北京搜索有间歇性超时，详情见联网记录。
 
 当前环境没有连接 Android 设备，尚未实测定位硬件、权限弹窗、TalkBack、下拉手势与深浅色实际显示；这里的构建 / 联网验证不等于真机验收。进程被系统杀死后重新从首页进入，收藏与设置仍持久保存。
+
+### 模拟器真机渲染核对（2026-10-31）
+
+本轮除 Robolectric 截图外，另在 Android 模拟器（Android 11 / x86_64，无 KVM 时用 `-accel off` 软件模拟）里安装 Debug 包逐页截图比对：授予定位权限并用 `adb emu geo fix 118.13 24.48` 注入厦门坐标后，首页取到真实附近站点（卧龙西路口 187 米、龙山桥 337 米）与到站站数，搜索 91 路得到 35 条线路，线路详情 32 站、首末班 06:30 / 22:00，时刻表出现真实班次分组。深色模式同屏核对通过。
+
+软件模拟下冷启动约十余分钟，且会与 Gradle 抢占 CPU（曾导致测试子进程 120 秒连接超时，属环境资源问题，关闭模拟器后同一命令 26 秒通过）。真机仍待你实测。
 
 ## 数据免责声明
 

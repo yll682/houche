@@ -134,14 +134,12 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 }
 
 @Composable fun DistanceChip(distance: Double?) {
-    Surface(shape = Capsule, color = Color.Transparent, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-        Text(
-            distanceLabel(distance),
-            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    Text(
+        distanceLabel(distance),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1
+    )
 }
 
 /** 小号信息胶囊，用于站台数量、分组计数等辅助信息。 */
