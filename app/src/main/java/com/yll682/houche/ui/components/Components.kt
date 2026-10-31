@@ -3,6 +3,7 @@ package com.yll682.houche.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
@@ -13,6 +14,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -32,10 +34,31 @@ import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.theme.BadgeShape
 import com.yll682.houche.ui.theme.Capsule
 import com.yll682.houche.ui.theme.CardShape
+import com.yll682.houche.ui.theme.HeaderBottom
+import com.yll682.houche.ui.theme.HeaderBottomDark
+import com.yll682.houche.ui.theme.HeaderTop
+import com.yll682.houche.ui.theme.HeaderTopDark
 import kotlinx.coroutines.delay
 
 /** 触控区不小于 48dp，并补上无障碍标签。 */
 fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { contentDescription = label }
+
+/** 顶栏渐变：与首页同一套蓝色，深色模式压暗一档，白色图标始终有足够对比。 */
+@Composable fun headerGradient(): Brush = Brush.verticalGradient(
+    if (isSystemInDarkTheme()) listOf(HeaderTopDark, HeaderBottomDark) else listOf(HeaderTop, HeaderBottom)
+)
+
+/** 顶栏容器：蓝色渐变背景 + 状态栏留白，内容由调用方决定放标题行还是搜索框。 */
+@Composable fun HeaderSurface(content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().background(headerGradient()).statusBarsPadding(), content = content)
+}
+
+/** 顶栏里的白色图标按钮，只在渐变背景上使用。 */
+@Composable fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
+    IconButton(onClick, Modifier.size(48.dp), enabled = enabled) {
+        Icon(icon, label, tint = if (enabled) Color.White else Color.White.copy(alpha = .4f))
+    }
+}
 
 @Composable fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true, tint: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
     IconButton(onClick, Modifier.size(48.dp), enabled = enabled) { Icon(icon, label, tint = if (enabled) tint else tint.copy(alpha = .38f)) }
@@ -238,19 +261,28 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-/** 二级页面外壳：返回按钮 + 标题，底部一条发丝线。 */
+/** 二级页面外壳：蓝色渐变顶栏 + 返回按钮 + 白色标题，与首页同一种家族感。 */
 @Composable fun Page(title: String, back: () -> Unit, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}, content: @Composable (PaddingValues) -> Unit) {
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
-                Row(Modifier.fillMaxWidth().statusBarsPadding().height(56.dp).padding(start = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back, tint = MaterialTheme.colorScheme.onSurface)
-                    Text(title, Modifier.weight(1f).padding(start = 4.dp), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            HeaderSurface {
+                Row(
+                    Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp, end = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+                    Text(
+                        title,
+                        Modifier.weight(1f).padding(start = 2.dp),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     actions()
                 }
-                Hairline()
             }
         },
         content = content

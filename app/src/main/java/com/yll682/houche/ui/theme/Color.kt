@@ -14,6 +14,10 @@ val AlertOrange = Color(0xFFFF5B2B)
 val HeaderTop = Color(0xFF2A7BF7)
 val HeaderBottom = Color(0xFF1B62DF)
 
+// 深色模式顶栏：同样的蓝色调压暗两档，保证白色图标与标题的对比度。
+val HeaderTopDark = Color(0xFF2A4C82)
+val HeaderBottomDark = Color(0xFF172F55)
+
 // 浅色：白卡片 + 浅灰页底，主色取官方 App 的蓝色。
 val LightColors = lightColorScheme(
     primary = Color(0xFF1E6FF3),

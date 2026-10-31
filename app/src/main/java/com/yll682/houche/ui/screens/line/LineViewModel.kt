@@ -31,25 +31,33 @@ class LineViewModel(private val graph: AppGraph, val city: City, private val sum
             val route = graph.repository().lineDetail(city, summary.name, direction)
             val selected = if (reverse) null else (data.selected?.let { old -> route.stations.firstOrNull { it.name == old.name } } ?: route.stations.firstOrNull { it.name == boarding?.name } ?: route.stations.firstOrNull { it.order == summary.stationOrder })
             update(LineData(route = route, selected = selected, favorite = graph.prefs.favoriteLines.first().any { it.city.key == city.key && it.line.name == summary.name && it.line.direction == direction }), route.stations.isEmpty())
-            if (selected != null) refreshLive()
+            // 进页即取车辆：先选站才看车会让「车在哪」这件事多一步。
+            refreshLive()
         }
     }
     fun select(station: RouteStation) {
         job?.cancel()
-        update(data.copy(selected = station, live = null, arrivals = emptyList()))
+        // 车辆列表是全线的，选站只影响「还有几站」这类相对信息，不必清空。
+        update(data.copy(selected = station, arrivals = emptyList()))
         job = action { refreshLive() }
     }
     suspend fun refreshLive() {
         val route = data.route ?: return
-        val station = data.selected ?: return
+        if (route.stations.isEmpty()) return
+        val station = data.selected
         if (!mutex.tryLock()) return
         try { attempt {
             val repo = graph.repository()
             coroutineScope {
                 val vehicles = async { repo.vehicles(city, route, station) }
-                val arrivals = async { if (city.isXiamen) repo.arrivals(city, route.name, route.direction, station.order!!) else emptyList() }
+                val arrivals = async { if (station != null && city.isXiamen) repo.arrivals(city, route.name, route.direction, station.order ?: 0) else emptyList() }
                 val live = vehicles.await()
-                val estimates = if (city.isXiamen) arrivals.await() else live.arrivals
+                // 到站结论只对具体的乘车站成立：没选站时不拿终点站的到站资料充数。
+                val estimates = when {
+                    station == null -> emptyList()
+                    city.isXiamen -> arrivals.await()
+                    else -> live.arrivals
+                }
                 if (data.route == route && data.selected == station) update(data.copy(live = live, arrivals = estimates))
             }
         } } finally { mutex.unlock() }
