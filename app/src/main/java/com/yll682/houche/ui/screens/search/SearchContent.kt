@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.yll682.houche.ui.screens.search
 
 import androidx.compose.foundation.*
@@ -23,7 +23,6 @@ import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
 import com.yll682.houche.ui.theme.Capsule
-import com.yll682.houche.ui.theme.FieldShape
 
 @Composable fun SearchContent(
     state: UiState<SearchData>, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit,
@@ -34,88 +33,45 @@ import com.yll682.houche.ui.theme.FieldShape
     val typed = data.query.isNotBlank()
 
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ActionIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back, tint = MaterialTheme.colorScheme.onSurface)
-            OutlinedTextField(
-                value = data.query,
-                onValueChange = query,
-                modifier = inputModifier.fillMaxWidth().weight(1f).height(52.dp),
-                singleLine = true,
-                shape = FieldShape,
-                placeholder = { Text(stringResource(R.string.search_hint), style = MaterialTheme.typography.bodyLarge) },
-                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                trailingIcon = {
-                    if (typed) IconButton({ clear() }, Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Close, stringResource(R.string.clear), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { submit() }),
-                textStyle = MaterialTheme.typography.bodyLarge,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-            TextButton(back, Modifier.touch(stringResource(R.string.cancel)), contentPadding = PaddingValues(horizontal = 10.dp)) {
-                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.labelLarge)
+        HeaderSurface {
+            Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+                HeaderSearchField(data.query, query, stringResource(R.string.search_hint), { query("") },
+                    inputModifier.weight(1f), KeyboardOptions(imeAction = ImeAction.Search), KeyboardActions(onSearch = { submit() }))
+                TextButton(back, Modifier.touch(stringResource(R.string.cancel)), contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.cancel), style = MaterialTheme.typography.labelLarge, color = Color.White)
+                }
             }
         }
-        Hairline()
 
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             feedback(state) { submit() }
             if (!typed) {
                 if (data.history.isNotEmpty()) {
                     item {
-                        Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            SectionHeader(stringResource(R.string.recent_searches))
-                        }
-                    }
-                    item {
-                        CardSurface {
-                            data.history.forEachIndexed { index, keyword ->
-                                if (index > 0) Hairline()
-                                Row(
-                                    Modifier.fillMaxWidth().touch(keyword).clickable { search(keyword) }.padding(start = 16.dp, end = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.History, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        keyword,
-                                        Modifier.weight(1f).padding(vertical = 14.dp),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            data.history.forEach { keyword ->
+                                Surface(shape = Capsule, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                                    Row(Modifier.widthIn(max = 320.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(keyword, Modifier.weight(1f, fill = false).widthIn(min = 48.dp).touch(keyword).clickable { search(keyword) }.padding(start = 12.dp).wrapContentHeight(),
+                                            style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
+                                    }
                                 }
                             }
+                            OutlinedButton(clear, Modifier.touch(stringResource(R.string.clear)), shape = Capsule, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { Text(stringResource(R.string.clear), style = MaterialTheme.typography.labelLarge) }
                         }
                     }
-                    item {
-                        TextButton({ clear() }, Modifier.touch(stringResource(R.string.clear)), contentPadding = PaddingValues(horizontal = 4.dp)) {
-                            Text(stringResource(R.string.clear), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                } else {
-                    item { EmptyState(stringResource(R.string.search_hint), stringResource(R.string.search_tip)) }
-                }
+                } else item { EmptyState(stringResource(R.string.search_hint)) }
             } else {
                 val lines = data.result.lines
                 val stations = data.result.stations
                 if (lines.isEmpty() && stations.isEmpty() && state !is UiState.Loading) {
-                    item { EmptyState(stringResource(R.string.search_empty), stringResource(R.string.search_tip)) }
+                    item { EmptyState(stringResource(R.string.search_empty)) }
                 }
                 if (lines.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.lines), lines.size) }

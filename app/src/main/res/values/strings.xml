@@ -100,9 +100,4 @@
     <string name="stop_vehicles_accessibility">%1$s，%2$d 辆车</string>
     <string name="selected_stop_accessibility">%1$s，当前乘车站</string>
     <string name="group_count">%1$s · %2$d</string>
-    <string name="recent_searches">最近搜索</string>
-    <string name="search_tip">请检查城市，换个关键词试试</string>
-    <string name="live_note">到站数据每 20 秒更新，预计时间受路况与调度影响，请提前候车。</string>
-    <string name="located_city">定位城市 · %1$s</string>
-    <string name="city_note">省份资料来自公交城市配置，服务覆盖以查询结果为准。</string>
 </resources>

@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.City
 import com.yll682.houche.ui.components.*
-import com.yll682.houche.ui.theme.FieldShape
+import com.yll682.houche.ui.theme.CardShape
 
 @Composable fun CityContent(
     state: CityData, dismiss: () -> Unit, retry: () -> Unit, choose: (City) -> Unit,
@@ -39,44 +39,26 @@ import com.yll682.houche.ui.theme.FieldShape
     }
 
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                ActionIcon(Icons.Default.Close, stringResource(R.string.close), dismiss, tint = MaterialTheme.colorScheme.onSurface)
-                Text(stringResource(R.string.choose_city), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        Column(Modifier.fillMaxSize()) {
+            HeaderSurface {
+                Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    HeaderIcon(Icons.Default.Close, stringResource(R.string.close), dismiss)
+                    Text(stringResource(R.string.choose_city), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = Color.White)
+                }
+                HeaderSearchField(state.query, queryChange, stringResource(R.string.city_search), { queryChange("") },
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp))
             }
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = queryChange,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp),
-                singleLine = true,
-                shape = FieldShape,
-                placeholder = { Text(stringResource(R.string.city_search), style = MaterialTheme.typography.bodyLarge) },
-                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                trailingIcon = {
-                    if (state.query.isNotEmpty()) IconButton({ queryChange("") }, Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Close, stringResource(R.string.clear), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-            Spacer(Modifier.height(8.dp))
-            Hairline()
 
-            LazyColumn(Modifier.fillMaxSize().weight(1f), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(Modifier.fillMaxSize().weight(1f), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (state.error != null) item { ErrorCard(state.error, retry) }
                 if (keyword.isBlank() && state.province == null && state.located != null) {
                     item {
-                        CardSurface(onClick = { choose(state.located) }) {
+                        Surface(onClick = { choose(state.located) }, modifier = Modifier.fillMaxWidth().touch(state.located.name),
+                            shape = CardShape, color = MaterialTheme.colorScheme.primaryContainer) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.MyLocation, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(Modifier.width(10.dp))
-                                Text(stringResource(R.string.located_city, state.located.name), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                                Text(state.located.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                                 Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
                             }
                         }
@@ -102,7 +84,7 @@ import com.yll682.houche.ui.theme.FieldShape
                             provinces.forEachIndexed { index, province ->
                                 if (index > 0) Hairline()
                                 Row(
-                                    Modifier.fillMaxWidth().touch(province).clickable { provinceChange(province) }.padding(horizontal = 16.dp, vertical = 15.dp),
+                                    Modifier.fillMaxWidth().touch(province.ifBlank { other }).clickable { provinceChange(province) }.padding(horizontal = 16.dp, vertical = 15.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
@@ -112,8 +94,8 @@ import com.yll682.houche.ui.theme.FieldShape
                                     )
                                     Text(
                                         (grouped[province]?.size ?: 0).toString(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
@@ -124,7 +106,7 @@ import com.yll682.houche.ui.theme.FieldShape
                 } else {
                     item {
                         Row(
-                            Modifier.fillMaxWidth().height(44.dp).touch(stringResource(R.string.provinces)).clickable { provinceChange(null) },
+                            Modifier.fillMaxWidth().height(48.dp).touch(stringResource(R.string.provinces)).clickable { provinceChange(null) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -145,14 +127,7 @@ import com.yll682.houche.ui.theme.FieldShape
                         }
                     }
                 }
-                item {
-                    Text(
-                        stringResource(R.string.city_note),
-                        Modifier.padding(top = 8.dp, bottom = 12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+
             }
         }
     }
