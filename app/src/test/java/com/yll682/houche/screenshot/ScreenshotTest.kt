@@ -80,7 +80,7 @@ class ScreenshotTest {
     )
     private val lineRoute = Route("1路", "11", "1", "四惠枢纽站", "老山公交场站", "05:00", "23:00", "票价2-6元", beijingStops, true)
     private val longStop = Station("天安门东（地铁站）", distance = 44.0, lines = listOf(LineSummary("地铁1号线八通线", "1", to = "环球度假区（地铁站）"), LineSummary("地铁1号线八通线", "2", to = "福寿岭（地铁站）")))
-    private val live = VehicleResults(listOf(Vehicle("京A·01236", 1, "at-stop", currentStation = "四惠枢纽站", dataTime = "08:26:00"), Vehicle("京A·03591", 2, "between", segmentDistance = 320.0)), "车辆位置仅供参考，请提前候车")
+    private val live = VehicleResults(listOf(Vehicle("京A·01236", 1, "at-stop", currentStation = "四惠枢纽站", dataTime = "08:26:00"), Vehicle("京A·03591", 2, "between", currentStation = "八王坟西", dataTime = "08:26:00", segmentDistance = 320.0)), "车辆位置仅供参考，请提前候车", nextDeparture = "10:05")
     private val home = HomeData(stations = listOf(stop), arrivals = mapOf(0 to arrivals), position = Position(24.48, 118.13), cityResolved = true, favoriteLines = listOf(SavedLine(city, LineSummary("91路", "1", route.from, route.to))), favoriteStations = listOf(SavedStation(city, stop)))
     private val timetableData = TimetableData(
         Timetable(emptyList(), "本时刻表显示计划发车时间，受道路通行情况影响可能临时调整，仅供参考。"),
@@ -91,7 +91,7 @@ class ScreenshotTest {
     )
 
     @Composable private fun Home(state: UiState<HomeData>, segment: Int = 0, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
-    @Composable private fun Line(panel: Int) = LineContent(UiState.Success(LineData(lineRoute, beijingStops[1], live, listOf(Arrival(remainingStations = 1, timeText = "约3分钟", name = "1路", direction = "1")))), beijing, panel, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
+    @Composable private fun Line(panel: Int, selected: Boolean = true) = LineContent(UiState.Success(LineData(lineRoute, if (selected) beijingStops[1] else null, live, if (selected) listOf(Arrival(remainingStations = 1, timeText = "约3分钟", name = "1路", direction = "1")) else emptyList())), beijing, panel, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
 
     // Compose 1.7 的内置 captureToImage 在 Robolectric 等待窗口重绘时超时：
     // https://github.com/robolectric/robolectric/issues/8071
@@ -108,6 +108,7 @@ class ScreenshotTest {
     }
 
     private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, content: @Composable () -> Unit) {
+        org.robolectric.RuntimeEnvironment.setQualifiers(if (dark) "+night" else "+notnight")
         compose.setContent {
             MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
@@ -140,6 +141,29 @@ class ScreenshotTest {
     @Test fun scene4_dark() = capture("line-stops", true) { Line(0) }
     @Test fun scene5_light() = capture("line-vehicles", false) { Line(1) }
     @Test fun scene5_dark() = capture("line-vehicles", true) { Line(1) }
+    @Test fun lineUnselected_light() {
+        capture("line-unselected", false) { Line(0, selected = false) }
+        compose.onNodeWithText("点击下方站点选择乘车站").assertDoesNotExist()
+        compose.onNodeWithText("全线车辆").assertIsDisplayed()
+        compose.onNodeWithText("2 辆").assertIsDisplayed()
+        compose.onAllNodesWithContentDescription("八王坟西，1 辆车").onFirst().assert(hasClickAction())
+    }
+    @Test fun lineUnselected_dark() = capture("line-unselected", true) { Line(0, selected = false) }
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun lineNarrow_light() = capture("line-narrow", false, 1080, 2400) { Line(0) }
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun lineNarrow_dark() = capture("line-narrow", true, 1080, 2400) { Line(0) }
+    @Test fun selectedStopSemantics() {
+        capture("line-stops", false) { Line(0) }
+        val row = compose.onNodeWithContentDescription("八王坟西，当前乘车站，1 辆车")
+        row.assert(hasClickAction()).assertIsDisplayed()
+        assertTrue(row.fetchSemanticsNode().children.none { it.config.contains(androidx.compose.ui.semantics.SemanticsActions.OnClick) })
+        row.performClick()
+    }
+    @Test fun searchHistory_light() = capture("search-history", false) { SearchContent(UiState.Success(SearchData(history = listOf("91路", "实验幼儿园", "火车站", "BRT"))), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun searchHistory_dark() = capture("search-history", true) { SearchContent(UiState.Success(SearchData(history = listOf("91路", "实验幼儿园", "火车站", "BRT"))), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun searchEmpty_light() = capture("search-empty", false) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun searchEmpty_dark() = capture("search-empty", true) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
     @Test fun scene6_light() = capture("station", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene6_dark() = capture("station", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene7_light() = capture("timetable", false) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }

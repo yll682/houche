@@ -2,6 +2,7 @@ package com.yll682.houche
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Rule
@@ -23,6 +24,8 @@ class LaunchSmokeTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun 冷启动显示首页并且不崩溃() {
+        // 城市表与偏好在 IO 初始化；Compose 空闲不代表首页数据已就绪。
+        compose.waitUntil(timeoutMillis = 10_000) { compose.onAllNodesWithText("候车").fetchSemanticsNodes().isNotEmpty() }
         compose.waitForIdle()
         compose.onNodeWithText("候车").assertIsDisplayed()
         compose.onNodeWithText("搜线路 / 站点").assertIsDisplayed()
