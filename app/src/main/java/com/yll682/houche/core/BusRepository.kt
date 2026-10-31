@@ -112,20 +112,23 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
                 operatingPeriods = raw.field("firstLast"), path = raw.field("nihelist"), companies = raw.field("companys"), relatedRoutes = raw.field("StationRelatedRouteName"))
         }
     }
-    suspend fun vehicles(city: City, line: Route, station: RouteStation): VehicleResults = cached("vehicles", city, line, station) {
-        val order = station.order
-        argument(order != null && order > 0, "车辆查询需要选择乘车站")
+    // 未选乘车站时以终点方向最后一站为参照：上游按参照站序号返回整条线路的车辆，
+    // 乘客进线路页就能看到车在哪，不必先选站。
+    suspend fun vehicles(city: City, line: Route, station: RouteStation? = null): VehicleResults = cached("vehicles", city, line, station) {
+        val anchor = station ?: line.stations.lastOrNull() ?: throw BusException(BusException.Kind.ARGUMENT, "这条线路没有站点资料")
+        val order = anchor.order ?: throw BusException(BusException.Kind.ARGUMENT, "上游没有返回可查询车辆的站点序号")
+        argument(order > 0, "上游没有返回可查询车辆的站点序号")
         val records: List<Vehicle>
         if (city.isXiamen) {
-            argument(line.id.isNotEmpty() && !station.id.isNullOrEmpty(), "厦门车辆查询需要线路和所选站点编号")
-            records = xm("busList", "busLineId" to line.id, "direction" to line.direction, "stationSeq" to order, "stationId" to station.id, "stationName" to station.name).items().map {
+            argument(line.id.isNotEmpty() && !anchor.id.isNullOrEmpty(), "厦门车辆查询需要线路和站点编号")
+            records = xm("busList", "busLineId" to line.id, "direction" to line.direction, "stationSeq" to order, "stationId" to anchor.id, "stationName" to anchor.name).items().map {
                 val reported = it.i("stationOrder")
                 Vehicle(it.s("plateNo"), reported?.plus(if (it.s("inOrOut") == "1") 1 else 0), when(it.s("inOrOut")) { "0" -> "at-stop"; "1" -> "between"; else -> "unknown" },
                     reported, it.field("inOrOut").text(), it.field("nextStationName").text(), dataTime = it.field("dataTime").text(), lat = it.d("lat"), lng = it.d("lng"))
             }
-            VehicleResults(sortVehicles(records, order!!), "车辆位置来自上游，站点序号依据厦门公交返回值。")
+            VehicleResults(sortVehicles(records, order), "车辆位置来自上游，站点序号依据厦门公交返回值。")
         } else {
-            val raw = realtime(city, line.name, line.direction, order!!)
+            val raw = realtime(city, line.name, line.direction, order)
             records = raw.list("list").map {
                 Vehicle(it.s("busNumber"), it.i("index")?.plus(1), when(it.s("statusType")) { "0" -> "at-stop"; "2" -> "between"; else -> "unknown" },
                     currentStation = it.field("stationName").text(), lat = it.d("bus_lat"), lng = it.d("bus_lng"), statusType = it.field("statusType").text(),
