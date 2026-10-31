@@ -12,7 +12,6 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,13 +22,13 @@ import com.yll682.houche.core.*
 import com.yll682.houche.ui.*
 import com.yll682.houche.ui.components.*
 import com.yll682.houche.ui.theme.Capsule
-import com.yll682.houche.ui.theme.FieldShape
 import com.yll682.houche.ui.theme.HeaderBottom
 import com.yll682.houche.ui.theme.HeaderTop
 
 /**
- * 首页版式参照厦门公交官方 App：蓝色渐变顶栏 + 快捷入口宫格 + 胶囊搜索框 + 站点卡片。
+ * 首页版式参照厦门公交官方 App：蓝色渐变顶栏 + 胶囊搜索框 + 站点卡片。
  * 到站信息按官方配色分级：即将到站橙红、有站数蓝色、等待发车灰色。
+ * 搜索只有一个入口（顶栏胶囊框），宫格与底部导航不重复承载同一动作。
  */
 @Composable fun HomeContent(
     state: UiState<HomeData>, city: City, granted: Boolean, segment: Int, selectSegment: (Int) -> Unit,
@@ -43,15 +42,14 @@ import com.yll682.houche.ui.theme.HeaderTop
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { HomeHeader(city, cities, locate, search) },
-        bottomBar = { HomeBottomBar(segment, selectSegment, search, settings) }
+        bottomBar = { HomeBottomBar(segment, selectSegment, settings) }
     ) { padding ->
         PullToRefresh(loading, { locate() }) {
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item { QuickActions(segment, selectSegment, search, cities, locate) }
                 if (segment == 0) {
                     item {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -204,43 +202,8 @@ import com.yll682.houche.ui.theme.HeaderTop
     }
 }
 
-/** 快捷入口宫格，视觉对齐官方首页的四列图标区。 */
-@Composable private fun QuickActions(segment: Int, selectSegment: (Int) -> Unit, search: () -> Unit, cities: () -> Unit, locate: () -> Unit) {
-    CardSurface {
-        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            QuickAction(Icons.Default.DirectionsBus, stringResource(R.string.nearby), segment == 0) { selectSegment(0) }
-            QuickAction(Icons.Default.Search, stringResource(R.string.quick_search), false) { search() }
-            QuickAction(Icons.Default.Star, stringResource(R.string.favorites), segment == 1) { selectSegment(1) }
-            QuickAction(Icons.Default.Place, stringResource(R.string.switch_city), false) { cities() }
-        }
-    }
-}
-
-@Composable private fun QuickAction(icon: ImageVector, label: String, active: Boolean, onClick: () -> Unit) {
-    Column(
-        Modifier.widthIn(min = 64.dp).touch(label).clip(FieldShape).clickable(onClick = onClick).padding(vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            Modifier.size(42.dp).clip(Capsule)
-                .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, Modifier.size(22.dp), tint = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-/** 底部导航：首页 / 搜索 / 收藏 / 设置，平面样式不套选中胶囊。 */
-@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit, search: () -> Unit, settings: () -> Unit) {
+/** 底部导航：首页 / 收藏 / 设置，搜索由顶栏胶囊框承担，不在这里重复。 */
+@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit, settings: () -> Unit) {
     Column {
         Hairline()
         NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
@@ -249,13 +212,6 @@ import com.yll682.houche.ui.theme.HeaderTop
                 onClick = { selectSegment(0) },
                 icon = { Icon(Icons.Default.Home, null) },
                 label = { Text(stringResource(R.string.home)) },
-                colors = flatNavColors()
-            )
-            NavigationBarItem(
-                selected = false,
-                onClick = search,
-                icon = { Icon(Icons.Default.Search, null) },
-                label = { Text(stringResource(R.string.search)) },
                 colors = flatNavColors()
             )
             NavigationBarItem(
@@ -310,10 +266,11 @@ import com.yll682.houche.ui.theme.HeaderTop
     val platforms = station.sameNum ?: station.platformNumbers.size
     CardSurface {
         Row(
-            Modifier.fillMaxWidth().touch(station.name).clickable(onClick = onOpen).padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            Modifier.fillMaxWidth().touch(station.name).clickable(onClick = onOpen).padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            // 站点是站牌，公交图标留给车辆本身，别在站名旁画一辆车。
+            Icon(Icons.Default.Signpost, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Text(station.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -357,7 +314,7 @@ import com.yll682.houche.ui.theme.HeaderTop
 @Composable private fun StationLineRow(line: LineSummary, arrival: Arrival?, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().touch(line.name).clickable(onClick = onClick)
-            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+            .padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 官方样式：第一行「线路号 + 开往终点」，第二行只补充起点，避免终点被说两遍。
