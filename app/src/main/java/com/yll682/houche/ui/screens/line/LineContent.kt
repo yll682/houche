@@ -198,7 +198,8 @@ import com.yll682.houche.ui.theme.*
     val listState = rememberLazyListState()
     LaunchedEffect(route.name, route.direction) {
         val target = selected ?: vehicles.firstOrNull()?.order?.let { order -> route.stations.firstOrNull { it.order == order } }
-        val index = route.stations.indexOf(target).coerceAtLeast(0)
+        // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图标。
+        val index = (route.stations.indexOf(target) - 1).coerceAtLeast(0)
         if (route.stations.isNotEmpty()) listState.scrollToItem(index)
     }
     LazyRow(state = listState, contentPadding = PaddingValues(horizontal = 8.dp)) {
@@ -208,12 +209,19 @@ import com.yll682.houche.ui.theme.*
             val primary = MaterialTheme.colorScheme.primary
             val passed = selected?.order?.let { (stop.order ?: it) < it } == true
             val description = if (buses.isEmpty()) stop.name else stringResource(R.string.stop_vehicles_accessibility, stop.name, buses.size)
-            Column(Modifier.width(64.dp).heightIn(min = 152.dp).clickable(role = Role.Button) { preview(stop) }
+            Column(Modifier.width(64.dp).heightIn(min = 136.dp).clickable(role = Role.Button) { preview(stop) }
                 .semantics(mergeDescendants = true) { contentDescription = description }, horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(Modifier.height(26.dp).clearAndSetSemantics {}, verticalAlignment = Alignment.CenterVertically) {
+                // 车的位置就是状态：到站画在该站圆点正上方，途中向左偏移半格，落在两站之间。
+                Box(Modifier.height(24.dp).fillMaxWidth().clearAndSetSemantics {}) {
                     buses.firstOrNull()?.let { bus ->
-                        Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = primary.copy(alpha = if (bus.positionState == "at-stop") 1f else .38f))
-                        if (buses.size > 1) Text(buses.size.toString(), style = MaterialTheme.typography.labelSmall, color = primary)
+                        val between = bus.positionState != "at-stop"
+                        Row(
+                            Modifier.align(Alignment.Center).offset(x = if (between) (-32).dp else 0.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
+                            if (buses.size > 1) Text(buses.size.toString(), style = MaterialTheme.typography.labelSmall, color = primary)
+                        }
                     }
                 }
                 Text(stop.order?.toString().orEmpty(), Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelSmall, color = if (active) primary else MaterialTheme.colorScheme.outline)
@@ -243,14 +251,14 @@ import com.yll682.houche.ui.theme.*
         Box(Modifier.matchParentSize().clearAndSetSemantics {}) {
             Box(Modifier.width(40.dp).fillMaxHeight()) {
                 Box(Modifier.align(Alignment.Center).width(1.5.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
-                Box(Modifier.align(Alignment.TopCenter).padding(top = 10.dp).size(22.dp).clip(Capsule)
+                Box(Modifier.align(Alignment.TopCenter).padding(top = 8.dp).size(22.dp).clip(Capsule)
                     .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
                     .border(1.5.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, Capsule), contentAlignment = Alignment.Center) {
                     Text(stop.order?.toString().orEmpty(), style = MaterialTheme.typography.labelSmall, color = if (active) Color.White else MaterialTheme.colorScheme.outline)
                 }
             }
         }
-        Column(Modifier.fillMaxWidth().padding(start = 40.dp, top = 8.dp, bottom = 10.dp, end = 4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(start = 40.dp, top = 6.dp, bottom = 8.dp, end = 4.dp)) {
             Text(stop.name, style = if (active) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
                 color = if (active) MaterialTheme.colorScheme.primary else if (passed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
