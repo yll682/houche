@@ -63,7 +63,12 @@ import com.yll682.houche.ui.theme.Capsule
                                     }
                                 }
                             }
-                            OutlinedButton(clear, Modifier.touch(stringResource(R.string.clear)), shape = Capsule, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { Text(stringResource(R.string.clear), style = MaterialTheme.typography.labelLarge) }
+                            // 「清空」与关键词 chip 同一形态，只是文字更轻，避免两种药丸挤在一行。
+                            Surface(onClick = clear, modifier = Modifier.touch(stringResource(R.string.clear)), shape = Capsule,
+                                color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                                Text(stringResource(R.string.clear), Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 } else item { EmptyState(stringResource(R.string.search_hint)) }
