@@ -1,6 +1,6 @@
 # 候车
 
-原生 Android 公交查询客户端，使用 Kotlin、Jetpack Compose 和 Material 3，直接请求公开公交服务，不需要自建后端。支持系统深浅色模式，固定青绿色品牌主题。
+原生 Android 公交查询客户端，使用 Kotlin、Jetpack Compose 和 Material 3，直接请求公开公交服务，不需要自建后端。支持系统深浅色模式，蓝色渐变顶栏与语义状态色。
 
 ## 功能与界面
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | 首页 | 定位说明与用户主动授权、附近站点、距离、附近 / 收藏分段、收藏线路 / 站点、下拉重新定位、前三站前台每 20 秒更新到站 |
 | 搜索 | 300ms 防抖、线路 / 站点分组、键盘立即查询、最近 10 条搜索及删除 / 清空 |
-| 线路 | 方向切换、首末班与票价、收藏、文本分享、选乘车站、下一班、站点时间轴及车辆圆点、车辆列表、前台每 20 秒刷新 |
+| 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆、乘车站到站结论、横向站点图、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
 | 站点 | 同名 / 反向站台切换、经过线路及实时到站、收藏、下拉刷新、前台每 20 秒更新 |
 | 时刻表 | 线路方向、首末班、上游下一班、时段折叠、四列时间网格、当前时段高亮及上游说明 |
 | 城市选择 | 全屏窗口、已识别定位城市置顶、省 → 市、城市名 / 拼音检索与匹配高亮 |
@@ -32,7 +32,11 @@
 | --- | --- | --- | --- |
 | [浅色](docs/screenshots/search-results-light.png) / [深色](docs/screenshots/search-results-dark.png) | [浅色](docs/screenshots/timetable-light.png) / [深色](docs/screenshots/timetable-dark.png) | [浅色](docs/screenshots/city-picker-light.png) / [深色](docs/screenshots/city-picker-dark.png) | [浅色](docs/screenshots/settings-light.png) / [深色](docs/screenshots/settings-dark.png) |
 
-另外还有加载态、错误态、未授权定位、收藏空态、长站名挤压，以及 360dp 窄屏时刻表等边界截图，见同一目录。
+| 全线车辆（未选站） | 搜索历史 | 搜索空态 | 360dp 线路页 |
+| --- | --- | --- | --- |
+| [浅色](docs/screenshots/line-unselected-light.png) / [深色](docs/screenshots/line-unselected-dark.png) | [浅色](docs/screenshots/search-history-light.png) / [深色](docs/screenshots/search-history-dark.png) | [浅色](docs/screenshots/search-empty-light.png) / [深色](docs/screenshots/search-empty-dark.png) | [浅色](docs/screenshots/line-narrow-light.png) / [深色](docs/screenshots/line-narrow-dark.png) |
+
+另外保留加载态、错误态、未授权定位、收藏空态、长站名及 360dp 时刻表截图，共 38 张 PNG。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
 
 ```sh
 # 重新生成全部截图
@@ -101,19 +105,19 @@ keyPassword=自行填写
 
 ## 数据与实现说明
 
-数据层沿用上一轮提交 `98d280e` 的 `core/` 与 `data/`，本轮没有重写或修改它们。Application 初始化手写 `AppGraph`，城市表在 IO 加载，固定设备编号保存在 DataStore，两个客户端共享 HttpClient。查询缓存 TTL 为 15 秒，最多 512 条。
+本轮基于 `f6e9c97`，保留进页即查询全线车辆、未选站不生成到站结论、选站不清空车辆的行为；未修改 `core/` 与 `data/`，未新增依赖。Application 初始化手写 `AppGraph`，城市表在 IO 加载，固定设备编号保存在 DataStore，两个客户端共享 HttpClient。查询缓存 TTL 为 15 秒，最多 512 条。
 
 定位采用 Android LocationManager，支持最近已知位置兜底和 WGS84 → GCJ02 转换。定位城市只识别厦门覆盖区（最近站点距离不超过 30 km），其他地区使用上次选择 / 厦门默认值，不具备全国逆地理编码能力。
 
-时刻表优先使用上游分组；厦门未提供分组时按两小时时段展示。上游未提供下一班、车辆、分钟数或发车时间时显示相应空态，不推算或补造数据。搜索接口未返回线路数量的站点显示「点击查看」。北京 1 路本次返回 `hasReal=0` 和空时刻表；北京搜索有间歇性超时，详情见联网记录。
+时刻表优先使用上游分组；厦门未提供分组时按两小时时段展示。上游未提供下一班、车辆、分钟数或发车时间时显示相应空态，不推算或补造数据。搜索接口未返回线路数量时只显示站名。北京 1 路本次返回 `hasReal=0` 和空时刻表；北京搜索有间歇性超时，详情见联网记录。
 
 当前环境没有连接 Android 设备，尚未实测定位硬件、权限弹窗、TalkBack、下拉手势与深浅色实际显示；这里的构建 / 联网验证不等于真机验收。进程被系统杀死后重新从首页进入，收藏与设置仍持久保存。
 
 ### 模拟器真机渲染核对（2026-10-31）
 
-本轮除 Robolectric 截图外，另在 Android 模拟器（Android 11 / x86_64，无 KVM 时用 `-accel off` 软件模拟）里安装 Debug 包逐页截图比对：授予定位权限并用 `adb emu geo fix 118.13 24.48` 注入厦门坐标后，首页取到真实附近站点（卧龙西路口 187 米、龙山桥 337 米）与到站站数，搜索 91 路得到 35 条线路，线路详情 32 站、首末班 06:30 / 22:00，时刻表出现真实班次分组。深色模式同屏核对通过。
+此前的模拟器记录只覆盖旧版界面。本轮未启动 Android 模拟器，内页版式全部用 Robolectric 的真实 Compose 渲染截图核对；覆盖已选站与未选站、两辆车、六字竖排站名、深浅色和 360dp 窄屏。横向站点列至少 152dp，内容自然增高；站点行自然测量，整行只有一个点击语义节点。截图测试同时设置系统夜间模式，保证深色实时卡与渐变顶栏走实际深色分支。
 
-软件模拟下冷启动约十余分钟，且会与 Gradle 抢占 CPU（曾导致测试子进程 120 秒连接超时，属环境资源问题，关闭模拟器后同一命令 26 秒通过）。真机仍待你实测。
+本轮标准 `assembleDebug` / `testDebugUnitTest` / `lintDebug` 均尝试执行，但当前沙箱禁止 Gradle 的本机 socket，未能启动任务。缓存副本解决了默认 Gradle 目录只读问题，`--no-daemon` 的单次 daemon 仍被阻挡；不把此前的构建结果当成本轮通过。离线替代验证及完整限制见 [本轮验收记录](docs/inner-pages-validation.md)。真机手势、TalkBack 与权限弹窗仍需设备实测。
 
 ## 数据免责声明
 
