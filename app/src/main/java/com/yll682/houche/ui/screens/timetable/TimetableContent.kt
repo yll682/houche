@@ -31,8 +31,8 @@ import com.yll682.houche.ui.theme.Capsule
     Page(stringResource(R.string.timetable), back, modifier) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             feedback(state) { retry() }
             item {
@@ -69,8 +69,8 @@ import com.yll682.houche.ui.theme.Capsule
                     Text(
                         tips,
                         Modifier.padding(top = 4.dp, bottom = 8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
@@ -85,6 +85,10 @@ import com.yll682.houche.ui.theme.Capsule
             Modifier.fillMaxWidth().touch(group.name).clickable(onClick = onToggle).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (group.current) {
+                Box(Modifier.width(3.dp).height(16.dp).background(MaterialTheme.colorScheme.primary))
+                Spacer(Modifier.width(8.dp))
+            }
             Column(Modifier.weight(1f)) {
                 Text(
                     group.name.ifBlank { stringResource(R.string.all_day) },
@@ -95,7 +99,7 @@ import com.yll682.houche.ui.theme.Capsule
                     Text(stringResource(R.string.current_period), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
-            Text(stringResource(R.string.departures, group.times.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.departures, group.times.size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.width(8.dp))
             Icon(Icons.Default.ExpandMore, stringResource(R.string.expand_group), Modifier.size(20.dp).rotate(rotation), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -105,18 +109,17 @@ import com.yll682.houche.ui.theme.Capsule
                 group.times.chunked(4).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { departure ->
-                            val highlight = !nextDeparture.isNullOrBlank() && departure.time == nextDeparture
+                            val highlight = (!nextDeparture.isNullOrBlank() && departure.time == nextDeparture) || (group.current && departure.status == 2)
                             Surface(
                                 modifier = Modifier.weight(1f).height(40.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow,
-                                border = if (highlight) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = .08f)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         departure.time,
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                        color = if (highlight) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                        color = if (highlight) Color.White else MaterialTheme.colorScheme.onSurface,
                                         textAlign = TextAlign.Center
                                     )
                                 }
