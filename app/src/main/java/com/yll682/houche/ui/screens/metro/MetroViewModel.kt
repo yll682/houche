@@ -12,6 +12,8 @@ data class MetroData(
     val lines: List<MetroLine> = emptyList(),
     val selected: String = "",
     val updated: String = "",
+    /** 站序出处，界面不铺开，只在「设置 → 关于」里说明。 */
+    val source: String = "",
     val online: Boolean = false,
     val note: String = ""
 ) {
@@ -38,7 +40,14 @@ class MetroViewModel(
             return@action
         }
         val lines = network.openedLines
-        update(MetroData(lines = lines, selected = pick(initial, lines), updated = network.updated))
+        update(
+            MetroData(
+                lines = lines,
+                selected = pick(initial, lines),
+                updated = network.updated,
+                source = network.source
+            )
+        )
 
         val probe = graph.metroRemote.latest()
         if (!probe.online || probe.lines.isEmpty()) {

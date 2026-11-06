@@ -118,6 +118,7 @@ class ScreenshotTest {
     private val metroLine1: MetroLine get() = metroLines.first { it.id == "1" }
     private val metroLine2: MetroLine get() = metroLines.first { it.id == "2" }
     private val metroLine3: MetroLine get() = metroLines.first { it.id == "3" }
+    private val metroLine4: MetroLine get() = metroLines.first { it.id == "4" }
     private val metroData: MetroData get() = MetroData(metroLines, "1", "2026-11-06")
 
     @Composable private fun MetroShot() = MetroContent(UiState.Success(metroData), {}, {})
@@ -214,13 +215,13 @@ class ScreenshotTest {
     /** 搜索「地铁」：地铁资料在本地，公交接口还没回来时也要能看见这三条线。 */
     @Test fun searchMetro_light() = capture("search-metro", false) {
         SearchContent(
-            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3))),
+            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3, metroLine4))),
             {}, {}, {}, {}, {}, {}, {}, {}, metro = {}
         )
     }
     @Test fun searchMetro_dark() = capture("search-metro", true) {
         SearchContent(
-            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3))),
+            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3, metroLine4))),
             {}, {}, {}, {}, {}, {}, {}, {}, metro = {}
         )
     }
@@ -234,7 +235,7 @@ class ScreenshotTest {
     }
     @Test fun stationMetro_light() = capture("station-metro", false) {
         StationContent(UiState.Success(StationData(Station("吕厝", "SM000170", 365.0, lines = lines), arrivals, true,
-            metro = listOf(MetroCalling(metroLine1, MetroStation(17, "吕厝", listOf("2号线"))), MetroCalling(metroLine2, MetroStation(14, "吕厝", listOf("1号线")))))), {}, { _, _ -> }, {}, {}, {})
+            metro = listOf(MetroCalling(metroLine1, MetroStation(8, "吕厝", listOf("2号线"))), MetroCalling(metroLine2, MetroStation(16, "吕厝", listOf("1号线")))))), {}, { _, _ -> }, {}, {}, {})
     }
     @Test fun scene6_light() = capture("station", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene6_dark() = capture("station", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }

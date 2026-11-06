@@ -8,9 +8,10 @@ import kotlinx.serialization.Serializable
 import java.io.InputStream
 
 /**
- * 地铁线路资料。厦门地铁官方 App 的接口域名（app.i-amtr.com）已经下线，
- * 高德的老地铁图接口也已 404，所以线路与站序改为内置资源，和 cities.json 同一套做法。
- * 站序、换乘、首末班都极少变动，内置比依赖一个随时会挂的网关更稳。
+ * 地铁线路资料。站序、线路色与换乘全部取自厦门地铁官方 App 内置的运营线路图
+ * （res/raw/xm_20260609_1.svg，元素 ID 自带线路与站序），由 analysis/extract_svg.py 提取。
+ * 官方网关 app.i-amtr.com 的签名算法也已还原（见 MetroRemote），但它要求登录态，
+ * 匿名拿不到数据，所以线网资料走内置资源，和 cities.json 同一套做法。
  */
 @Serializable data class MetroStation(
     val order: Int,
@@ -38,6 +39,8 @@ import java.io.InputStream
     val city: String = "",
     val cityKey: String = "",
     val updated: String = "",
+    /** 站序出处，例如「厦门地铁官方App线路图 xm_20260609_1.svg」。 */
+    val source: String = "",
     val lines: List<MetroLine> = emptyList()
 ) {
     val openedLines: List<MetroLine> get() = lines.filter { it.opened && it.liveStations.isNotEmpty() }

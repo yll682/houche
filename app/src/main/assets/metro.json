@@ -2,529 +2,511 @@
   "city": "厦门市",
   "cityKey": "11",
   "updated": "2026-11-06",
+  "source": "厦门地铁官方App线路图 xm_20260609_1.svg",
   "lines": [
     {
       "id": "1",
       "name": "地铁1号线",
-      "color": "#E56849",
-      "from": "岩内",
-      "to": "镇海路",
+      "color": "#DA7028",
+      "from": "镇海路",
+      "to": "岩内",
       "opened": true,
-      "first": "06:00",
-      "last": "23:00",
+      "first": "",
+      "last": "",
       "stations": [
         {
           "order": 1,
-          "name": "岩内",
-          "transfer": [],
-          "opened": true
+          "name": "镇海路",
+          "transfer": []
         },
         {
           "order": 2,
-          "name": "厦门北站",
-          "transfer": [
-            "BRT",
-            "国铁"
-          ],
-          "opened": true
+          "name": "中山公园",
+          "transfer": []
         },
         {
           "order": 3,
-          "name": "天水路",
-          "transfer": [],
-          "opened": true
+          "name": "将军祠",
+          "transfer": []
         },
         {
           "order": 4,
-          "name": "集美大道",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 5,
-          "name": "集美软件园",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 6,
-          "name": "诚毅广场",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 7,
-          "name": "官任",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 8,
-          "name": "杏锦路",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 9,
-          "name": "杏林村",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 10,
-          "name": "园博苑",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 11,
-          "name": "集美学村",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 12,
-          "name": "高崎",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 13,
-          "name": "殿前",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 14,
-          "name": "火炬园",
-          "transfer": [
-            "3号线"
-          ],
-          "opened": true
-        },
-        {
-          "order": 15,
-          "name": "塘边",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 16,
-          "name": "乌石浦",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 17,
-          "name": "吕厝",
-          "transfer": [
-            "2号线"
-          ],
-          "opened": true
-        },
-        {
-          "order": 18,
-          "name": "莲花路口",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 19,
-          "name": "莲坂",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 20,
-          "name": "湖滨东路",
-          "transfer": [
-            "3号线"
-          ],
-          "opened": true
-        },
-        {
-          "order": 21,
           "name": "文灶",
           "transfer": [
             "BRT"
-          ],
-          "opened": true
+          ]
+        },
+        {
+          "order": 5,
+          "name": "湖滨东路",
+          "transfer": [
+            "3号线"
+          ]
+        },
+        {
+          "order": 6,
+          "name": "莲坂",
+          "transfer": []
+        },
+        {
+          "order": 7,
+          "name": "莲花路口",
+          "transfer": []
+        },
+        {
+          "order": 8,
+          "name": "吕厝",
+          "transfer": [
+            "2号线"
+          ]
+        },
+        {
+          "order": 9,
+          "name": "乌石浦",
+          "transfer": []
+        },
+        {
+          "order": 10,
+          "name": "塘边",
+          "transfer": []
+        },
+        {
+          "order": 11,
+          "name": "火炬园",
+          "transfer": [
+            "3号线"
+          ]
+        },
+        {
+          "order": 12,
+          "name": "殿前",
+          "transfer": []
+        },
+        {
+          "order": 13,
+          "name": "高崎",
+          "transfer": []
+        },
+        {
+          "order": 14,
+          "name": "集美学村",
+          "transfer": []
+        },
+        {
+          "order": 15,
+          "name": "园博苑",
+          "transfer": []
+        },
+        {
+          "order": 16,
+          "name": "杏林村",
+          "transfer": []
+        },
+        {
+          "order": 17,
+          "name": "杏锦路",
+          "transfer": []
+        },
+        {
+          "order": 18,
+          "name": "官任",
+          "transfer": []
+        },
+        {
+          "order": 19,
+          "name": "诚毅广场",
+          "transfer": []
+        },
+        {
+          "order": 20,
+          "name": "集美软件园",
+          "transfer": []
+        },
+        {
+          "order": 21,
+          "name": "集美大道",
+          "transfer": []
         },
         {
           "order": 22,
-          "name": "将军祠",
-          "transfer": [],
-          "opened": true
+          "name": "天水路",
+          "transfer": []
         },
         {
           "order": 23,
-          "name": "中山公园",
-          "transfer": [],
-          "opened": true
+          "name": "厦门北站",
+          "transfer": [
+            "4号线",
+            "BRT",
+            "国铁"
+          ]
         },
         {
           "order": 24,
-          "name": "镇海路",
-          "transfer": [],
-          "opened": true
+          "name": "岩内",
+          "transfer": []
         }
       ]
     },
     {
       "id": "2",
       "name": "地铁2号线",
-      "color": "#4DAA50",
+      "color": "#52A441",
       "from": "天竺山",
       "to": "五缘湾",
       "opened": true,
-      "first": "06:00",
-      "last": "23:00",
+      "first": "",
+      "last": "",
       "stations": [
         {
           "order": 1,
           "name": "天竺山",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 2,
           "name": "东孚",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 3,
           "name": "东瑶",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 4,
-          "name": "鼎美",
-          "transfer": [],
-          "opened": true
+          "name": "新阳大道",
+          "transfer": []
         },
         {
           "order": 5,
-          "name": "马銮中心",
-          "transfer": [],
-          "opened": true
+          "name": "新垵",
+          "transfer": []
         },
         {
           "order": 6,
-          "name": "新阳大道",
-          "transfer": [],
-          "opened": true
+          "name": "翁角路",
+          "transfer": []
         },
         {
           "order": 7,
-          "name": "新垵",
-          "transfer": [],
-          "opened": true
+          "name": "马青路",
+          "transfer": []
         },
         {
           "order": 8,
-          "name": "翁角路",
-          "transfer": [],
-          "opened": true
+          "name": "海沧行政中心",
+          "transfer": []
         },
         {
           "order": 9,
-          "name": "马青路",
-          "transfer": [],
-          "opened": true
+          "name": "海沧商务中心",
+          "transfer": []
         },
         {
           "order": 10,
-          "name": "海沧行政中心",
-          "transfer": [],
-          "opened": true
+          "name": "海沧湾公园",
+          "transfer": []
         },
         {
           "order": 11,
-          "name": "海沧商务中心",
-          "transfer": [],
-          "opened": true
+          "name": "邮轮中心",
+          "transfer": []
         },
         {
           "order": 12,
-          "name": "海沧湾公园",
-          "transfer": [],
-          "opened": true
+          "name": "建业路",
+          "transfer": []
         },
         {
           "order": 13,
-          "name": "邮轮中心",
-          "transfer": [],
-          "opened": true
+          "name": "湖滨中路",
+          "transfer": []
         },
         {
           "order": 14,
-          "name": "建业路",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 15,
-          "name": "湖滨中路",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 16,
           "name": "体育中心",
           "transfer": [
             "3号线"
-          ],
-          "opened": true
+          ]
         },
         {
-          "order": 17,
+          "order": 15,
           "name": "育秀东路",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
-          "order": 18,
+          "order": 16,
           "name": "吕厝",
           "transfer": [
             "1号线"
-          ],
-          "opened": true
+          ]
+        },
+        {
+          "order": 17,
+          "name": "江头",
+          "transfer": []
+        },
+        {
+          "order": 18,
+          "name": "后埔",
+          "transfer": []
         },
         {
           "order": 19,
-          "name": "江头",
-          "transfer": [],
-          "opened": true
+          "name": "蔡塘",
+          "transfer": [
+            "BRT"
+          ]
         },
         {
           "order": 20,
-          "name": "后埔",
-          "transfer": [],
-          "opened": true
+          "name": "古地石",
+          "transfer": []
         },
         {
           "order": 21,
-          "name": "蔡塘",
-          "transfer": [],
-          "opened": true
+          "name": "岭兜",
+          "transfer": []
         },
         {
           "order": 22,
-          "name": "古地石",
-          "transfer": [],
-          "opened": true
+          "name": "软件园二期",
+          "transfer": []
         },
         {
           "order": 23,
-          "name": "岭兜",
-          "transfer": [],
-          "opened": true
+          "name": "何厝",
+          "transfer": []
         },
         {
           "order": 24,
-          "name": "软件园二期",
-          "transfer": [],
-          "opened": true
+          "name": "观音山",
+          "transfer": []
         },
         {
           "order": 25,
-          "name": "何厝",
-          "transfer": [],
-          "opened": true
+          "name": "东宅",
+          "transfer": []
         },
         {
           "order": 26,
-          "name": "观音山",
-          "transfer": [],
-          "opened": true
+          "name": "两岸金融中心",
+          "transfer": []
         },
         {
           "order": 27,
-          "name": "东宅",
-          "transfer": [],
-          "opened": true
+          "name": "五通",
+          "transfer": []
         },
         {
           "order": 28,
-          "name": "两岸金融中心",
-          "transfer": [],
-          "opened": true
+          "name": "湿地公园",
+          "transfer": []
         },
         {
           "order": 29,
-          "name": "五通",
-          "transfer": [],
-          "opened": true
+          "name": "钟宅",
+          "transfer": []
         },
         {
           "order": 30,
-          "name": "湿地公园",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 31,
-          "name": "钟宅",
-          "transfer": [],
-          "opened": true
-        },
-        {
-          "order": 32,
           "name": "五缘湾",
           "transfer": [
             "3号线"
-          ],
-          "opened": true
+          ]
         }
       ]
     },
     {
       "id": "3",
       "name": "地铁3号线",
-      "color": "#00BFD3",
+      "color": "#52B5C8",
       "from": "厦门火车站",
       "to": "蔡厝",
       "opened": true,
-      "first": "06:00",
-      "last": "23:00",
+      "first": "",
+      "last": "",
       "stations": [
         {
           "order": 1,
           "name": "厦门火车站",
           "transfer": [
+            "BRT",
             "国铁"
-          ],
-          "opened": true
+          ]
         },
         {
           "order": 2,
           "name": "湖滨东路",
           "transfer": [
             "1号线"
-          ],
-          "opened": true
+          ]
         },
         {
           "order": 3,
           "name": "体育中心",
           "transfer": [
             "2号线"
-          ],
-          "opened": true
+          ]
         },
         {
           "order": 4,
           "name": "人才中心",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 5,
           "name": "湖里公园",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 6,
           "name": "华荣路",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 7,
           "name": "火炬园",
           "transfer": [
             "1号线"
-          ],
-          "opened": true
+          ]
         },
         {
           "order": 8,
           "name": "小东山",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 9,
           "name": "安兜",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 10,
           "name": "坂尚",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 11,
           "name": "湖里创新园",
-          "transfer": [],
-          "opened": true
+          "transfer": [
+            "BRT"
+          ]
         },
         {
           "order": 12,
           "name": "五缘湾",
           "transfer": [
             "2号线"
-          ],
-          "opened": true
+          ]
         },
         {
           "order": 13,
           "name": "国际博览中心",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 14,
           "name": "东界",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 15,
           "name": "洪坑",
-          "transfer": [],
-          "opened": true
+          "transfer": [
+            "4号线"
+          ]
         },
         {
           "order": 16,
           "name": "林前",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 17,
           "name": "鼓锣",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 18,
           "name": "翔安市民公园",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 19,
           "name": "浦边",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 20,
           "name": "后村",
-          "transfer": [],
-          "opened": true
+          "transfer": []
         },
         {
           "order": 21,
           "name": "蔡厝",
-          "transfer": [],
-          "opened": true
+          "transfer": []
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "地铁4号线",
+      "color": "#E50012",
+      "from": "集美软件园北",
+      "to": "前浯",
+      "opened": true,
+      "first": "",
+      "last": "",
+      "stations": [
+        {
+          "order": 1,
+          "name": "集美软件园北",
+          "transfer": []
+        },
+        {
+          "order": 2,
+          "name": "后溪",
+          "transfer": []
+        },
+        {
+          "order": 3,
+          "name": "厦门北站",
+          "transfer": [
+            "1号线",
+            "BRT",
+            "国铁"
+          ]
+        },
+        {
+          "order": 4,
+          "name": "官浔",
+          "transfer": [
+            "BRT"
+          ]
+        },
+        {
+          "order": 5,
+          "name": "丙洲",
+          "transfer": []
+        },
+        {
+          "order": 6,
+          "name": "城场",
+          "transfer": []
+        },
+        {
+          "order": 7,
+          "name": "洪坑",
+          "transfer": [
+            "3号线"
+          ]
+        },
+        {
+          "order": 8,
+          "name": "前浯",
+          "transfer": []
         }
       ]
     }
