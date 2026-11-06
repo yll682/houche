@@ -7,7 +7,7 @@
 | 页面 | 功能 |
 | --- | --- |
 | 首页 | 顶栏唯一搜索入口、定位与用户主动授权、附近站点、距离、附近 / 收藏分段、收藏线路 / 站点、下拉重新定位、前三站前台每 20 秒更新到站 |
-| 搜索 | 300ms 防抖、线路 / 站点分组、键盘立即查询、最近 10 条搜索及删除 / 清空 |
+| 搜索 | 300ms 防抖、地铁 / 线路 / 站点分组（地铁走本地资料，不受网络影响）、键盘立即查询、最近 10 条搜索及删除 / 清空 |
 | 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆（按离乘车站从近到远）、乘车站到站结论、横向站点图（车辆位置即到站 / 途中，长站名完整显示）、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
 | 车辆 | 单辆车的实时位置与状态、到站结论、跟踪开关、到站提醒（本地通知）、文本分享、本站其它车辆、前台每 20 秒刷新 |
 | 站点 | 同名 / 反向站台切换、经过线路及实时到站、收藏、下拉刷新、前台每 20 秒更新 |
@@ -44,11 +44,11 @@
 | --- | --- | --- |
 | [浅色](docs/screenshots/line-long-stops-light.png) / [深色](docs/screenshots/line-long-stops-dark.png) | [浅色](docs/screenshots/vehicle-light.png) / [深色](docs/screenshots/vehicle-dark.png) | [浅色](docs/screenshots/settings-update-light.png) / [深色](docs/screenshots/settings-update-dark.png) |
 
-| 地铁 | 站点（地铁换乘） | 地铁在线 |
-| --- | --- | --- |
-| [浅色](docs/screenshots/metro-light.png) / [深色](docs/screenshots/metro-dark.png) | [浅色](docs/screenshots/station-metro-light.png) | [浅色](docs/screenshots/metro-online-light.png) |
+| 地铁 | 站点（地铁换乘） | 地铁在线 | 搜索地铁 |
+| --- | --- | --- | --- |
+| [浅色](docs/screenshots/metro-light.png) / [深色](docs/screenshots/metro-dark.png) | [浅色](docs/screenshots/station-metro-light.png) | [浅色](docs/screenshots/metro-online-light.png) | [浅色](docs/screenshots/search-metro-light.png) / [深色](docs/screenshots/search-metro-dark.png) |
 
-另外保留加载态、错误态、未授权定位、收藏空态、长站名、7~8 字长站名的站点图、车辆跟踪页、检查更新展开态及 360dp 时刻表截图，共 52 张 PNG（含应用图标三档尺寸）。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
+另外保留加载态、错误态、未授权定位、收藏空态、长站名、7~8 字长站名的站点图、车辆跟踪页、检查更新展开态及 360dp 时刻表截图，共 54 张 PNG（含应用图标三档尺寸）。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
 
 ```sh
 # 重新生成全部截图
@@ -95,12 +95,12 @@
 `aapt2` 输出关键字段：
 
 ```text
-package: name='com.yll682.houche' versionCode='6' versionName='1.4.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.yll682.houche' versionCode='7' versionName='1.4.1' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 minSdkVersion:'26'
 targetSdkVersion:'35'
 ```
 
-Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.4.0`、`versionCode=6`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 起的历次版本同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
+Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.4.1`、`versionCode=7`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 起的历次版本同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
 
 ## 签名
 
@@ -125,7 +125,7 @@ keyPassword=自行填写
 
 检查更新读仓库根目录的 `version.json`（GitHub RAW 与 CNB RAW 并发请求，谁先成功用谁，下载也优先用同源链接），不携带任何凭证，也不在应用内安装 APK —— 下载交给系统浏览器。发布新版本时 `version.json` 的 `versionName` / `versionCode` / 下载链接必须一起更新。
 
-地铁线路与站序以 `assets/metro.json` 为准（1 号线 24 站、2 号线 32 站、3 号线 21 站，含换乘与 06:00–23:00 首末班）。厦门地铁官方网关 `app.i-amtr.com` 的签名算法已还原（`sign = md5(盐 + 毫秒时间戳 + "1.0" + 请求体)`，请求头要求 `sign` / `app-id: oms` / `version`），但该网关在签名之后仍强制要求登录 token，匿名一律返回 `999 未认证或者token已过期`；且官方 H5 的 token 由原生壳注入，浏览器态拿不到。因此 App 把在线接口作为**后台探测**：命中就换成在线站序并在头部标「在线」，未命中完全静默，继续用内置资料。探测结论只写日志与「设置 → 关于」，不向界面抛错误。详见 [网关实测记录](docs/metro-api-verified.md)。
+地铁线路与站序以 `assets/metro.json` 为准（1 号线 24 站、2 号线 32 站、3 号线 21 站，含换乘与 06:00–23:00 首末班）。资料里的 `cityKey` 必须与 `cities.json` 的城市编号一致（厦门市是 `11`），`networkFor` 同时认编号、拼音与市名三种写法；`MetroDataTest` 直接读真实资源断言这层对应关系，别再让一个字段错位就把整块地铁静默关掉。搜索走本地资料，输入「地铁」或任一站名都能出结果。厦门地铁官方网关 `app.i-amtr.com` 的签名算法已还原（`sign = md5(盐 + 毫秒时间戳 + "1.0" + 请求体)`，请求头要求 `sign` / `app-id: oms` / `version`），但该网关在签名之后仍强制要求登录 token，匿名一律返回 `999 未认证或者token已过期`；且官方 H5 的 token 由原生壳注入，浏览器态拿不到。因此 App 把在线接口作为**后台探测**：命中就换成在线站序并在头部标「在线」，未命中完全静默，继续用内置资料。探测结论只写日志与「设置 → 关于」，不向界面抛错误。详见 [网关实测记录](docs/metro-api-verified.md)。
 
 时刻表优先使用上游分组；厦门未提供分组时按两小时时段展示。上游未提供下一班、车辆、分钟数或发车时间时显示相应空态，不推算或补造数据。搜索接口未返回线路数量时只显示站名。北京 1 路本次返回 `hasReal=0` 和空时刻表；北京搜索有间歇性超时，详情见联网记录。
 
