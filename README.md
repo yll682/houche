@@ -95,12 +95,12 @@
 `aapt2` 输出关键字段：
 
 ```text
-package: name='com.yll682.houche' versionCode='5' versionName='1.3.1' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.yll682.houche' versionCode='6' versionName='1.4.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 minSdkVersion:'26'
 targetSdkVersion:'35'
 ```
 
-Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.3.1`、`versionCode=5`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
+Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.4.0`、`versionCode=6`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 起的历次版本同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
 
 ## 签名
 
