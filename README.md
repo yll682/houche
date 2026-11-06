@@ -25,6 +25,8 @@
 
 版式对标厦门公交官方 App，参考截图（应用商店公开图）存于 `docs/reference/`。
 
+应用图标是侧视公交：方正车厢、连续长窗、前部双折门、两个轮子，底色取品牌蓝。图形与单色层都在 `docs/screenshots/app-icon*.png` 里，其中 `app-icon-48.png` 是桌面上的真实尺寸。
+
 | 首页 | 线路（站点） | 线路（车辆） | 站点 |
 | --- | --- | --- | --- |
 | [浅色](docs/screenshots/home-nearby-light.png) / [深色](docs/screenshots/home-nearby-dark.png) | [浅色](docs/screenshots/line-stops-light.png) / [深色](docs/screenshots/line-stops-dark.png) | [浅色](docs/screenshots/line-vehicles-light.png) / [深色](docs/screenshots/line-vehicles-dark.png) | [浅色](docs/screenshots/station-light.png) / [深色](docs/screenshots/station-dark.png) |
@@ -41,7 +43,7 @@
 | --- | --- | --- |
 | [浅色](docs/screenshots/line-long-stops-light.png) / [深色](docs/screenshots/line-long-stops-dark.png) | [浅色](docs/screenshots/vehicle-light.png) / [深色](docs/screenshots/vehicle-dark.png) | [浅色](docs/screenshots/settings-update-light.png) / [深色](docs/screenshots/settings-update-dark.png) |
 
-另外保留加载态、错误态、未授权定位、收藏空态、长站名、7~8 字长站名的站点图、车辆跟踪页、检查更新展开态及 360dp 时刻表截图，共 44 张 PNG。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
+另外保留加载态、错误态、未授权定位、收藏空态、长站名、7~8 字长站名的站点图、车辆跟踪页、检查更新展开态及 360dp 时刻表截图，共 47 张 PNG（含应用图标三档尺寸）。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
 
 ```sh
 # 重新生成全部截图
@@ -88,12 +90,12 @@
 `aapt2` 输出关键字段：
 
 ```text
-package: name='com.yll682.houche' versionCode='4' versionName='1.3.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.yll682.houche' versionCode='5' versionName='1.3.1' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 minSdkVersion:'26'
 targetSdkVersion:'35'
 ```
 
-Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.3.0`、`versionCode=4`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
+Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.3.1`、`versionCode=5`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
 
 ## 签名
 

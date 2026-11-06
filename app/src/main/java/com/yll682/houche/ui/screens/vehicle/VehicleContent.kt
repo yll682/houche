@@ -12,14 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,7 +35,6 @@ import com.yll682.houche.R
 import com.yll682.houche.core.RouteStation
 import com.yll682.houche.core.Vehicle
 import com.yll682.houche.ui.UiState
-import com.yll682.houche.ui.components.BusGlyph
 import com.yll682.houche.ui.components.CardSurface
 import com.yll682.houche.ui.components.HeaderIcon
 import com.yll682.houche.ui.components.MetaPill
@@ -118,12 +120,11 @@ private fun VehicleHeader(data: VehicleData) {
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            // 车辆状态统一用 BusGlyph 表示：停站画正脸，途中画侧身。
             val current = data.vehicle
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (current != null) {
-                    BusGlyph(current.positionState != "at-stop", 18.dp,
-                        if (current.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
+                    Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp),
+                        tint = if (current.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                 }
                 VehicleState(current)
                 if (data.offline) MetaPill(stringResource(R.string.vehicle_offline), tint = MaterialTheme.colorScheme.error)
@@ -217,7 +218,7 @@ private fun VehicleRow(vehicle: Vehicle, boarding: RouteStation?, selected: Bool
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // 当前这辆车靠左侧 3dp 竖条识别：小字号下只换字重看不出来。
             if (selected) Box(Modifier.width(3.dp).height(20.dp).background(MaterialTheme.colorScheme.primary))
-            BusGlyph(running, 18.dp, tint)
+            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = tint)
             Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, Modifier.weight(1f),
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)

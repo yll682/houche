@@ -1,12 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  应用图标前景：侧视公交。
+  方正车厢、平直车顶、连续长窗（中间一根细柱）、前部双折门、两个露出的轮子。
+  侧视是公交最不容易被认成轨道交通的表达：动车没有双折门，也不会露出轮子。
+  车窗与车门用品牌蓝填成镂空；图形收在 35~75，圆遮罩下四周留白。
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group android:translateX="18" android:translateY="18">
-        <path
-            android:fillColor="#FFFFFFFF"
-            android:pathData="M18,10c-7.73,0 -14,1.34 -14,6v33c0,2.76 2.24,5 5,5v3c0,1.66 1.34,3 3,3h3c1.66,0 3,-1.34 3,-3v-3h16v3c0,1.66 1.34,3 3,3h3c1.66,0 3,-1.34 3,-3v-3c2.76,0 5,-2.24 5,-5V16c0,-4.66 -6.27,-6 -14,-6zM18,15c6.49,0 10.61,0.79 11.79,2.5H6.21C7.39,15.79 11.51,15 18,15zM9.5,24c1.38,0 2.5,1.12 2.5,2.5S10.88,29 9.5,29 7,27.88 7,26.5 8.12,24 9.5,24zM26.5,24c1.38,0 2.5,1.12 2.5,2.5S27.88,29 26.5,29 24,27.88 24,26.5 25.12,24 26.5,24zM7,34h22v6H7z" />
-    </group>
+
+    <!-- 车顶空调 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M42,35 h24 a2,2 0 0 1 2,2 v3 h-28 v-3 a2,2 0 0 1 2,-2 z" />
+
+    <!-- 车身：方正车厢 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M29,40 h50 a5,5 0 0 1 5,5 v18 a5,5 0 0 1 -5,5 h-50 a5,5 0 0 1 -5,-5 v-18 a5,5 0 0 1 5,-5 z" />
+
+    <!-- 连续车窗（中间一根细柱） -->
+    <path
+        android:fillColor="#FF1E6FF3"
+        android:pathData="M29,45 h15 a1.5,1.5 0 0 1 1.5,1.5 v7 a1.5,1.5 0 0 1 -1.5,1.5 h-15 a1.5,1.5 0 0 1 -1.5,-1.5 v-7 a1.5,1.5 0 0 1 1.5,-1.5 z
+            M49,45 h15 a1.5,1.5 0 0 1 1.5,1.5 v7 a1.5,1.5 0 0 1 -1.5,1.5 h-15 a1.5,1.5 0 0 1 -1.5,-1.5 v-7 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+
+    <!-- 前部双折门 -->
+    <path
+        android:fillColor="#FF1E6FF3"
+        android:pathData="M69,45 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v16 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-16 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+    <path
+        android:fillColor="#FF1E6FF3"
+        android:pathData="M76,45 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v16 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-16 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+
+    <!-- 左轮 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M36,68 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0" />
+    <path
+        android:fillColor="#FF1E6FF3"
+        android:pathData="M36,68 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0" />
+
+    <!-- 右轮 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M71,68 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0" />
+    <path
+        android:fillColor="#FF1E6FF3"
+        android:pathData="M71,68 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0" />
 </vector>

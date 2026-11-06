@@ -245,4 +245,35 @@ class ScreenshotTest {
 
     @Test fun vehicle_light() = capture("vehicle", false) { VehicleShot() }
     @Test fun vehicle_dark() = capture("vehicle", true) { VehicleShot() }
+
+    /** 把自适应图标真实渲染出来，供文档展示；同时出一张圆形遮罩版，接近桌面上的样子。 */
+    @Test fun appIcon() {
+        val context = org.robolectric.RuntimeEnvironment.getApplication()
+        val icon = androidx.core.content.ContextCompat.getDrawable(context, com.yll682.houche.R.mipmap.ic_launcher)
+            ?: error("找不到应用图标")
+        fun render(size: Int, round: Boolean): Bitmap {
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            if (round) {
+                val path = android.graphics.Path().apply { addCircle(size / 2f, size / 2f, size / 2f, android.graphics.Path.Direction.CW) }
+                canvas.clipPath(path)
+            }
+            icon.setBounds(0, 0, size, size)
+            icon.draw(canvas)
+            return bitmap
+        }
+        val dir = File(System.getProperty("screenshots.dir"))
+        dir.mkdirs()
+        // 432 用于文档展示，48 用于核对桌面上的真实显示尺寸。
+        for ((name, spec) in listOf(
+            "app-icon" to (432 to false),
+            "app-icon-round" to (432 to true),
+            "app-icon-48" to (48 to true)
+        )) {
+            val (size, round) = spec
+            val file = File(dir, "$name.png")
+            file.outputStream().use { render(size, round).compress(Bitmap.CompressFormat.PNG, 100, it) }
+            assertTrue("$name 应已写出", file.length() > 0)
+        }
+    }
 }

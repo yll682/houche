@@ -226,7 +226,7 @@ import com.yll682.houche.ui.theme.*
                             Modifier.align(Alignment.Center).offset(x = if (running) -(column / 2f) else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BusGlyph(running, 20.dp, primary)
+                            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
                             if (buses.size > 1) {
                                 Text(buses.size.toString(), Modifier.padding(start = 1.dp),
                                     style = MaterialTheme.typography.labelSmall, color = primary)
@@ -275,9 +275,8 @@ import com.yll682.houche.ui.theme.*
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
             vehicles.forEach { vehicle ->
                 Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    BusGlyph(vehicle.positionState != "at-stop", 14.dp,
-                        if (vehicle.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
-                    Spacer(Modifier.width(5.dp))
+                    ColorDot(if (vehicle.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
+                    Spacer(Modifier.width(6.dp))
                     Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

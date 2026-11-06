@@ -30,8 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -77,19 +75,6 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
 /** 1dp 发丝分隔线。 */
 @Composable fun Hairline(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
-}
-
-/**
- * 车辆图形。停站用正脸（两扇前窗 + 轮子），行驶中用侧视，形状本身承担状态，
- * 不必再靠文字或颜色区分。tint 决定颜色，尺寸由调用方按场景给。
- */
-@Composable fun BusGlyph(running: Boolean, size: Dp = 20.dp, tint: Color = MaterialTheme.colorScheme.primary) {
-    Icon(
-        painterResource(if (running) R.drawable.ic_bus_side else R.drawable.ic_bus_front),
-        contentDescription = null,
-        modifier = Modifier.size(if (running) size * 1.15f else size),
-        tint = tint
-    )
 }
 
 /** 本应用唯一的卡片容器：纯 surface + 细描边，不用阴影和灰色填充。 */
@@ -261,7 +246,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         Box(
             Modifier.size(64.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
-        ) { BusGlyph(false, 30.dp, MaterialTheme.colorScheme.onSurfaceVariant) }
+        ) { Icon(Icons.Default.DirectionsBus, title, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         action?.let {
