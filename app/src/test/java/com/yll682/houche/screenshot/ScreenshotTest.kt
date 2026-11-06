@@ -23,6 +23,7 @@ import com.yll682.houche.ui.screens.station.*
 import com.yll682.houche.ui.screens.timetable.*
 import com.yll682.houche.ui.screens.city.*
 import com.yll682.houche.ui.screens.settings.*
+import com.yll682.houche.ui.screens.vehicle.*
 import com.yll682.houche.ui.theme.*
 import org.junit.Assert.*
 import org.junit.Rule
@@ -79,6 +80,17 @@ class ScreenshotTest {
         RouteStation("老山公交场站", 29)
     )
     private val lineRoute = Route("1路", "11", "1", "四惠枢纽站", "老山公交场站", "05:00", "23:00", "票价2-6元", beijingStops, true)
+    // 厦门真实的长站名：用来验证横向站点图 7~8 字也能竖排完整显示。
+    private val longStops = listOf(
+        RouteStation("长庚医院停车场", 19),
+        RouteStation("石室禅院", 20),
+        RouteStation("地铁马青路", 21),
+        RouteStation("海沧房产", 22),
+        RouteStation("海沧建行", 23),
+        RouteStation("新阳西公交场站", 24),
+        RouteStation("祥露公交场站", 25)
+    )
+    private val longRoute = Route("807路", "807", "1", "长庚医院停车场", "大屏山公交场站", "06:40", "20:00", "一票制1元", longStops, true)
     private val longStop = Station("天安门东（地铁站）", distance = 44.0, lines = listOf(LineSummary("地铁1号线八通线", "1", to = "环球度假区（地铁站）"), LineSummary("地铁1号线八通线", "2", to = "福寿岭（地铁站）")))
     private val live = VehicleResults(listOf(Vehicle("京A·01236", 1, "at-stop", currentStation = "四惠枢纽站", dataTime = "08:26:00"), Vehicle("京A·03591", 2, "between", currentStation = "八王坟西", dataTime = "08:26:00", segmentDistance = 320.0)), "车辆位置仅供参考，请提前候车", nextDeparture = "10:05")
     private val home = HomeData(stations = listOf(stop), arrivals = mapOf(0 to arrivals), position = Position(24.48, 118.13), cityResolved = true, favoriteLines = listOf(SavedLine(city, LineSummary("91路", "1", route.from, route.to))), favoriteStations = listOf(SavedStation(city, stop)))
@@ -90,7 +102,14 @@ class ScreenshotTest {
         )
     )
 
-    @Composable private fun Home(state: UiState<HomeData>, segment: Int = 0, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
+    /** 设置现在是首页的第三个 Tab，截图也要连底部导航一起拍。 */
+    @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
+        UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
+        {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
+        settingsContent = { SettingsBody(UiState.Success(SettingsData(city, update = update)), {}, {}) }
+    )
+
+    @Composable private fun Home(state: UiState<HomeData>, segment: Int = 0, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
     @Composable private fun Line(panel: Int, selected: Boolean = true) = LineContent(UiState.Success(LineData(lineRoute, if (selected) beijingStops[1] else null, live, if (selected) listOf(Arrival(remainingStations = 1, timeText = "约3分钟", name = "1路", direction = "1")) else emptyList())), beijing, panel, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
 
     // Compose 1.7 的内置 captureToImage 在 Robolectric 等待窗口重绘时超时：
@@ -174,14 +193,56 @@ class ScreenshotTest {
     fun timetableNarrow_dark() = capture("timetable-narrow", true, 1080, 2400) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }
     @Test fun scene8_light() = capture("city-picker", false) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
     @Test fun scene8_dark() = capture("city-picker", true) { CityContent(CityData(listOf(city, City("beijing", "北京市", province = "北京市"), City("fuzhou", "福州市", province = "福建省")), city), {}, {}, {}, {}, {}) }
-    @Test fun scene9_light() = capture("settings", false) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
-    @Test fun scene9_dark() = capture("settings", true) { SettingsContent(UiState.Success(SettingsData(city)), {}, {}, {}) }
+    @Test fun lineLongStops_light() = capture("line-long-stops", false) {
+        LineContent(UiState.Success(LineData(longRoute, longStops[3], VehicleResults(listOf(
+            Vehicle("闽D·28810", 22, "at-stop", currentStation = "海沧房产", dataTime = "17:06:12"),
+            Vehicle("闽D·51927", 24, "between", nextStation = "祥露公交场站", dataTime = "17:06:12", segmentDistance = 410.0)
+        ), "车辆位置仅供参考", nextDeparture = "17:20"), listOf(Arrival(remainingStations = 0, timeText = "即将到站", name = "807路", direction = "1")))),
+            city, 0, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
+    }
+    @Test fun lineLongStops_dark() = capture("line-long-stops", true) {
+        LineContent(UiState.Success(LineData(longRoute, longStops[3], VehicleResults(listOf(
+            Vehicle("闽D·28810", 22, "at-stop", currentStation = "海沧房产", dataTime = "17:06:12"),
+            Vehicle("闽D·51927", 24, "between", nextStation = "祥露公交场站", dataTime = "17:06:12", segmentDistance = 410.0)
+        ), "车辆位置仅供参考", nextDeparture = "17:20"), listOf(Arrival(remainingStations = 0, timeText = "即将到站", name = "807路", direction = "1")))),
+            city, 0, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
+    }
+
+    @Test fun scene9_light() = capture("settings", false) { SettingsTab() }
+    @Test fun scene9_dark() = capture("settings", true) { SettingsTab() }
     @Test fun scene10_light() = capture("home-loading", false) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
     @Test fun scene10_dark() = capture("home-loading", true) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
     @Test fun scene11_light() = capture("home-error", false) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
     @Test fun scene11_dark() = capture("home-error", true) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
     @Test fun scene12_light() = capture("favorites-empty", false) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
     @Test fun scene12_dark() = capture("favorites-empty", true) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
-    @Test fun longStation_light() = capture("home-long-station", false) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
-    @Test fun longStation_dark() = capture("home-long-station", true) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
+    @Test fun longStation_light() = capture("home-long-station", false) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
+    @Test fun longStation_dark() = capture("home-long-station", true) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
+
+    // 车辆跟踪页：沿用 807 路海沧站序，车辆与更新时刻为演示数据。
+    @Composable private fun VehicleShot() = VehicleContent(
+        UiState.Success(VehicleData(
+            route = longRoute,
+            plate = "闽D·28810",
+            boarding = RouteStation("海沧房产", 22),
+            vehicle = Vehicle("闽D·28810", 21, "between", nextStation = "海沧房产", dataTime = "17:06:12", segmentDistance = 320.0),
+            vehicles = listOf(
+                Vehicle("闽D·28810", 21, "between", nextStation = "海沧房产", dataTime = "17:06:12", segmentDistance = 320.0),
+                Vehicle("闽D·20356", 22, "at-stop", currentStation = "海沧房产", dataTime = "17:06:12"),
+                Vehicle("闽D·51927", 24, "between", nextStation = "祥露公交场站", dataTime = "17:06:12", segmentDistance = 410.0)
+            ),
+            tracking = true,
+            updatedAt = "17:06:12"
+        )),
+        {}, { _, _ -> }, {}, {}, {}
+    )
+    @Test fun settingsUpdate_light() = capture("settings-update", false) {
+        SettingsTab(UpdateState(release = RemoteRelease("1.3.0", 4, "首页去掉重复入口；站点图按车辆位置区分到站与途中；新增车辆跟踪页与到站提醒；设置内新增检查更新。", "GitHub", "https://example.com/houche.apk"), hasUpdate = true))
+    }
+    @Test fun settingsUpdate_dark() = capture("settings-update", true) {
+        SettingsTab(UpdateState(release = RemoteRelease("1.3.0", 4, "首页去掉重复入口；站点图按车辆位置区分到站与途中；新增车辆跟踪页与到站提醒；设置内新增检查更新。", "GitHub", "https://example.com/houche.apk"), hasUpdate = true))
+    }
+
+    @Test fun vehicle_light() = capture("vehicle", false) { VehicleShot() }
+    @Test fun vehicle_dark() = capture("vehicle", true) { VehicleShot() }
 }

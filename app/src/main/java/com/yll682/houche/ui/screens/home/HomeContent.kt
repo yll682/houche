@@ -32,18 +32,23 @@ import com.yll682.houche.ui.theme.HeaderTop
  */
 @Composable fun HomeContent(
     state: UiState<HomeData>, city: City, granted: Boolean, segment: Int, selectSegment: (Int) -> Unit,
-    locate: () -> Unit, search: () -> Unit, cities: () -> Unit, settings: () -> Unit,
+    locate: () -> Unit, search: () -> Unit, cities: () -> Unit,
     line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    settingsContent: @Composable () -> Unit = {}
 ) {
     val data = state.data ?: HomeData()
     val loading = state is UiState.Loading
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { HomeHeader(city, cities, locate, search) },
-        bottomBar = { HomeBottomBar(segment, selectSegment, settings) }
+        topBar = { HomeHeader(city, cities, locate, search, searchable = segment != 2, refreshable = segment != 2) },
+        bottomBar = { HomeBottomBar(segment, selectSegment) }
     ) { padding ->
+        if (segment == 2) {
+            Box(Modifier.fillMaxSize().padding(padding)) { settingsContent() }
+            return@Scaffold
+        }
         PullToRefresh(loading, { locate() }) {
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
@@ -84,7 +89,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                     if (!granted || data.permissionDenied || (data.position == null && !loading)) {
                         item { LocationCard(data.permissionDenied, locate) }
                     }
-                    feedback(state) { locate() }
+                    feedback(state, cards = 5) { locate() }
                     if (data.stations.isEmpty() && state is UiState.Empty) {
                         item { EmptyState(stringResource(R.string.no_stations), action = stringResource(R.string.search_action), onClick = search) }
                     }
@@ -99,7 +104,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                         )
                     }
                 } else {
-                    feedback(state) { locate() }
+                    feedback(state, cards = 4) { locate() }
                     if (data.favoriteLines.isEmpty() && data.favoriteStations.isEmpty()) {
                         item { EmptyState(stringResource(R.string.no_favorites), action = stringResource(R.string.search_action), onClick = search) }
                     }
@@ -152,7 +157,7 @@ import com.yll682.houche.ui.theme.HeaderTop
 }
 
 /** 蓝色渐变顶栏：城市选择 + 居中标题 + 刷新，下方是白色胶囊搜索框。 */
-@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit) {
+@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true) {
     Column(
         Modifier.fillMaxWidth()
             .background(Brush.verticalGradient(listOf(HeaderTop, HeaderBottom)))
@@ -179,31 +184,41 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White, letterSpacing = 1.sp)
             }
-            IconButton(locate, Modifier.size(48.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }
-        }
-        Surface(
-            onClick = search,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp).height(44.dp)
-                .touch(stringResource(R.string.search_hint)),
-            shape = Capsule,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Search, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.search_hint),
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (refreshable) {
+                IconButton(locate, Modifier.size(48.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }
+            } else {
+                Spacer(Modifier.width(12.dp))
             }
+        }
+        // 搜索框只在能搜索的两个 Tab 出现：设置页放一个搜不到东西的框只会误导。
+        if (searchable) {
+            Spacer(Modifier.height(0.dp))
+            Surface(
+                onClick = search,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp).height(44.dp)
+                    .touch(stringResource(R.string.search_hint)),
+                shape = Capsule,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Search, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.search_hint),
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
 
 /** 底部导航：首页 / 收藏 / 设置，搜索由顶栏胶囊框承担，不在这里重复。 */
-@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit, settings: () -> Unit) {
+@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit) {
     Column {
         Hairline()
         NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
@@ -222,8 +237,8 @@ import com.yll682.houche.ui.theme.HeaderTop
                 colors = flatNavColors()
             )
             NavigationBarItem(
-                selected = false,
-                onClick = settings,
+                selected = segment == 2,
+                onClick = { selectSegment(2) },
                 icon = { Icon(Icons.Default.Settings, null) },
                 label = { Text(stringResource(R.string.settings)) },
                 colors = flatNavColors()

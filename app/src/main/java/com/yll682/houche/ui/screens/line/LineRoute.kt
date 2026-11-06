@@ -17,7 +17,7 @@ import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
 import com.yll682.houche.ui.theme.*
 
-@Composable fun LineRoute(vm: LineViewModel, back: () -> Unit, timetable: (Route) -> Unit) {
+@Composable fun LineRoute(vm: LineViewModel, back: () -> Unit, timetable: (Route) -> Unit, openVehicle: (Route, String, RouteStation?) -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     val data = state.data ?: LineData()
     val context = LocalContext.current
@@ -25,5 +25,6 @@ import com.yll682.houche.ui.theme.*
     var fare by rememberSaveable { mutableStateOf(false) }
     PollEvery20Seconds(data.selected != null && state !is UiState.Loading && state !is UiState.Error) { vm.refreshLive() }
     LineScreen(vm, panel, fare, { panel = it }, { fare = !fare }, back, timetable,
-        { text, title -> context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, title)) })
+        { text, title -> context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, title)) },
+        { route, vehicle -> openVehicle(route, vehicle.plate, vm.state.value.data?.selected) })
 }
