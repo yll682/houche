@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -75,6 +77,19 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
 /** 1dp 发丝分隔线。 */
 @Composable fun Hairline(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
+}
+
+/**
+ * 车辆图形。停站用正脸（两扇前窗 + 轮子），行驶中用侧视，形状本身承担状态，
+ * 不必再靠文字或颜色区分。tint 决定颜色，尺寸由调用方按场景给。
+ */
+@Composable fun BusGlyph(running: Boolean, size: Dp = 20.dp, tint: Color = MaterialTheme.colorScheme.primary) {
+    Icon(
+        painterResource(if (running) R.drawable.ic_bus_side else R.drawable.ic_bus_front),
+        contentDescription = null,
+        modifier = Modifier.size(if (running) size * 1.15f else size),
+        tint = tint
+    )
 }
 
 /** 本应用唯一的卡片容器：纯 surface + 细描边，不用阴影和灰色填充。 */
@@ -196,21 +211,30 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-@Composable fun LoadingSkeleton() {
+@Composable fun LoadingSkeleton(cards: Int = 3) {
     val transition = rememberInfiniteTransition(label = "加载微光")
-    val alpha by transition.animateFloat(.4f, .85f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "透明度")
+    val alpha by transition.animateFloat(.4f, .9f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "透明度")
     val loadingLabel = stringResource(R.string.loading)
+    val bar = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha)
     Column(
         Modifier.fillMaxWidth().semantics { contentDescription = loadingLabel }.padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        repeat(3) { index ->
-            Box(
-                Modifier.fillMaxWidth(if (index == 1) .68f else 1f)
-                    .height(if (index == 0) 88.dp else 56.dp)
-                    .clip(CardShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = alpha))
-            )
+        // 骨架照真实卡片画：白底 + 细描边 + 内部文字条，数量由调用方给。
+        // 首页给 5 张把首屏填满，否则定位中会露出大片空白。
+        repeat(cards) { index ->
+            Column(
+                Modifier.fillMaxWidth().height(if (index == 0) 92.dp else 138.dp).clip(CardShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CardShape)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Box(Modifier.fillMaxWidth(if (index == 0) .38f else .54f).height(16.dp).clip(Capsule).background(bar))
+                Box(Modifier.fillMaxWidth(.92f).height(13.dp).clip(Capsule).background(bar))
+                Box(Modifier.fillMaxWidth(.88f).height(13.dp).clip(Capsule).background(bar))
+                if (index > 0) Box(Modifier.fillMaxWidth(.7f).height(13.dp).clip(Capsule).background(bar))
+            }
         }
     }
 }
@@ -237,7 +261,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         Box(
             Modifier.size(64.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
-        ) { Icon(Icons.Default.DirectionsBus, title, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        ) { BusGlyph(false, 30.dp, MaterialTheme.colorScheme.onSurfaceVariant) }
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         action?.let {
@@ -263,9 +287,9 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     PullToRefreshBox(refreshing, onRefresh, Modifier.fillMaxSize(), content = content)
 }
 
-@Composable fun <T> StateFeedback(state: UiState<T>, retry: () -> Unit) {
+@Composable fun <T> StateFeedback(state: UiState<T>, cards: Int = 3, retry: () -> Unit) {
     when (state) {
-        is UiState.Loading -> LoadingSkeleton()
+        is UiState.Loading -> LoadingSkeleton(cards)
         is UiState.Error -> ErrorCard(state.message, retry)
         else -> Unit
     }
@@ -361,8 +385,8 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-fun LazyListScope.feedback(state: UiState<*>, retry: () -> Unit) {
-    if (state is UiState.Loading || state is UiState.Error) item { StateFeedback(state, retry) }
+fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, retry: () -> Unit) {
+    if (state is UiState.Loading || state is UiState.Error) item { StateFeedback(state, cards, retry) }
 }
 
 @Composable fun HeaderSearchField(

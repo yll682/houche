@@ -168,11 +168,24 @@ internal fun publicArrivals(raw: JsonElement): List<Arrival> = raw.list("routeOn
     Arrival(if (waiting) null else it.i("busToStationCount"), if (waiting) null else it.d("busToStationDistance"), waiting,
         if (waiting) it.field("planTime").text() else null, it.s("toStationName"), it.field("busNumber").text(), it.s("busToStationTips"), it.s("busToStationTimeTips"), if (waiting) "" else it.s("busToStationDistanceTips"))
 }.sortedWith(arrivalComparator)
-internal fun sortVehicles(records: List<Vehicle>, stationOrder: Int): List<Vehicle> {
-    fun group(v: Vehicle) = if (v.order == null || v.positionState == "unknown") 2 else if (v.order > stationOrder) 1 else 0
-    return records.sortedWith(compareBy<Vehicle> { group(it) }.thenBy { if (group(it) == 2) Int.MAX_VALUE else kotlin.math.abs(it.order!! - stationOrder) }
-        .thenBy { group(it) != 2 && it.positionState != "at-stop" }.thenBy { it.segmentDistance?.takeIf { d -> d >= 0 } ?: Double.POSITIVE_INFINITY })
-}
+/**
+ * 进场车辆从近到远：离参照站还剩几站就是排序键，正在进站的那辆排第一。
+ * 已经驶过的车不参与「谁先到」的比较，统一压到后面，否则会顶掉真正要进站的车。
+ */
+internal fun sortVehicles(records: List<Vehicle>, stationOrder: Int): List<Vehicle> =
+    records.sortedWith(
+        compareBy<Vehicle> {
+            val order = it.order
+            when {
+                order == null || it.positionState == "unknown" -> Int.MAX_VALUE
+                order <= stationOrder -> stationOrder - order
+                else -> 10_000 + (order - stationOrder)
+            }
+        }
+            .thenBy { it.positionState != "at-stop" }
+            .thenBy { it.segmentDistance?.takeIf { distance -> distance >= 0 } ?: Double.POSITIVE_INFINITY }
+            .thenBy { it.plate }
+    )
 private fun requireData(raw: JsonElement, message: String) { if (raw !is JsonObject || raw.isEmpty()) throw BusException(BusException.Kind.UPSTREAM, message) }
 private fun direction(value: String) = argument(value in setOf("1", "2"), "线路方向需要为 1 或 2")
 private fun coordinates(lat: Double, lng: Double) = argument(lat.isFinite() && lng.isFinite() && lat in -90.0..90.0 && lng in -180.0..180.0, "请输入有效经纬度")

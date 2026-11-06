@@ -31,12 +31,14 @@ import com.yll682.houche.ui.theme.*
     toggleFare: () -> Unit, back: () -> Unit, timetable: (Route) -> Unit, favorite: () -> Unit,
     share: (String, String) -> Unit, retry: () -> Unit, reverse: () -> Unit,
     previewStation: (RouteStation) -> Unit, select: (RouteStation) -> Unit, closePreview: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    openVehicle: (Vehicle) -> Unit = {}
 ) {
     val data = state.data ?: LineData()
     val route = data.route
     val loading = state is UiState.Loading
-    val vehicles = data.live?.vehicles.orEmpty().sortedWith(compareBy<Vehicle> { it.order ?: Int.MAX_VALUE }.thenBy { it.plate })
+    // 顺序由仓库给：按离乘车站从近到远，不要在这里按序号重排，否则「谁先到」会被打乱。
+    val vehicles = data.live?.vehicles.orEmpty()
     Page(route?.name ?: stringResource(R.string.lines), back, modifier, actions = {
         HeaderIcon(if (data.favorite) Icons.Default.Star else Icons.Default.StarBorder,
             stringResource(if (data.favorite) R.string.unfavorite else R.string.favorite), favorite)
@@ -62,7 +64,9 @@ import com.yll682.houche.ui.theme.*
                         }
                     } else {
                         if (vehicles.isEmpty()) item { EmptyState(stringResource(R.string.no_vehicles)) }
-                        itemsIndexed(vehicles, key = { index, vehicle -> "${vehicle.plate}-$index" }) { _, vehicle -> VehicleCard(vehicle, data.selected) }
+                        itemsIndexed(vehicles, key = { index, vehicle -> "${vehicle.plate}-$index" }) { _, vehicle ->
+                            VehicleCard(vehicle, data.selected) { openVehicle(vehicle) }
+                        }
                     }
                 }
             }
@@ -195,46 +199,53 @@ import com.yll682.houche.ui.theme.*
 }
 
 @Composable private fun RouteStrip(route: Route, selected: RouteStation?, vehicles: List<Vehicle>, preview: (RouteStation) -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
     val listState = rememberLazyListState()
+    // 列宽跟着最长站名走：短站名保持紧凑，长站名有足够宽度，竖排不会被挤成一条线。
+    val longest = route.stations.maxOfOrNull { it.name.length } ?: 3
+    val column = (58 + (longest - 3).coerceAtLeast(0) * 6).coerceAtMost(92).dp
     LaunchedEffect(route.name, route.direction) {
         val target = selected ?: vehicles.firstOrNull()?.order?.let { order -> route.stations.firstOrNull { it.order == order } }
-        // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图标。
+        // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图形。
         val index = (route.stations.indexOf(target) - 1).coerceAtLeast(0)
         if (route.stations.isNotEmpty()) listState.scrollToItem(index)
     }
     LazyRow(state = listState, contentPadding = PaddingValues(horizontal = 8.dp)) {
-        itemsIndexed(route.stations) { index, stop ->
+        itemsIndexed(route.stations, key = { index, stop -> "${stop.order}-${stop.name}-$index" }) { index, stop ->
             val active = stop == selected
             val buses = vehicles.filter { it.order != null && it.order == stop.order }
-            val primary = MaterialTheme.colorScheme.primary
             val passed = selected?.order?.let { (stop.order ?: it) < it } == true
             val description = if (buses.isEmpty()) stop.name else stringResource(R.string.stop_vehicles_accessibility, stop.name, buses.size)
-            Column(Modifier.width(64.dp).heightIn(min = 136.dp).clickable(role = Role.Button) { preview(stop) }
+            Column(Modifier.width(column).heightIn(min = 152.dp).clickable(role = Role.Button) { preview(stop) }
                 .semantics(mergeDescendants = true) { contentDescription = description }, horizontalAlignment = Alignment.CenterHorizontally) {
-                // 车的位置就是状态：到站画在该站圆点正上方，途中向左偏移半格，落在两站之间。
-                Box(Modifier.height(24.dp).fillMaxWidth().clearAndSetSemantics {}) {
-                    buses.firstOrNull()?.let { bus ->
-                        val between = bus.positionState != "at-stop"
+                // 车的位置就是状态：到站停在该站正上方（正脸），途中偏左半格落在两站之间（侧视）。
+                Box(Modifier.height(26.dp).fillMaxWidth().clearAndSetSemantics {}) {
+                    if (buses.isNotEmpty()) {
+                        val running = buses.first().positionState != "at-stop"
                         Row(
-                            Modifier.align(Alignment.Center).offset(x = if (between) (-32).dp else 0.dp),
+                            Modifier.align(Alignment.Center).offset(x = if (running) -(column / 2f) else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
-                            if (buses.size > 1) Text(buses.size.toString(), style = MaterialTheme.typography.labelSmall, color = primary)
+                            BusGlyph(running, 20.dp, primary)
+                            if (buses.size > 1) {
+                                Text(buses.size.toString(), Modifier.padding(start = 1.dp),
+                                    style = MaterialTheme.typography.labelSmall, color = primary)
+                            }
                         }
                     }
                 }
                 Text(stop.order?.toString().orEmpty(), Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelSmall, color = if (active) primary else MaterialTheme.colorScheme.outline)
-                Box(Modifier.fillMaxWidth().height(22.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(24.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
                     Box(Modifier.align(if (index == 0) Alignment.CenterEnd else Alignment.CenterStart)
-                        .fillMaxWidth(if (index == 0 || index == route.stations.lastIndex) .5f else 1f).height(3.dp).background(primary.copy(alpha = .30f)))
-                    Box(Modifier.size(12.dp).clip(Capsule).background(if (active) primary else MaterialTheme.colorScheme.surface)
+                        .fillMaxWidth(if (index == 0 || index == route.stations.lastIndex) .5f else 1f).height(4.dp).background(primary.copy(alpha = .28f)))
+                    Box(Modifier.size(15.dp).clip(Capsule).background(if (active) primary else MaterialTheme.colorScheme.surface)
                         .border(if (buses.isNotEmpty()) 2.dp else 1.5.dp, primary.copy(alpha = if (active || buses.isNotEmpty()) 1f else .35f), Capsule), contentAlignment = Alignment.Center) {
-                        if (active) Box(Modifier.size(4.dp).clip(Capsule).background(Color.White))
+                        if (active) Box(Modifier.size(5.dp).clip(Capsule).background(Color.White))
                     }
                 }
+                // 竖排一字一行，行高收紧；上限 8 行覆盖常见长站名，再长才省略。
                 Text(stop.name.chunked(1).joinToString("\n"), Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.sp), textAlign = TextAlign.Center,
-                    maxLines = 6, overflow = TextOverflow.Ellipsis, fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
+                    maxLines = 8, overflow = TextOverflow.Ellipsis, fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (active) primary else if (passed) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -264,8 +275,9 @@ import com.yll682.houche.ui.theme.*
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
             vehicles.forEach { vehicle ->
                 Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ColorDot(if (vehicle.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
-                    Spacer(Modifier.width(6.dp))
+                    BusGlyph(vehicle.positionState != "at-stop", 14.dp,
+                        if (vehicle.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
+                    Spacer(Modifier.width(5.dp))
                     Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -281,8 +293,8 @@ import com.yll682.houche.ui.theme.*
     MetaPill(label, vehicle.positionState == "at-stop", color)
 }
 
-@Composable private fun VehicleCard(vehicle: Vehicle, selected: RouteStation?) {
-    CardSurface {
+@Composable private fun VehicleCard(vehicle: Vehicle, selected: RouteStation?, onClick: () -> Unit) {
+    CardSurface(onClick = onClick) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)

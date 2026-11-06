@@ -8,11 +8,12 @@
 | --- | --- |
 | 首页 | 顶栏唯一搜索入口、定位与用户主动授权、附近站点、距离、附近 / 收藏分段、收藏线路 / 站点、下拉重新定位、前三站前台每 20 秒更新到站 |
 | 搜索 | 300ms 防抖、线路 / 站点分组、键盘立即查询、最近 10 条搜索及删除 / 清空 |
-| 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆、乘车站到站结论、横向站点图（车辆位置即到站 / 途中）、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
+| 线路 | 方向切换、首末班与票价、收藏、文本分享、进页全线车辆（按离乘车站从近到远）、乘车站到站结论、横向站点图（车辆位置即到站 / 途中，长站名完整显示）、整行可点时间轴、车辆列表、前台每 20 秒刷新 |
+| 车辆 | 单辆车的实时位置与状态、到站结论、跟踪开关、到站提醒（本地通知）、文本分享、本站其它车辆、前台每 20 秒刷新 |
 | 站点 | 同名 / 反向站台切换、经过线路及实时到站、收藏、下拉刷新、前台每 20 秒更新 |
 | 时刻表 | 线路方向、首末班、上游下一班、时段折叠、四列时间网格、当前时段高亮及上游说明 |
 | 城市选择 | 全屏窗口、已识别定位城市置顶、省 → 市、城市名 / 拼音检索与匹配高亮 |
-| 设置 | 默认城市、清查询缓存、关于与版本 |
+| 设置 | 默认城市、清查询缓存、检查更新、关于与版本。设置是底部标签页之一，不另开全屏页面 |
 
 首次启动不自动申请定位；点击「允许定位」或「开启定位」后才请求，拒绝后提供应用设置入口。未授权也能选择城市、搜索公交。加载采用骨架占位，刷新错误保留已有内容并原位提供重试。
 
@@ -36,7 +37,11 @@
 | --- | --- | --- | --- |
 | [浅色](docs/screenshots/line-unselected-light.png) / [深色](docs/screenshots/line-unselected-dark.png) | [浅色](docs/screenshots/search-history-light.png) / [深色](docs/screenshots/search-history-dark.png) | [浅色](docs/screenshots/search-empty-light.png) / [深色](docs/screenshots/search-empty-dark.png) | [浅色](docs/screenshots/line-narrow-light.png) / [深色](docs/screenshots/line-narrow-dark.png) |
 
-另外保留加载态、错误态、未授权定位、收藏空态、长站名及 360dp 时刻表截图，共 38 张 PNG。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
+| 长站名站点图 | 车辆跟踪 | 检查更新 |
+| --- | --- | --- |
+| [浅色](docs/screenshots/line-long-stops-light.png) / [深色](docs/screenshots/line-long-stops-dark.png) | [浅色](docs/screenshots/vehicle-light.png) / [深色](docs/screenshots/vehicle-dark.png) | [浅色](docs/screenshots/settings-update-light.png) / [深色](docs/screenshots/settings-update-dark.png) |
+
+另外保留加载态、错误态、未授权定位、收藏空态、长站名、7~8 字长站名的站点图、车辆跟踪页、检查更新展开态及 360dp 时刻表截图，共 44 张 PNG。完整清单与验证记录见 [本轮验收记录](docs/inner-pages-validation.md)。
 
 ```sh
 # 重新生成全部截图
@@ -83,12 +88,12 @@
 `aapt2` 输出关键字段：
 
 ```text
-package: name='com.yll682.houche' versionCode='3' versionName='1.2.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='com.yll682.houche' versionCode='4' versionName='1.3.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 minSdkVersion:'26'
 targetSdkVersion:'35'
 ```
 
-Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.2.0`、`versionCode=3`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
+Debug / Release 均为 `applicationId=com.yll682.houche`、`minSdk=26`、`targetSdk=35`、`versionName=1.3.0`、`versionCode=4`。Release 的 `apksigner verify` 返回成功，证书主题为 `CN=Houche, O=yll682, L=Xiamen, ST=Fujian, C=CN`（证书 SHA-256 `225bf656…77d5ee`，与 1.0.0 / 1.1.0 同一把密钥）。本机这份 Release 使用已配置的签名；密钥文件与密码未写入版本库。
 
 ## 签名
 
@@ -108,6 +113,10 @@ keyPassword=自行填写
 本轮基于 `041efd0`，保留进页即查询全线车辆、未选站不生成到站结论、选站不清空车辆的行为；未修改 `core/` 与 `data/`，未新增依赖。Application 初始化手写 `AppGraph`，城市表在 IO 加载，固定设备编号保存在 DataStore，两个客户端共享 HttpClient。查询缓存 TTL 为 15 秒，最多 512 条。
 
 定位采用 Android LocationManager，支持最近已知位置兜底和 WGS84 → GCJ02 转换。定位城市只识别厦门覆盖区（最近站点距离不超过 30 km），其他地区使用上次选择 / 厦门默认值，不具备全国逆地理编码能力。
+
+车辆按「离乘车站还剩几站」升序排列，正在进站的那辆排最前，已经驶过的车压到后面；同站多辆车用上游给的区间距离细化。车辆跟踪只在页面前台生效：进度靠 20 秒轮询推进，剩余 1 站以内发一次本地通知，通知频道 `houche_track`，Android 13 起按需申请通知权限。
+
+检查更新读仓库根目录的 `version.json`（GitHub RAW 与 CNB RAW 并发请求，谁先成功用谁，下载也优先用同源链接），不携带任何凭证，也不在应用内安装 APK —— 下载交给系统浏览器。发布新版本时 `version.json` 的 `versionName` / `versionCode` / 下载链接必须一起更新。
 
 时刻表优先使用上游分组；厦门未提供分组时按两小时时段展示。上游未提供下一班、车辆、分钟数或发车时间时显示相应空态，不推算或补造数据。搜索接口未返回线路数量时只显示站名。北京 1 路本次返回 `hasReal=0` 和空时刻表；北京搜索有间歇性超时，详情见联网记录。
 

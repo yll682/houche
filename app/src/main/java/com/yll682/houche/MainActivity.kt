@@ -1,5 +1,6 @@
 package com.yll682.houche
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.widget.Toast
@@ -27,8 +28,8 @@ import com.yll682.houche.ui.screens.search.*
 import com.yll682.houche.ui.screens.line.*
 import com.yll682.houche.ui.screens.station.*
 import com.yll682.houche.ui.screens.timetable.*
+import com.yll682.houche.ui.screens.vehicle.*
 import com.yll682.houche.ui.screens.city.CityRoute
-import com.yll682.houche.ui.screens.settings.SettingsScreen
 import com.yll682.houche.ui.theme.HoucheTheme
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -39,7 +40,7 @@ sealed interface Screen {
     data class Line(val city: City, val line: LineSummary, val station: Station? = null) : Screen
     data class Stop(val city: City, val station: Station) : Screen
     data class Times(val city: City, val route: Route) : Screen
-    data object Settings : Screen
+    data class Vehicle(val city: City, val route: Route, val plate: String, val boarding: RouteStation?) : Screen
 }
 class PageEntry(val screen: Screen) : ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
@@ -48,10 +49,12 @@ class NavigationState : ViewModel() {
     val stack = mutableStateListOf(PageEntry(Screen.Home))
     private val retired = mutableSetOf<PageEntry>()
     var cityVisible by mutableStateOf(false)
+    // 首页 / 收藏 / 设置是同一层的三个 Tab，设置不再是压栈页面。
+    var segment by mutableIntStateOf(0)
     fun push(screen: Screen) { stack.add(PageEntry(screen)) }
     fun pop() { if (stack.size > 1) { val entry = stack.removeAt(stack.lastIndex); retired.add(entry) } }
     fun release(entry: PageEntry) { if (entry !in stack) { entry.viewModelStore.clear(); retired.remove(entry) } }
-    fun home() { val visible = stack.last(); while (stack.size > 1) pop(); retired.filter { it != visible }.toList().forEach { release(it) } }
+    fun home() { val visible = stack.last(); while (stack.size > 1) pop(); segment = 0; retired.filter { it != visible }.toList().forEach { release(it) } }
     override fun onCleared() { (stack + retired).forEach { it.viewModelStore.clear() } }
 }
 data class RootData(val cities: List<City> = emptyList(), val city: City? = null)
@@ -103,6 +106,7 @@ class MainActivity : ComponentActivity() {
     var lastBack by remember { mutableLongStateOf(0L) }
     BackHandler(!navigation.cityVisible) {
         if (navigation.stack.size > 1) navigation.pop()
+        else if (navigation.segment != 0) navigation.segment = 0
         else {
             val now = SystemClock.elapsedRealtime()
             if (lastBack != 0L && now - lastBack < 2000) exit()
@@ -116,12 +120,27 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(entry) { onDispose { navigation.release(entry) } }
                 CompositionLocalProvider(LocalViewModelStoreOwner provides entry) {
                     when (val screen = entry.screen) {
-                        Screen.Home -> HomeRoute(model(key = city.key) { HomeViewModel(graph, city) }, { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true }, { navigation.push(Screen.Settings) }, { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) })
+                        Screen.Home -> HomeRoute(
+                            model(key = city.key) { HomeViewModel(graph, city) },
+                            model(key = "settings-${city.key}") { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) },
+                            navigation.segment, { navigation.segment = it },
+                            { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true },
+                            { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) }
+                        )
                         is Screen.Search -> SearchRoute(model { SearchViewModel(graph, screen.city) }, navigation::pop, { navigation.push(Screen.Line(screen.city, it)) }, { navigation.push(Screen.Stop(screen.city, it)) })
-                        is Screen.Line -> LineRoute(model { LineViewModel(graph, screen.city, screen.line, screen.station) }, navigation::pop, { navigation.push(Screen.Times(screen.city, it)) })
+                        is Screen.Line -> LineRoute(
+                            model { LineViewModel(graph, screen.city, screen.line, screen.station) },
+                            navigation::pop,
+                            { navigation.push(Screen.Times(screen.city, it)) },
+                            { route, plate, boarding -> navigation.push(Screen.Vehicle(screen.city, route, plate, boarding)) }
+                        )
                         is Screen.Stop -> StationRoute(model { StationViewModel(graph, screen.city, screen.station) }, navigation::pop, { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) })
                         is Screen.Times -> TimetableRoute(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
-                        Screen.Settings -> SettingsScreen(model { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) }, navigation::pop) { navigation.cityVisible = true }
+                        is Screen.Vehicle -> VehicleRoute(
+                            model { VehicleViewModel(graph, screen.city, screen.route, screen.plate, screen.boarding) },
+                            navigation::pop,
+                            { text, title -> context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, title)) }
+                        )
                     }
                 }
             }

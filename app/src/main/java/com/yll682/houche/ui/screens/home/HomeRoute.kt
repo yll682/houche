@@ -22,11 +22,10 @@ import com.yll682.houche.core.*
 import com.yll682.houche.ui.*
 import com.yll682.houche.ui.components.*
 
-@Composable fun HomeRoute(vm: HomeViewModel, search: () -> Unit, cities: () -> Unit, settings: () -> Unit, line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit) {
+@Composable fun HomeRoute(vm: HomeViewModel, settingsVm: com.yll682.houche.ui.screens.settings.SettingsViewModel, segment: Int, selectSegment: (Int) -> Unit, search: () -> Unit, cities: () -> Unit, line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     val data = state.data ?: HomeData()
     val context = LocalContext.current
-    var segment by rememberSaveableState(0)
     var granted by remember { mutableStateOf(false) }
     fun permission() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -44,7 +43,5 @@ import com.yll682.houche.ui.components.*
         else launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
     PollEvery20Seconds(data.stations.isNotEmpty()) { vm.refreshLive() }
-    HomeScreen(vm, granted, segment, { segment = it }, ::locate, search, cities, settings, line, station)
+    HomeScreen(vm, settingsVm, granted, segment, selectSegment, ::locate, search, cities, line, station)
 }
-
-@Composable private fun rememberSaveableState(initial: Int) = androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(initial) }
