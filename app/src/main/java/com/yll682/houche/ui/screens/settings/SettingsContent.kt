@@ -65,6 +65,14 @@ import com.yll682.houche.ui.components.*
                 Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (data.metroNote.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.metro_source, data.metroNote),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
                     stringResource(R.string.version, data.versionName, data.versionCode),

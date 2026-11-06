@@ -19,6 +19,9 @@ class AppGraph(app: Application) {
     val locatedCity: kotlinx.coroutines.flow.StateFlow<City?> = located
     fun setLocatedCity(city: City) { located.value = city }
     val cities = Cities { app.assets.open("cities.json") }
+    // 地铁线路与站序优先用内置资源；在线接口只作为后台探测，通了才替换。
+    val metro = Metro { app.assets.open("metro.json") }
+    val metroRemote = MetroRemote()
     val prefs = Prefs(app)
     val location = LocationProvider(app)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

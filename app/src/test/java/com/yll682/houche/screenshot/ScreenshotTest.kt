@@ -22,6 +22,7 @@ import com.yll682.houche.ui.screens.line.*
 import com.yll682.houche.ui.screens.station.*
 import com.yll682.houche.ui.screens.timetable.*
 import com.yll682.houche.ui.screens.city.*
+import com.yll682.houche.ui.screens.metro.*
 import com.yll682.houche.ui.screens.settings.*
 import com.yll682.houche.ui.screens.vehicle.*
 import com.yll682.houche.ui.theme.*
@@ -103,6 +104,37 @@ class ScreenshotTest {
     )
 
     /** 设置现在是首页的第三个 Tab，截图也要连底部导航一起拍。 */
+
+    // 地铁演示数据取自 assets/metro.json 的真实站序，截图只截前若干站。
+    private val metroLine1 = MetroLine("1", "地铁1号线", "#E56849", "岩内", "镇海路", true, "06:00", "23:00", listOf(
+        MetroStation(1, "岩内"), MetroStation(2, "厦门北站", listOf("BRT", "国铁")),
+        MetroStation(3, "天水路"), MetroStation(4, "集美大道"), MetroStation(5, "集美软件园"),
+        MetroStation(6, "诚毅广场"), MetroStation(7, "官任"), MetroStation(8, "杏锦路"),
+        MetroStation(9, "杏林村"), MetroStation(10, "园博苑"), MetroStation(11, "集美学村"),
+        MetroStation(12, "高崎"), MetroStation(13, "殿前"), MetroStation(14, "火炬园", listOf("3号线")),
+        MetroStation(15, "塘边"), MetroStation(16, "乌石浦"), MetroStation(17, "吕厝", listOf("2号线")),
+        MetroStation(18, "莲花路口"), MetroStation(19, "莲坂"), MetroStation(20, "湖滨东路", listOf("3号线")),
+        MetroStation(21, "文灶", listOf("BRT")), MetroStation(22, "将军祠"), MetroStation(23, "中山公园"),
+        MetroStation(24, "镇海路")
+    ))
+    private val metroLine2 = MetroLine("2", "地铁2号线", "#4DAA50", "天竺山", "五缘湾", true, "06:00", "23:00", listOf(
+        MetroStation(1, "天竺山"), MetroStation(2, "东孚"), MetroStation(3, "东瑶")
+    ))
+    private val metroLine3 = MetroLine("3", "地铁3号线", "#00BFD3", "厦门火车站", "蔡厝", true, "06:00", "23:00", listOf(
+        MetroStation(1, "厦门火车站", listOf("国铁")), MetroStation(2, "湖滨东路", listOf("1号线"))
+    ))
+    private val metroData = MetroData(listOf(metroLine1, metroLine2, metroLine3), "1", "2026-11-06")
+
+    @Composable private fun MetroShot() = MetroContent(UiState.Success(metroData), {}, {})
+
+    @Test fun metro_light() = capture("metro", false) { MetroShot() }
+    @Test fun metro_dark() = capture("metro", true) { MetroShot() }
+
+    /** 在线资料命中时头部多一个「在线」胶囊；探测失败时这张和上面完全一样。 */
+    @Test fun metroOnline_light() = capture("metro-online", false) {
+        MetroContent(UiState.Success(metroData.copy(online = true)), {}, {})
+    }
+
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
         UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
@@ -183,6 +215,10 @@ class ScreenshotTest {
     @Test fun searchHistory_dark() = capture("search-history", true) { SearchContent(UiState.Success(SearchData(history = listOf("91路", "实验幼儿园", "火车站", "BRT"))), {}, {}, {}, {}, {}, {}, {}, {}) }
     @Test fun searchEmpty_light() = capture("search-empty", false) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
     @Test fun searchEmpty_dark() = capture("search-empty", true) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
+    @Test fun stationMetro_light() = capture("station-metro", false) {
+        StationContent(UiState.Success(StationData(Station("吕厝", "SM000170", 365.0, lines = lines), arrivals, true,
+            metro = listOf(MetroCalling(metroLine1, MetroStation(17, "吕厝", listOf("2号线"))), MetroCalling(metroLine2, MetroStation(14, "吕厝", listOf("1号线")))))), {}, { _, _ -> }, {}, {}, {})
+    }
     @Test fun scene6_light() = capture("station", false) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene6_dark() = capture("station", true) { StationContent(UiState.Success(StationData(stop, arrivals, true)), {}, { _, _ -> }, {}, {}, {}) }
     @Test fun scene7_light() = capture("timetable", false) { TimetableContent(UiState.Success(timetableData), route, emptySet(), {}, {}, {}) }

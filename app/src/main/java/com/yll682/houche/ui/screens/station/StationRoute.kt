@@ -10,8 +10,8 @@ import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
 
-@Composable fun StationRoute(vm: StationViewModel, back: () -> Unit, line: (LineSummary, Station) -> Unit) {
+@Composable fun StationRoute(vm: StationViewModel, back: () -> Unit, line: (LineSummary, Station) -> Unit, metro: (String) -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     PollEvery20Seconds(state !is UiState.Loading && state !is UiState.Error) { vm.refreshLive() }
-    StationScreen(vm, back, line)
+    StationScreen(vm, back, line, metro)
 }
