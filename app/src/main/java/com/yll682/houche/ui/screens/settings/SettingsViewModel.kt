@@ -24,14 +24,24 @@ data class SettingsData(
     val versionCode: Int = BuildConfig.VERSION_CODE,
     val update: UpdateState = UpdateState(),
     /** 地铁在线接口的最近一次探测结论；只在这里露出，主界面不显示。 */
-    val metroNote: String = ""
+    val metroNote: String = "",
+    /** 地铁站序的出处，说明数据来自哪里。 */
+    val metroSource: String = ""
 )
 
 class SettingsViewModel(private val graph: AppGraph, city: City) : StateViewModel<SettingsData>(SettingsData(city)) {
     private val updates = UpdateClient()
 
     init {
-        action { update(data.copy(metroNote = graph.metroRemote.last?.note.orEmpty())) }
+        action {
+            val network = graph.metro.networkFor(city)
+            update(
+                data.copy(
+                    metroNote = graph.metroRemote.last?.note.orEmpty(),
+                    metroSource = network?.source.orEmpty()
+                )
+            )
+        }
     }
     fun clearCache() = action {
         update(data.copy(cleared = false))

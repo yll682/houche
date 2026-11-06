@@ -1,10 +1,10 @@
 {
-  "versionName": "1.4.1",
-  "versionCode": 7,
-  "released": "2026-11-06",
-  "notes": "修复地铁入口不显示、搜索「地铁」查不到线路的问题。",
+  "versionName": "1.5.0",
+  "versionCode": 8,
+  "released": "2026-11-07",
+  "notes": "地铁资料换成厦门地铁官方 App 内置线网图：新增 4 号线，站序与线路色按官方图校正。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.4.1/houche-v1.4.1.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.4.1/houche-v1.4.1.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.5.0/houche-v1.5.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.5.0/houche-v1.5.0.apk"
   }
 }

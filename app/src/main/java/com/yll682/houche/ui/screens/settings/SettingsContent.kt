@@ -73,6 +73,14 @@ import com.yll682.houche.ui.components.*
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
+                if (data.metroSource.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.metro_data_source, data.metroSource),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
                     stringResource(R.string.version, data.versionName, data.versionCode),
