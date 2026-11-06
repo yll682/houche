@@ -105,25 +105,20 @@ class ScreenshotTest {
 
     /** 设置现在是首页的第三个 Tab，截图也要连底部导航一起拍。 */
 
-    // 地铁演示数据取自 assets/metro.json 的真实站序，截图只截前若干站。
-    private val metroLine1 = MetroLine("1", "地铁1号线", "#E56849", "岩内", "镇海路", true, "06:00", "23:00", listOf(
-        MetroStation(1, "岩内"), MetroStation(2, "厦门北站", listOf("BRT", "国铁")),
-        MetroStation(3, "天水路"), MetroStation(4, "集美大道"), MetroStation(5, "集美软件园"),
-        MetroStation(6, "诚毅广场"), MetroStation(7, "官任"), MetroStation(8, "杏锦路"),
-        MetroStation(9, "杏林村"), MetroStation(10, "园博苑"), MetroStation(11, "集美学村"),
-        MetroStation(12, "高崎"), MetroStation(13, "殿前"), MetroStation(14, "火炬园", listOf("3号线")),
-        MetroStation(15, "塘边"), MetroStation(16, "乌石浦"), MetroStation(17, "吕厝", listOf("2号线")),
-        MetroStation(18, "莲花路口"), MetroStation(19, "莲坂"), MetroStation(20, "湖滨东路", listOf("3号线")),
-        MetroStation(21, "文灶", listOf("BRT")), MetroStation(22, "将军祠"), MetroStation(23, "中山公园"),
-        MetroStation(24, "镇海路")
-    ))
-    private val metroLine2 = MetroLine("2", "地铁2号线", "#4DAA50", "天竺山", "五缘湾", true, "06:00", "23:00", listOf(
-        MetroStation(1, "天竺山"), MetroStation(2, "东孚"), MetroStation(3, "东瑶")
-    ))
-    private val metroLine3 = MetroLine("3", "地铁3号线", "#00BFD3", "厦门火车站", "蔡厝", true, "06:00", "23:00", listOf(
-        MetroStation(1, "厦门火车站", listOf("国铁")), MetroStation(2, "湖滨东路", listOf("1号线"))
-    ))
-    private val metroData = MetroData(listOf(metroLine1, metroLine2, metroLine3), "1", "2026-11-06")
+    /**
+     * 地铁演示数据直接读 assets/metro.json，不再手抄：
+     * 手抄版本曾漏掉 2/3 号线的站，搜索结果里就显示成「3 站」「2 站」。
+     */
+    private val metroLines: List<MetroLine> by lazy {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val text = context.assets.open("metro.json").bufferedReader().use { it.readText() }
+        kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+            .decodeFromString<MetroNetwork>(text).openedLines
+    }
+    private val metroLine1: MetroLine get() = metroLines.first { it.id == "1" }
+    private val metroLine2: MetroLine get() = metroLines.first { it.id == "2" }
+    private val metroLine3: MetroLine get() = metroLines.first { it.id == "3" }
+    private val metroData: MetroData get() = MetroData(metroLines, "1", "2026-11-06")
 
     @Composable private fun MetroShot() = MetroContent(UiState.Success(metroData), {}, {})
 
@@ -215,6 +210,28 @@ class ScreenshotTest {
     @Test fun searchHistory_dark() = capture("search-history", true) { SearchContent(UiState.Success(SearchData(history = listOf("91路", "实验幼儿园", "火车站", "BRT"))), {}, {}, {}, {}, {}, {}, {}, {}) }
     @Test fun searchEmpty_light() = capture("search-empty", false) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
     @Test fun searchEmpty_dark() = capture("search-empty", true) { SearchContent(UiState.Success(SearchData("无匹配")), {}, {}, {}, {}, {}, {}, {}, {}) }
+
+    /** 搜索「地铁」：地铁资料在本地，公交接口还没回来时也要能看见这三条线。 */
+    @Test fun searchMetro_light() = capture("search-metro", false) {
+        SearchContent(
+            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3))),
+            {}, {}, {}, {}, {}, {}, {}, {}, metro = {}
+        )
+    }
+    @Test fun searchMetro_dark() = capture("search-metro", true) {
+        SearchContent(
+            UiState.Success(SearchData("地铁", SearchResults(emptyList(), emptyList()), metro = listOf(metroLine1, metroLine2, metroLine3))),
+            {}, {}, {}, {}, {}, {}, {}, {}, metro = {}
+        )
+    }
+
+    /** 首页有地铁资料时，顶栏刷新左侧出现地铁入口。 */
+    @Test fun homeMetro_light() = capture("home-metro", false) {
+        HomeContent(
+            UiState.Success(HomeData(stations = listOf(stop), position = Position(24.48, 118.13), cityResolved = true, hasMetro = true)),
+            city, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }, metro = {}
+        )
+    }
     @Test fun stationMetro_light() = capture("station-metro", false) {
         StationContent(UiState.Success(StationData(Station("吕厝", "SM000170", 365.0, lines = lines), arrivals, true,
             metro = listOf(MetroCalling(metroLine1, MetroStation(17, "吕厝", listOf("2号线"))), MetroCalling(metroLine2, MetroStation(14, "吕厝", listOf("1号线")))))), {}, { _, _ -> }, {}, {}, {})

@@ -130,7 +130,12 @@ class MainActivity : ComponentActivity() {
                             { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) },
                             { line -> navigation.push(Screen.Metro(city, line)) }
                         )
-                        is Screen.Search -> SearchRoute(model { SearchViewModel(graph, screen.city) }, navigation::pop, { navigation.push(Screen.Line(screen.city, it)) }, { navigation.push(Screen.Stop(screen.city, it)) })
+                        is Screen.Search -> SearchRoute(
+                            model { SearchViewModel(graph, screen.city) }, navigation::pop,
+                            { navigation.push(Screen.Line(screen.city, it)) },
+                            { navigation.push(Screen.Stop(screen.city, it)) },
+                            { lineId -> navigation.push(Screen.Metro(screen.city, lineId)) }
+                        )
                         is Screen.Line -> LineRoute(
                             model { LineViewModel(graph, screen.city, screen.line, screen.station) },
                             navigation::pop,

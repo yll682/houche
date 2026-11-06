@@ -22,12 +22,14 @@ import com.yll682.houche.R
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
+import com.yll682.houche.ui.screens.metro.metroColor
 import com.yll682.houche.ui.theme.Capsule
 
 @Composable fun SearchContent(
     state: UiState<SearchData>, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit,
     query: (String) -> Unit, search: (String) -> Unit, submit: () -> Unit, clear: () -> Unit,
-    remove: (String) -> Unit, modifier: Modifier = Modifier, inputModifier: Modifier = Modifier
+    remove: (String) -> Unit, modifier: Modifier = Modifier, inputModifier: Modifier = Modifier,
+    metro: (String) -> Unit = {}
 ) {
     val data = state.data ?: SearchData()
     val typed = data.query.isNotBlank()
@@ -75,8 +77,19 @@ import com.yll682.houche.ui.theme.Capsule
             } else {
                 val lines = data.result.lines
                 val stations = data.result.stations
-                if (lines.isEmpty() && stations.isEmpty() && state !is UiState.Loading) {
+                if (lines.isEmpty() && stations.isEmpty() && data.metro.isEmpty() && state !is UiState.Loading) {
                     item { EmptyState(stringResource(R.string.search_empty)) }
+                }
+                if (data.metro.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.metro), data.metro.size) }
+                    item {
+                        CardSurface {
+                            data.metro.forEachIndexed { index, item ->
+                                if (index > 0) Hairline()
+                                MetroSearchRow(item) { metro(item.id) }
+                            }
+                        }
+                    }
                 }
                 if (lines.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.lines), lines.size) }
@@ -118,5 +131,33 @@ import com.yll682.houche.ui.theme.Capsule
                 }
             }
         }
+    }
+}
+
+/** 地铁搜索结果：线路色点代替线路牌，副行给始终点与站数，点击直接进地铁页。 */
+@Composable private fun MetroSearchRow(line: MetroLine, onClick: () -> Unit) {
+    val tint = metroColor(line.color)
+    val ends = stringResource(R.string.metro_ends, line.from, line.to)
+    Row(
+        Modifier.fillMaxWidth().touch(stringResource(R.string.metro_stop_transfer, line.name, ends))
+            .clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier.size(34.dp).clip(Capsule).background(tint.copy(alpha = .14f)),
+            contentAlignment = Alignment.Center
+        ) { Box(Modifier.size(10.dp).clip(Capsule).background(tint)) }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(line.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                stringResource(R.string.metro_search_meta, ends, line.liveStations.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
     }
 }

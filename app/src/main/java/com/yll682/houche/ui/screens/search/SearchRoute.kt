@@ -14,9 +14,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.components.*
 
-@Composable fun SearchRoute(vm: SearchViewModel, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit) {
+@Composable fun SearchRoute(
+    vm: SearchViewModel, back: () -> Unit, line: (LineSummary) -> Unit, station: (Station) -> Unit,
+    metro: (String) -> Unit
+) {
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
-    SearchScreen(vm, back, line, station, { keyboard?.hide() }, Modifier.focusRequester(focus))
+    SearchScreen(vm, back, line, station, metro, { keyboard?.hide() }, Modifier.focusRequester(focus))
 }
