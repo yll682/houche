@@ -1,10 +1,10 @@
 {
-  "versionName": "1.3.1",
-  "versionCode": 5,
+  "versionName": "1.4.0",
+  "versionCode": 6,
   "released": "2026-11-06",
-  "notes": "应用图标换成侧视公交（方正车厢、连续长窗、前部双折门、两个轮子），底色改为品牌蓝；线路页车辆图标恢复为原样式。其余同 1.3.0：长站名完整显示、车辆跟踪页、设置并入底部标签页、检查更新。",
+  "notes": "新增地铁：1/2/3 号线站序、换乘与首末班，站点页可直接跳转换乘线路。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.3.1/houche-v1.3.1.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.3.1/houche-v1.3.1.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.4.0/houche-v1.4.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.4.0/houche-v1.4.0.apk"
   }
 }

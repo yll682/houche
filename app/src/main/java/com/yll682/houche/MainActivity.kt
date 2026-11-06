@@ -29,6 +29,7 @@ import com.yll682.houche.ui.screens.line.*
 import com.yll682.houche.ui.screens.station.*
 import com.yll682.houche.ui.screens.timetable.*
 import com.yll682.houche.ui.screens.vehicle.*
+import com.yll682.houche.ui.screens.metro.*
 import com.yll682.houche.ui.screens.city.CityRoute
 import com.yll682.houche.ui.theme.HoucheTheme
 import kotlinx.coroutines.*
@@ -41,6 +42,7 @@ sealed interface Screen {
     data class Stop(val city: City, val station: Station) : Screen
     data class Times(val city: City, val route: Route) : Screen
     data class Vehicle(val city: City, val route: Route, val plate: String, val boarding: RouteStation?) : Screen
+    data class Metro(val city: City, val line: String? = null) : Screen
 }
 class PageEntry(val screen: Screen) : ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
@@ -125,7 +127,8 @@ class MainActivity : ComponentActivity() {
                             model(key = "settings-${city.key}") { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) },
                             navigation.segment, { navigation.segment = it },
                             { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true },
-                            { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) }
+                            { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) },
+                            { line -> navigation.push(Screen.Metro(city, line)) }
                         )
                         is Screen.Search -> SearchRoute(model { SearchViewModel(graph, screen.city) }, navigation::pop, { navigation.push(Screen.Line(screen.city, it)) }, { navigation.push(Screen.Stop(screen.city, it)) })
                         is Screen.Line -> LineRoute(
@@ -134,8 +137,14 @@ class MainActivity : ComponentActivity() {
                             { navigation.push(Screen.Times(screen.city, it)) },
                             { route, plate, boarding -> navigation.push(Screen.Vehicle(screen.city, route, plate, boarding)) }
                         )
-                        is Screen.Stop -> StationRoute(model { StationViewModel(graph, screen.city, screen.station) }, navigation::pop, { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) })
+                        is Screen.Stop -> StationRoute(
+                            model { StationViewModel(graph, screen.city, screen.station) },
+                            navigation::pop,
+                            { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) },
+                            { lineId -> navigation.push(Screen.Metro(screen.city, lineId)) }
+                        )
                         is Screen.Times -> TimetableRoute(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
+                        is Screen.Metro -> MetroRoute(model { MetroViewModel(graph, screen.city, screen.line) }, navigation::pop)
                         is Screen.Vehicle -> VehicleRoute(
                             model { VehicleViewModel(graph, screen.city, screen.route, screen.plate, screen.boarding) },
                             navigation::pop,

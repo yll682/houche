@@ -27,7 +27,8 @@ import com.yll682.houche.ui.theme.Capsule
 @Composable fun StationContent(
     state: UiState<StationData>, back: () -> Unit, line: (LineSummary, Station) -> Unit,
     refresh: () -> Unit, platform: (Station) -> Unit, favorite: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    openMetro: (String) -> Unit = {}
 ) {
     val data = state.data ?: return
     val stop = data.station
@@ -65,6 +66,28 @@ import com.yll682.houche.ui.theme.Capsule
                 val platforms = stop.platformNumbers.distinct()
                 if (platforms.size > 1 || stop.platforms.size > 1) {
                     item { PlatformSelector(stop, platforms, platform) }
+                }
+                if (data.metro.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.metro_transfer), data.metro.size) }
+                    item {
+                        CardSurface {
+                            data.metro.forEachIndexed { index, calling ->
+                                if (index > 0) Hairline()
+                                Row(
+                                    Modifier.fillMaxWidth().touch(calling.line.name).clickable { openMetro(calling.line.id) }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(Modifier.size(10.dp).clip(Capsule).background(Color(android.graphics.Color.parseColor(calling.line.color))))
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(calling.line.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(R.string.to, calling.line.to), style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        }
+                    }
                 }
                 item { SectionHeader(stringResource(R.string.passing_lines), stop.lines.size) }
                 if (stop.lines.isEmpty() && state !is UiState.Loading) {

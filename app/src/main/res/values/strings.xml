@@ -102,4 +102,13 @@
     <string name="update_up_to_date">已是最新</string>
     <string name="update_failed">检查失败</string>
     <string name="update_download">下载</string>
+    <string name="metro">地铁</string>
+    <string name="metro_empty">暂无地铁资料</string>
+    <string name="metro_stations">站点</string>
+    <string name="metro_ends">%1$s → %2$s</string>
+    <string name="metro_stop_transfer">%1$s，可换乘 %2$s</string>
+    <string name="metro_updated">地铁资料 %1$s</string>
+    <string name="metro_online">在线</string>
+    <string name="metro_transfer">地铁换乘</string>
+    <string name="metro_source">地铁站序来源：%1$s</string>
 </resources>

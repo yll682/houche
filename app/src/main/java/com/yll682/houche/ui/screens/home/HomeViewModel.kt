@@ -13,12 +13,14 @@ import kotlinx.coroutines.sync.Mutex
     val stations: List<Station> = emptyList(), val arrivals: Map<Int, List<Arrival>> = emptyMap(),
     val liveErrors: Map<Int, String?> = emptyMap(), val position: Position? = null,
     val favoriteLines: List<SavedLine> = emptyList(), val favoriteStations: List<SavedStation> = emptyList(),
-    val cityResolved: Boolean = false, val permissionDenied: Boolean = false
+    val cityResolved: Boolean = false, val permissionDenied: Boolean = false, val hasMetro: Boolean = false
 )
 class HomeViewModel(val graph: AppGraph, val city: City) : StateViewModel<HomeData>(HomeData()) {
     private val mutex = Mutex()
     init {
         viewModelScope.launch {
+            // 没有地铁资料的城市不显示入口，避免点进去只有一句「暂无」。
+            attempt { update(data.copy(hasMetro = graph.metro.networkFor(city) != null)) }
             attempt { combine(graph.prefs.favoriteLines, graph.prefs.favoriteStations) { lines, stations -> lines to stations }.collect { (lines, stations) ->
                 val value = data.copy(favoriteLines = lines, favoriteStations = stations)
                 mutable.value = when (val old = mutable.value) { is UiState.Error -> old.copy(data = value); is UiState.Loading -> old.copy(data = value); else -> UiState.Success(value) }

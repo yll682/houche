@@ -22,11 +22,17 @@ data class SettingsData(
     val cleared: Boolean = false,
     val versionName: String = BuildConfig.VERSION_NAME,
     val versionCode: Int = BuildConfig.VERSION_CODE,
-    val update: UpdateState = UpdateState()
+    val update: UpdateState = UpdateState(),
+    /** 地铁在线接口的最近一次探测结论；只在这里露出，主界面不显示。 */
+    val metroNote: String = ""
 )
 
 class SettingsViewModel(private val graph: AppGraph, city: City) : StateViewModel<SettingsData>(SettingsData(city)) {
     private val updates = UpdateClient()
+
+    init {
+        action { update(data.copy(metroNote = graph.metroRemote.last?.note.orEmpty())) }
+    }
     fun clearCache() = action {
         update(data.copy(cleared = false))
         graph.repository().clearCache()

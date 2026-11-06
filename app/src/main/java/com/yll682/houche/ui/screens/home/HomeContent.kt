@@ -35,6 +35,7 @@ import com.yll682.houche.ui.theme.HeaderTop
     locate: () -> Unit, search: () -> Unit, cities: () -> Unit,
     line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit,
     modifier: Modifier = Modifier,
+    metro: ((String?) -> Unit)? = null,
     settingsContent: @Composable () -> Unit = {}
 ) {
     val data = state.data ?: HomeData()
@@ -42,7 +43,8 @@ import com.yll682.houche.ui.theme.HeaderTop
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { HomeHeader(city, cities, locate, search, searchable = segment != 2, refreshable = segment != 2) },
+        topBar = { HomeHeader(city, cities, locate, search, searchable = segment != 2, refreshable = segment != 2,
+            metro = if (data.hasMetro && segment == 0) metro else null) },
         bottomBar = { HomeBottomBar(segment, selectSegment) }
     ) { padding ->
         if (segment == 2) {
@@ -157,7 +159,7 @@ import com.yll682.houche.ui.theme.HeaderTop
 }
 
 /** 蓝色渐变顶栏：城市选择 + 居中标题 + 刷新，下方是白色胶囊搜索框。 */
-@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true) {
+@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true, metro: ((String?) -> Unit)? = null) {
     Column(
         Modifier.fillMaxWidth()
             .background(Brush.verticalGradient(listOf(HeaderTop, HeaderBottom)))
@@ -183,6 +185,12 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Icon(Icons.Default.DirectionsBus, null, Modifier.size(20.dp), tint = Color.White)
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White, letterSpacing = 1.sp)
+            }
+            // 地铁是一个独立入口：只在当前城市有地铁资料时出现，不与搜索框重复。
+            if (metro != null) {
+                IconButton({ metro(null) }, Modifier.size(48.dp)) {
+                    Icon(Icons.Default.Subway, stringResource(R.string.metro), tint = Color.White)
+                }
             }
             if (refreshable) {
                 IconButton(locate, Modifier.size(48.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }

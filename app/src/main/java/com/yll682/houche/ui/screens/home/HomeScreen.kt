@@ -9,7 +9,7 @@ import com.yll682.houche.core.*
 import com.yll682.houche.ui.screens.settings.SettingsBody
 import com.yll682.houche.ui.screens.settings.SettingsViewModel
 
-@Composable fun HomeScreen(vm: HomeViewModel, settingsVm: SettingsViewModel, granted: Boolean, segment: Int, selectSegment: (Int) -> Unit, locate: () -> Unit, search: () -> Unit, cities: () -> Unit, line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit) {
+@Composable fun HomeScreen(vm: HomeViewModel, settingsVm: SettingsViewModel, granted: Boolean, segment: Int, selectSegment: (Int) -> Unit, locate: () -> Unit, search: () -> Unit, cities: () -> Unit, line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit, metro: (String?) -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     val settingsState by settingsVm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 
-data class StationData(val station: Station, val arrivals: List<Arrival> = emptyList(), val favorite: Boolean = false)
+data class StationData(val station: Station, val arrivals: List<Arrival> = emptyList(), val favorite: Boolean = false, val metro: List<MetroCalling> = emptyList())
 class StationViewModel(private val graph: AppGraph, val city: City, initial: Station) : StateViewModel<StationData>(StationData(initial)) {
     private var job: Job? = null
     private val mutex = Mutex()
@@ -26,7 +26,9 @@ class StationViewModel(private val graph: AppGraph, val city: City, initial: Sta
             mutable.value = UiState.Loading(data)
             val resolved = graph.repository().stationDetail(city, station.name, station.number, station.lat, station.lng)
             val detail = resolved.copy(distance = resolved.distance ?: station.distance)
-            update(StationData(detail, favorite = graph.prefs.favoriteStations.first().any { it.city.key == city.key && same(it.station, detail) }), detail.lines.isEmpty())
+            // 站名命中地铁站时把换乘线路一起带出来，数据是内置的，不需要额外请求。
+            val metro = graph.metro.callingAt(city, detail.name)
+            update(StationData(detail, favorite = graph.prefs.favoriteStations.first().any { it.city.key == city.key && same(it.station, detail) }, metro = metro), detail.lines.isEmpty())
             refreshLive()
         }
     }
