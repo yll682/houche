@@ -1,10 +1,10 @@
 {
-  "versionName": "1.4.0",
-  "versionCode": 6,
+  "versionName": "1.4.1",
+  "versionCode": 7,
   "released": "2026-11-06",
-  "notes": "新增地铁：1/2/3 号线站序、换乘与首末班，站点页可直接跳转换乘线路。",
+  "notes": "修复地铁入口不显示、搜索「地铁」查不到线路的问题。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.4.0/houche-v1.4.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.4.0/houche-v1.4.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.4.1/houche-v1.4.1.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.4.1/houche-v1.4.1.apk"
   }
 }

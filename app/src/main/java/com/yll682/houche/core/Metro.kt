@@ -60,10 +60,17 @@ class Metro(private val openAsset: () -> InputStream) {
         }
     }
 
-    /** 只返回当前城市有地铁资料时的那份网络，没有就返回 null，界面按「没有地铁」处理。 */
+    /**
+     * 只返回当前城市有地铁资料时的那份网络，没有就返回 null，界面按「没有地铁」处理。
+     * key / 拼音 / 市名任一命中即可：cities.json 的 key 是内部编号（厦门市是 11），
+     * 资料里的 cityKey 一旦跟它错位，整条地铁就会静默消失，这里多认两种写法兜住。
+     */
     suspend fun networkFor(city: City): MetroNetwork? {
         val all = network()
-        return all.takeIf { it.cityKey == city.key && it.openedLines.isNotEmpty() }
+        val hit = all.cityKey.equals(city.key, true) ||
+            (all.cityKey.isNotBlank() && all.cityKey.equals(city.pinyin, true)) ||
+            (all.city.isNotBlank() && all.city == city.name)
+        return all.takeIf { hit && it.openedLines.isNotEmpty() }
     }
 
     suspend fun lines(city: City, keyword: String = ""): List<MetroLine> {
