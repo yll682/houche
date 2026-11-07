@@ -1,11 +1,9 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.yll682.houche.ui.screens.metro
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -39,7 +37,8 @@ import com.yll682.houche.ui.theme.Capsule
     Page(line?.name ?: stringResource(R.string.metro), back, modifier) { padding ->
         if (line == null) {
             Box(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                EmptyState(stringResource(R.string.metro_empty))
+                if (state is UiState.Loading) LoadingSkeleton(cards = 2)
+                else EmptyState(stringResource(R.string.metro_empty))
             }
             return@Page
         }
@@ -47,12 +46,26 @@ import com.yll682.houche.ui.theme.Capsule
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.Top
         ) {
-            item { MetroHeader(line, data.lines, data.selected, data.online, select, tint) }
-            item { SectionHeader(stringResource(R.string.metro_stations), line.liveStations.size) }
+            item {
+                Box(Modifier.padding(bottom = 10.dp)) {
+                    MetroHeader(line, data.lines, data.selected, data.online, select, tint)
+                }
+            }
+            item {
+                Box(Modifier.padding(bottom = 10.dp)) {
+                    SectionHeader(
+                        stringResource(R.string.metro_stations),
+                        line.liveStations.size,
+                        // 整条线尚未运营时给短标签，同时保留全部站序。
+                        if (line.pendingCount == line.liveStations.size && line.pendingCount > 0)
+                            stringResource(R.string.metro_not_open) else null
+                    )
+                }
+            }
             itemsIndexed(line.liveStations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
-                MetroStopRow(stop, index, line.liveStations.size, tint)
+                MetroStopRow(stop, index, line.liveStations.size, tint, !stop.opened)
             }
             if (data.updated.isNotBlank()) {
                 item {
@@ -78,7 +91,7 @@ import com.yll682.houche.ui.theme.Capsule
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.metro_ends, line.from, line.to), Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                // 只有官方接口真的返回了站序才显示；探测失败时不出现任何提示。
+                // 只有官方接口真的返回了站序才显示；请求失败时不出现任何提示。
                 if (online) {
                     Spacer(Modifier.width(8.dp))
                     MetaPill(stringResource(R.string.metro_online), tint = MaterialTheme.colorScheme.primary)
@@ -94,7 +107,7 @@ import com.yll682.houche.ui.theme.Capsule
             }
             if (lines.size > 1) {
                 Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     lines.forEach { item ->
                         val active = item.id == selected
                         val itemTint = metroColor(item.color)
@@ -121,33 +134,46 @@ import com.yll682.houche.ui.theme.Capsule
     }
 }
 
-/** 竖向站序：左侧一条连续轨道串起每个站，换乘写在站名右侧。 */
-@Composable private fun MetroStopRow(stop: MetroStation, index: Int, total: Int, tint: Color) {
+/** 竖向站序：左侧连续轨道，站名下方显示首末班与换乘。 */
+@Composable private fun MetroStopRow(stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean) {
     val transferText = stop.transfer.joinToString(" / ")
-    val label = if (stop.transfer.isEmpty()) stop.name else
+    val stationLabel = if (stop.transfer.isEmpty()) stop.name else
         stringResource(R.string.metro_stop_transfer, stop.name, transferText)
+    val firstTime = if (stop.first.isNotBlank()) stringResource(R.string.first_time, stop.first) else ""
+    val lastTime = if (stop.last.isNotBlank()) stringResource(R.string.last_time, stop.last) else ""
+    val pendingText = if (pending) stringResource(R.string.metro_not_open) else ""
+    val label = listOf(stationLabel, firstTime, lastTime, pendingText).filter { it.isNotBlank() }.joinToString("，")
     val first = index == 0
     val last = index == total - 1
-    val track = tint.copy(alpha = .38f)
-    Box(Modifier.fillMaxWidth().height(52.dp).semantics(mergeDescendants = true) { contentDescription = label }) {
+    // 未开通的站点用淡色，视觉上能和已运营的分开
+    val track = tint.copy(alpha = if (pending) .16f else .38f)
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 52.dp)
+        .clearAndSetSemantics { contentDescription = label }) {
         Column(Modifier.width(34.dp).fillMaxHeight().clearAndSetSemantics {}) {
             // 上段只画到圆点中心，下段由 weight 撑到底，圆点带底色盖住接缝 → 轨道是连的。
             if (!first) Box(Modifier.align(Alignment.CenterHorizontally).width(2.dp).height(13.dp).background(track))
             Box(
                 Modifier.align(Alignment.CenterHorizontally).padding(top = if (first) 8.dp else 0.dp)
                     .size(if (stop.transfer.isEmpty()) 10.dp else 13.dp).clip(Capsule)
-                    .background(MaterialTheme.colorScheme.background).border(2.dp, tint, Capsule)
+                    .background(MaterialTheme.colorScheme.background)
+                    .border(2.dp, if (pending) tint.copy(alpha = .45f) else tint, Capsule)
             )
             if (!last) Box(Modifier.align(Alignment.CenterHorizontally).weight(1f).width(2.dp).background(track))
         }
-        Row(Modifier.fillMaxWidth().padding(start = 34.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stop.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (stop.transfer.isNotEmpty()) {
-                Spacer(Modifier.width(8.dp))
-                stop.transfer.take(2).forEach { tag ->
-                    // 换乘用中性色，跟线路色混在一起会看不出层级。
-                    MetaPill(tag)
-                    Spacer(Modifier.width(4.dp))
+        Column(Modifier.weight(1f).padding(end = 4.dp, bottom = 12.dp)) {
+            Text(
+                stop.name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (pending) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            )
+            if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
+                    val metaColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (firstTime.isNotEmpty()) Text(firstTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
+                    if (lastTime.isNotEmpty()) Text(lastTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
+                    stop.transfer.forEach { tag -> MetaPill(tag) }
                 }
             }
         }

@@ -257,9 +257,10 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 }
 
 /** 计数紧跟标题，保持辅助层级。 */
-@Composable fun SectionHeader(title: String, count: Int? = null) {
+@Composable fun SectionHeader(title: String, count: Int? = null, suffix: String? = null) {
     // 计数紧跟标题，避免右侧孤立的数字看起来像另一个条目。
-    val text = if (count == null) title else stringResource(R.string.group_count, title, count)
+    val base = if (count == null) title else stringResource(R.string.group_count, title, count)
+    val text = if (suffix.isNullOrBlank()) base else "$base  $suffix"
     Text(
         text,
         Modifier.fillMaxWidth(),
