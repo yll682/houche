@@ -1,10 +1,10 @@
 {
-  "versionName": "1.6.0",
-  "versionCode": 9,
+  "versionName": "1.6.1",
+  "versionCode": 10,
   "released": "2026-11-07",
-  "notes": "地铁改为在线优先：默认向厦门地铁官方接口取最新站序，新增 6 号线与逐站首末班，断网时静默用内置资料。",
+  "notes": "修复首页看不到地铁入口：按钮回调漏传，入口图标不显示。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.6.0/houche-v1.6.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.6.0/houche-v1.6.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.6.1/houche-v1.6.1.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.6.1/houche-v1.6.1.apk"
   }
 }

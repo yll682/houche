@@ -1,0 +1,10 @@
+验证方式：本地 Kotlin 编译器 + JUnit/Robolectric，无 Gradle，无在线地铁请求。
+
+com.yll682.houche.core.MetroDataTest: tests=16, failures=0
+com.yll682.houche.core.MetroLoaderTest: tests=7, failures=0
+com.yll682.houche.core.MetroRemoteTest: tests=18, failures=0
+com.yll682.houche.ui.screens.home.HomeMetroTest: tests=6, failures=0
+com.yll682.houche.screenshot.ScreenshotTest#homeViewModelMetro_light: tests=1, failures=0
+com.yll682.houche.screenshot.ScreenshotTest#homeMetro_light: tests=1, failures=0
+
+原实现对照：homeViewModelMetro_light 在 assertIsDisplayed 处失败，两个 ViewModel 的资料与非错误状态断言通过。

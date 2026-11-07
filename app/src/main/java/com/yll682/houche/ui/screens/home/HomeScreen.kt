@@ -14,6 +14,7 @@ import com.yll682.houche.ui.screens.settings.SettingsViewModel
     val settingsState by settingsVm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     HomeContent(state, vm.city, granted, segment, selectSegment, locate, search, cities, line, station,
+        metro = metro,
         settingsContent = {
             SettingsBody(
                 settingsState,
