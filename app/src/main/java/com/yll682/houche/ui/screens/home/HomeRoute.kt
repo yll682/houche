@@ -33,11 +33,13 @@ import com.yll682.houche.ui.components.*
         if (granted) vm.locate() else vm.denied()
     }
     LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        vm.refreshMetro()
         val now = permission()
         if (now && (!granted || data.position == null)) vm.locate()
         granted = now
     }
     fun locate() {
+        vm.refreshMetro()
         if (permission()) vm.locate()
         else if (data.permissionDenied) context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
         else launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))

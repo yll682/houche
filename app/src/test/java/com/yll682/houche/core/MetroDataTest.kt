@@ -1,9 +1,11 @@
 package com.yll682.houche.core
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
 
 /** 直接读取真实内置资源与官方抓取基准，避免演示资料掩盖城市、站数或状态失配。 */
 class MetroDataTest {
@@ -15,6 +17,93 @@ class MetroDataTest {
         val network = metro.networkFor(xiamen)
         assertNotNull("厦门市必须能取到兜底资料", network)
         assertEquals(listOf("1", "2", "3", "4", "6"), network!!.openedLines.map { it.id })
+    }
+
+    @Test fun `连续两次查询同一城市复用完整且一致的缓存`() = runBlocking {
+        val indexReads = AtomicInteger()
+        val networkReads = AtomicInteger()
+        val source = Metro(openIndex = {
+            indexReads.incrementAndGet()
+            asset("metro-cities.json").inputStream()
+        }) {
+            networkReads.incrementAndGet()
+            asset("metro.json").inputStream()
+        }
+        val first = source.networkFor(xiamen)
+        assertNotNull(first)
+        assertSame(first, source.networkFor(xiamen))
+        assertEquals(1, indexReads.get())
+        assertEquals(1, networkReads.get())
+    }
+
+    @Test fun `索引读取或解析首次失败不会缓存不支持城市的结论`() = runBlocking {
+        for (malformed in listOf(false, true)) {
+            val reads = AtomicInteger()
+            val source = Metro(openIndex = {
+                if (reads.incrementAndGet() == 1) {
+                    if (!malformed) throw IOException("索引首次读取失败")
+                    "[{".byteInputStream()
+                } else asset("metro-cities.json").inputStream()
+            }) { asset("metro.json").inputStream() }
+            assertLoadFailure { source.networkFor(xiamen) }
+            assertTrue(source.supports(xiamen))
+            assertNotNull(source.networkFor(xiamen))
+            assertEquals(2, reads.get())
+        }
+    }
+
+    @Test fun `站表读取或解析首次失败不污染缓存且后续可重试`() = runBlocking {
+        for (malformed in listOf(false, true)) {
+            val reads = AtomicInteger()
+            val source = Metro(openIndex = { asset("metro-cities.json").inputStream() }) {
+                if (reads.incrementAndGet() == 1) {
+                    if (!malformed) throw IOException("站表首次读取失败")
+                    "{\"lines\":[".byteInputStream()
+                } else asset("metro.json").inputStream()
+            }
+            assertLoadFailure { source.networkFor(xiamen) }
+            assertTrue(source.supports(xiamen))
+            val recovered = source.networkFor(xiamen)
+            assertNotNull(recovered)
+            assertEquals(5, recovered!!.openedLines.size)
+            assertSame(recovered, source.networkFor(xiamen))
+            assertSame(recovered, source.network())
+            assertEquals(2, reads.get())
+        }
+    }
+
+    @Test fun `并发查询城市索引和完整站表只发布一次成功缓存`() = runBlocking {
+        withTimeout(5_000) {
+            val indexReads = AtomicInteger()
+            val networkReads = AtomicInteger()
+            val source = Metro(openIndex = {
+                indexReads.incrementAndGet()
+                asset("metro-cities.json").inputStream()
+            }) {
+                networkReads.incrementAndGet()
+                asset("metro.json").inputStream()
+            }
+            (0 until 30).map { index ->
+                async(Dispatchers.Default) {
+                    when (index % 3) {
+                        0 -> assertTrue(source.supports(xiamen))
+                        1 -> assertEquals(5, source.network().openedLines.size)
+                        else -> assertEquals(5, source.networkFor(xiamen)!!.openedLines.size)
+                    }
+                }
+            }.awaitAll()
+            assertEquals(1, indexReads.get())
+            assertEquals(1, networkReads.get())
+        }
+    }
+
+    private suspend fun assertLoadFailure(load: suspend () -> Unit) {
+        try {
+            load()
+            fail("读取或解析失败必须抛出异常，不能缓存为没有资料")
+        } catch (error: BusException) {
+            assertNotNull(error.cause)
+        }
     }
 
     @Test fun `城市索引与内置站表一致且区号变更不影响匹配`() = runBlocking {

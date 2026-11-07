@@ -9,10 +9,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
+import com.yll682.houche.AppGraph
+import com.yll682.houche.PageEntry
+import com.yll682.houche.Screen
+import com.yll682.houche.model
 import com.yll682.houche.core.*
 import com.yll682.houche.data.Position
 import com.yll682.houche.ui.UiState
@@ -154,12 +161,17 @@ class ScreenshotTest {
         return bitmap.asImageBitmap()
     }
 
-    private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, content: @Composable () -> Unit) {
+    private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, ready: () -> Boolean = { true }, content: @Composable () -> Unit) {
         org.robolectric.RuntimeEnvironment.setQualifiers(if (dark) "+night" else "+notnight")
         compose.setContent {
             MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
             }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.waitForIdle()
+            ready()
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
@@ -232,6 +244,46 @@ class ScreenshotTest {
             UiState.Success(HomeData(stations = listOf(stop), position = Position(24.48, 118.13), cityResolved = true, hasMetro = true)),
             city, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }, metro = {}
         )
+    }
+
+    /** 经过真实城市表、共享资料、ViewModel 和 HomeScreen，防止中间层漏传入口回调。 */
+    @Test fun homeViewModelMetro_light() {
+        val graph = AppGraph(ApplicationProvider.getApplicationContext())
+        val xiamen = kotlinx.coroutines.runBlocking { graph.cities.all().single { it.name == "厦门市" } }
+        assertEquals("11", xiamen.key)
+        val entry = PageEntry(Screen.Home)
+        var homeVm: HomeViewModel? = null
+        var settingsVm: SettingsViewModel? = null
+        var opened = false
+        var selectedLine: String? = "尚未点击"
+        try {
+            capture("home-metro-viewmodel", false, ready = {
+                homeVm?.state?.value?.data?.hasMetro == true &&
+                    settingsVm?.state?.value?.data?.metroSource?.isNotBlank() == true
+            }) {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides entry) {
+                    val home = model(key = xiamen.key) { HomeViewModel(graph, xiamen) }
+                    val settings = model(key = "settings-${xiamen.key}") { SettingsViewModel(graph, xiamen) }
+                    homeVm = home
+                    settingsVm = settings
+                    HomeScreen(home, settings, false, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }, metro = {
+                        opened = true
+                        selectedLine = it
+                    })
+                }
+            }
+            assertFalse("首页读取地铁资料不应进入错误态", homeVm!!.state.value is UiState.Error)
+            assertFalse("设置读取同份资料不应进入错误态", settingsVm!!.state.value is UiState.Error)
+            val metro = compose.onNodeWithContentDescription("地铁")
+            metro.assertIsDisplayed().assertHasClickAction()
+            val refresh = compose.onNodeWithContentDescription("刷新").assertIsDisplayed()
+            assertTrue("地铁入口应在刷新左边", metro.fetchSemanticsNode().boundsInRoot.right <= refresh.fetchSemanticsNode().boundsInRoot.left)
+            metro.performClick()
+            assertTrue("地铁按钮必须触发导航回调", opened)
+            assertNull("顶栏入口应打开地铁首页", selectedLine)
+        } finally {
+            compose.runOnUiThread { entry.viewModelStore.clear() }
+        }
     }
     @Test fun stationMetro_light() = capture("station-metro", false) {
         StationContent(UiState.Success(StationData(Station("吕厝", "SM000170", 365.0, lines = lines), arrivals, true,

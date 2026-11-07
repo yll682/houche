@@ -89,25 +89,29 @@ class Metro(private val openIndex: () -> InputStream, private val openAsset: () 
     /** 只查随内置资料提供的城市索引，不依赖电话区号，也不提前读取完整站表。 */
     suspend fun supports(city: City): Boolean = withContext(Dispatchers.IO) {
         mutex.withLock {
-            val cities = cachedCities ?: try {
-                BusNetwork.json.decodeFromString<List<MetroCity>>(openIndex().bufferedReader(Charsets.UTF_8).use { it.readText() })
-                    .also { cachedCities = it }
-            } catch (error: Exception) {
-                throw failure(error, "地铁城市索引加载失败")
-            }
-            cities.any { it.matches(city) }
+            citiesLocked().any { it.matches(city) }
         }
     }
 
     suspend fun network(): MetroNetwork = withContext(Dispatchers.IO) {
         mutex.withLock {
-            cached ?: try {
-                val network = BusNetwork.json.decodeFromString<MetroNetwork>(openAsset().bufferedReader(Charsets.UTF_8).use { it.readText() })
-                network.copy(lines = metroTransfers(network.lines)).also { cached = it }
-            } catch (error: Exception) {
-                throw failure(error, "地铁资料加载失败")
-            }
+            networkLocked()
         }
+    }
+
+    // 只在持锁期间调用；读取、解析和换乘补齐全部成功后才写入缓存，失败可重新读取。
+    private fun citiesLocked(): List<MetroCity> = cachedCities ?: try {
+        BusNetwork.json.decodeFromString<List<MetroCity>>(openIndex().bufferedReader(Charsets.UTF_8).use { it.readText() })
+            .also { cachedCities = it }
+    } catch (error: Exception) {
+        throw failure(error, "地铁城市索引加载失败")
+    }
+
+    private fun networkLocked(): MetroNetwork = cached ?: try {
+        val network = BusNetwork.json.decodeFromString<MetroNetwork>(openAsset().bufferedReader(Charsets.UTF_8).use { it.readText() })
+        network.copy(lines = metroTransfers(network.lines)).also { cached = it }
+    } catch (error: Exception) {
+        throw failure(error, "地铁资料加载失败")
     }
 
     /**
@@ -115,11 +119,14 @@ class Metro(private val openIndex: () -> InputStream, private val openAsset: () 
      * key / 拼音 / 市名任一命中即可：cities.json 的 key 是内部编号（厦门市是 11），
      * 资料里的 cityKey 一旦跟它错位，整条地铁就会静默消失，这里多认两种写法兜住。
      */
-    suspend fun networkFor(city: City): MetroNetwork? {
-        if (!supports(city)) return null
-        val all = network()
-        val hit = MetroCity(all.city, all.cityKey).matches(city)
-        return all.takeIf { hit && it.openedLines.isNotEmpty() }
+    suspend fun networkFor(city: City): MetroNetwork? = withContext(Dispatchers.IO) {
+        // 城市判断与完整站表读取属于同一次查询，不能在两次独立加锁之间让出。
+        mutex.withLock {
+            if (!citiesLocked().any { it.matches(city) }) return@withLock null
+            val all = networkLocked()
+            val hit = MetroCity(all.city, all.cityKey).matches(city)
+            all.takeIf { hit && it.openedLines.isNotEmpty() }
+        }
     }
 
     suspend fun lines(city: City, keyword: String = ""): List<MetroLine> {
