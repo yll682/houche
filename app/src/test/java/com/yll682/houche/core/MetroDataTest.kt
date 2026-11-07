@@ -1,86 +1,116 @@
 package com.yll682.houche.core
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
 
-/**
- * 用仓库里真实的 assets/metro.json 和 cities.json 做回归：
- * 曾经把 cityKey 写成 "xiamen"，而厦门市的真实 key 是 "11"，导致地铁整块静默消失，
- * 截图测试用的是演示数据所以没发现。这里直接读真实资源，堵住这类失配。
- */
+/** 直接读取真实内置资源与官方抓取基准，避免演示资料掩盖城市、站数或状态失配。 */
 class MetroDataTest {
-
-    private val metro = Metro { File("src/main/assets/metro.json").inputStream() }
+    private fun asset(name: String): File = sequenceOf(File("src/main/assets/$name"), File("app/src/main/assets/$name")).first { it.isFile }
+    private val metro = Metro(openIndex = { asset("metro-cities.json").inputStream() }) { asset("metro.json").inputStream() }
     private val xiamen = City(key = "11", name = "厦门市", code = "0592", province = "福建", pinyin = "xiamen")
 
-    @Test fun `真实城市 key 能命中地铁资料`() {
-        val network = kotlinx.coroutines.runBlocking { metro.networkFor(xiamen) }
-        assertNotNull("厦门市(key=11) 必须能取到地铁资料，否则首页入口会消失", network)
-        assertEquals(4, network!!.openedLines.size)
+    @Test fun `真实城市 key 能命中五条地铁线路`() = runBlocking {
+        val network = metro.networkFor(xiamen)
+        assertNotNull("厦门市必须能取到兜底资料", network)
+        assertEquals(listOf("1", "2", "3", "4", "6"), network!!.openedLines.map { it.id })
     }
 
-    @Test fun `三条线的站数取自内置资料`() {
-        val network = kotlinx.coroutines.runBlocking { metro.networkFor(xiamen) }!!
-        val counts = network.openedLines.associate { it.id to it.liveStations.size }
-        // 站数与颜色均取自厦门地铁官方 App 内置线路图 xm_20260609_1.svg
-        assertEquals(24, counts["1"])
-        assertEquals(30, counts["2"])
-        assertEquals(21, counts["3"])
-        assertEquals(8, counts["4"])
-        assertEquals("#DA7028", network.openedLines.first { it.id == "1" }.color)
-        assertEquals("#E50012", network.openedLines.first { it.id == "4" }.color)
+    @Test fun `城市索引与内置站表一致且区号变更不影响匹配`() = runBlocking {
+        val index = BusNetwork.json.decodeFromString<List<MetroCity>>(asset("metro-cities.json").readText())
+        val network = metro.network()
+        assertEquals(listOf(MetroCity(network.city, network.cityKey)), index)
+        assertTrue(network.openedLines.isNotEmpty())
+        assertTrue(metro.supports(xiamen.copy(code = "已变更")))
+        assertNotNull(metro.networkFor(xiamen.copy(code = "")))
+        assertTrue(metro.supports(City(key = "11", name = "")))
+        assertTrue(metro.supports(City(key = "", name = "厦门市")))
+        assertFalse(metro.supports(City(key = "1", name = "北京市", code = "0592")))
+        assertFalse(metro.supports(City(key = "", name = "")))
     }
 
-    @Test fun `每个 cityKey 都能被真实城市表命中`() {
-        val network = kotlinx.coroutines.runBlocking { metro.network() }
-        val cities = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-            .decodeFromString<List<City>>(File("src/main/assets/cities.json").readText())
-        // 资料里的 cityKey 必须在城市表里真实存在，否则 networkFor 永远返回 null。
-        val hit = cities.any { it.key == network.cityKey || it.pinyin == network.cityKey || it.name == network.city }
-        assertTrue("cityKey=${network.cityKey} 在城市表里找不到对应城市", hit)
+    @Test fun `查询城市索引和不支持的城市不读取完整内置站表`() = runBlocking {
+        var opened = false
+        val source = Metro(openIndex = { asset("metro-cities.json").inputStream() }) {
+            opened = true
+            asset("metro.json").inputStream()
+        }
+        assertTrue(source.supports(xiamen))
+        assertNull(source.networkFor(City(key = "1", name = "北京市", code = "0592")))
+        assertFalse(opened)
     }
 
-    @Test fun `换乘查询能跨线路命中`() {
-        val calls = kotlinx.coroutines.runBlocking { metro.callingAt(xiamen, "吕厝") }
+    @Test fun `内置兜底与官方完整抓取基准逐字段一致`() {
+        val bundled = BusNetwork.json.parseToJsonElement(asset("metro.json").readText())
+        val official = BusNetwork.json.parseToJsonElement(MetroFixtures.file("metro-from-api.json").readText())
+        assertEquals(official, bundled)
+    }
+
+    @Test fun `五条线共一百零二站且保留官方线路色`() = runBlocking {
+        val lines = metro.networkFor(xiamen)!!.openedLines
+        assertEquals(mapOf("1" to 24, "2" to 32, "3" to 21, "4" to 8, "6" to 17), lines.associate { it.id to it.liveStations.size })
+        assertEquals(102, lines.sumOf { it.liveStations.size })
+        assertEquals(mapOf("1" to "#DA7028", "2" to "#52A441", "3" to "#52B5C8", "4" to "#E50012", "6" to "#92308D"), lines.associate { it.id to it.color })
+    }
+
+    @Test fun `未运营站点照常展示而非过滤掉`() = runBlocking {
+        val lines = metro.networkFor(xiamen)!!.openedLines
+        assertEquals(mapOf("1" to 0, "2" to 0, "3" to 0, "4" to 8, "6" to 17), lines.associate { it.id to it.pendingCount })
+        assertTrue(lines.filter { it.id in setOf("4", "6") }.all { line -> line.liveStations.all { !it.opened } })
+        val mixed = MetroLine("测试", "测试线路", stations = listOf(MetroStation(2, "未运营站", opened = false), MetroStation(1, "运营站")))
+        assertEquals(listOf("运营站", "未运营站"), mixed.liveStations.map { it.name })
+        assertEquals(1, mixed.pendingCount)
+    }
+
+    @Test fun `逐站时间坐标与站码保留且站序递增`() = runBlocking {
+        val lines = metro.networkFor(xiamen)!!.openedLines
+        lines.forEach { line ->
+            assertEquals(line.stations.size, line.stations.map { it.code }.distinct().size)
+            assertEquals(line.stations.map { it.code }.sorted(), line.liveStations.map { it.code })
+            assertEquals((1..line.stations.size).toList(), line.liveStations.map { it.order })
+        }
+        val station = lines.first().stations.first()
+        assertEquals("01010000", station.code)
+        assertEquals("06:00", station.first)
+        assertEquals("23:00", station.last)
+        assertEquals("118.089852", station.lng)
+        assertEquals("24.457147", station.lat)
+        assertEquals("集美软件园北", lines.first { it.id == "4" }.from)
+        assertEquals("角江路", lines.first { it.id == "6" }.from)
+    }
+
+    @Test fun `资料城市能被真实城市表命中`() = runBlocking {
+        val network = metro.network()
+        val cities = BusNetwork.json.decodeFromString<List<City>>(asset("cities.json").readText())
+        assertTrue(cities.any { it.key == network.cityKey && it.name == network.city })
+    }
+
+    @Test fun `同名站的换乘查询与标注双向对称`() = runBlocking {
+        val calls = metro.callingAt(xiamen, "吕厝站")
         assertEquals(listOf("1", "2"), calls.map { it.line.id }.sorted())
+        assertEquals(listOf("二号线"), calls.first { it.line.id == "1" }.station.transfer)
+        assertEquals(listOf("一号线"), calls.first { it.line.id == "2" }.station.transfer)
+        val hongkeng = metro.callingAt(xiamen, "洪坑")
+        assertEquals(listOf("四号线"), hongkeng.first { it.line.id == "3" }.station.transfer)
+        assertEquals(listOf("三号线"), hongkeng.first { it.line.id == "4" }.station.transfer)
     }
 
-    @Test fun `换乘标注双向对称`() {
-        val network = kotlinx.coroutines.runBlocking { metro.networkFor(xiamen) }!!
-        val byName = network.openedLines.flatMap { line ->
-            line.liveStations.map { line.id to it.name to it.transfer }
-        }.toMap()
-        // 吕厝：1 号线换 2 号线，2 号线换 1 号线
-        assertEquals(listOf("2号线"), byName["1" to "吕厝"])
-        assertEquals(listOf("1号线"), byName["2" to "吕厝"])
-        // 洪坑：3 号线换 4 号线（4 号线试乘段）
-        assertEquals(listOf("4号线"), byName["3" to "洪坑"])
-        assertEquals(listOf("3号线"), byName["4" to "洪坑"])
+    @Test fun `官方站表未提供的国铁与 BRT 换乘不补造`() = runBlocking {
+        val calls = metro.callingAt(xiamen, "厦门北站")
+        assertEquals(listOf("1", "4"), calls.map { it.line.id }.sorted())
+        assertTrue(calls.all { "国铁" !in it.station.transfer && "BRT" !in it.station.transfer })
     }
 
-    @Test fun `厦门北站换乘含国铁与 BRT`() {
-        val network = kotlinx.coroutines.runBlocking { metro.networkFor(xiamen) }!!
-        val line1 = network.openedLines.first { it.id == "1" }
-        val transfer = line1.liveStations.first { it.name == "厦门北站" }.transfer
-        assertTrue("厦门北站应有国铁换乘", transfer.contains("国铁"))
-        assertTrue("厦门北站应有 BRT 换乘", transfer.contains("BRT"))
+    @Test fun `别的城市没有厦门地铁资料`() = runBlocking {
+        assertNull(metro.networkFor(City(key = "1", name = "北京市", pinyin = "beijing")))
     }
 
-    @Test fun `别的城市没有地铁资料`() {
-        val other = City(key = "1", name = "北京市", pinyin = "beijing")
-        assertNull(kotlinx.coroutines.runBlocking { metro.networkFor(other) })
-    }
-
-    @Test fun `关键词能搜到地铁线路`() {
-        val hit = kotlinx.coroutines.runBlocking { metro.lines(xiamen, "地铁") }
-        assertEquals(4, hit.size)
-        assertTrue(kotlinx.coroutines.runBlocking { metro.lines(xiamen, "吕厝") }.isNotEmpty())
-        assertTrue(kotlinx.coroutines.runBlocking { metro.lines(xiamen, "岩内") }.any { it.id == "1" })
-        // 4 号线的站也应能被搜到
-        assertTrue(kotlinx.coroutines.runBlocking { metro.lines(xiamen, "集美软件园") }.any { it.id == "4" })
+    @Test fun `关键词能搜到五条线并保留未运营线路`() = runBlocking {
+        assertEquals(5, metro.lines(xiamen, "地铁").size)
+        assertTrue(metro.lines(xiamen, "吕厝").isNotEmpty())
+        assertTrue(metro.lines(xiamen, "岩内").any { it.id == "1" })
+        assertTrue(metro.lines(xiamen, "集美软件园北").any { it.id == "4" })
+        assertTrue(metro.lines(xiamen, "角江路").any { it.id == "6" })
     }
 }

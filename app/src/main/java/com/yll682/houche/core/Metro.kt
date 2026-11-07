@@ -8,16 +8,21 @@ import kotlinx.serialization.Serializable
 import java.io.InputStream
 
 /**
- * 地铁线路资料。站序、线路色与换乘全部取自厦门地铁官方 App 内置的运营线路图
- * （res/raw/xm_20260609_1.svg，元素 ID 自带线路与站序），由 analysis/extract_svg.py 提取。
- * 官方网关 app.i-amtr.com 的签名算法也已还原（见 MetroRemote），但它要求登录态，
- * 匿名拿不到数据，所以线网资料走内置资源，和 cities.json 同一套做法。
+ * 地铁资料的内置兜底。站表来自官方接口抓取快照，线路色来自官方 App。
+ * 地铁页由 MetroLoader 优先请求在线站表；本类也为离线搜索与站点换乘提供资料。
  */
 @Serializable data class MetroStation(
     val order: Int,
     val name: String,
     val transfer: List<String> = emptyList(),
-    val opened: Boolean = true
+    val opened: Boolean = true,
+    /** 官方站码，形如 01010000；接口与线路图共用同一套编号。 */
+    val code: String = "",
+    /** 往本方向的首末班时间；末班可能为「次日00:00」。 */
+    val first: String = "",
+    val last: String = "",
+    val lng: String = "",
+    val lat: String = ""
 )
 
 @Serializable data class MetroLine(
@@ -31,32 +36,74 @@ import java.io.InputStream
     val last: String = "",
     val stations: List<MetroStation> = emptyList()
 ) {
-    /** 已开通的站点，按站序排好；未开通段不参与展示。 */
-    val liveStations: List<MetroStation> get() = stations.filter { it.opened }.sortedBy { it.order }
+    /**
+     * 全部站点按站序排好。
+     * 官方接口用 showFlag 标记站点当前是否在运营图上显示（4、6 号线整条都还没正式运营），
+     * 仍保留这些站序供查看，只在界面上区分样式。
+     */
+    val liveStations: List<MetroStation> get() = stations.sortedBy { it.order }
+
+    /** 尚未正式运营的站点数量，用于界面上的状态提示。 */
+    val pendingCount: Int get() = stations.count { !it.opened }
 }
 
 @Serializable data class MetroNetwork(
     val city: String = "",
     val cityKey: String = "",
     val updated: String = "",
-    /** 站序出处，例如「厦门地铁官方App线路图 xm_20260609_1.svg」。 */
+    /** 站序出处，例如「厦门地铁官方接口 pub/station/allStation」。 */
     val source: String = "",
     val lines: List<MetroLine> = emptyList()
 ) {
-    val openedLines: List<MetroLine> get() = lines.filter { it.opened && it.liveStations.isNotEmpty() }
+    /** 展示的线路：只要有站点就展示，未正式运营的线路由界面另行标注。 */
+    val openedLines: List<MetroLine> get() = lines.filter { it.liveStations.isNotEmpty() }
 }
 
 /** 某个地铁站经过的线路，用于在站点页标注换乘。 */
 data class MetroCalling(val line: MetroLine, val station: MetroStation)
 
-class Metro(private val openAsset: () -> InputStream) {
+/** 依据同份官方站表的同名站补齐地铁换乘，不补造国铁或 BRT 信息。 */
+internal fun metroTransfers(lines: List<MetroLine>): List<MetroLine> {
+    val calling = lines.flatMap { line -> line.stations.map { it.name to line } }.groupBy({ it.first }, { it.second })
+    return lines.map { line ->
+        line.copy(stations = line.stations.map { station ->
+            val transfers = calling[station.name].orEmpty().filter { it.id != line.id }
+                .map { it.name.removePrefix("地铁") }
+            station.copy(transfer = (station.transfer + transfers).distinct())
+        })
+    }
+}
+
+/** 城市索引与站表分开存放，判断覆盖范围时无需读取完整站序。 */
+@Serializable internal data class MetroCity(val city: String, val cityKey: String) {
+    fun matches(candidate: City): Boolean =
+        (cityKey.isNotBlank() && (cityKey.equals(candidate.key, true) || cityKey.equals(candidate.pinyin, true))) ||
+            (city.isNotBlank() && city == candidate.name)
+}
+
+class Metro(private val openIndex: () -> InputStream, private val openAsset: () -> InputStream) {
     private val mutex = Mutex()
     private var cached: MetroNetwork? = null
+    private var cachedCities: List<MetroCity>? = null
+
+    /** 只查随内置资料提供的城市索引，不依赖电话区号，也不提前读取完整站表。 */
+    suspend fun supports(city: City): Boolean = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val cities = cachedCities ?: try {
+                BusNetwork.json.decodeFromString<List<MetroCity>>(openIndex().bufferedReader(Charsets.UTF_8).use { it.readText() })
+                    .also { cachedCities = it }
+            } catch (error: Exception) {
+                throw failure(error, "地铁城市索引加载失败")
+            }
+            cities.any { it.matches(city) }
+        }
+    }
 
     suspend fun network(): MetroNetwork = withContext(Dispatchers.IO) {
         mutex.withLock {
             cached ?: try {
-                BusNetwork.json.decodeFromString<MetroNetwork>(openAsset().bufferedReader(Charsets.UTF_8).use { it.readText() }).also { cached = it }
+                val network = BusNetwork.json.decodeFromString<MetroNetwork>(openAsset().bufferedReader(Charsets.UTF_8).use { it.readText() })
+                network.copy(lines = metroTransfers(network.lines)).also { cached = it }
             } catch (error: Exception) {
                 throw failure(error, "地铁资料加载失败")
             }
@@ -69,10 +116,9 @@ class Metro(private val openAsset: () -> InputStream) {
      * 资料里的 cityKey 一旦跟它错位，整条地铁就会静默消失，这里多认两种写法兜住。
      */
     suspend fun networkFor(city: City): MetroNetwork? {
+        if (!supports(city)) return null
         val all = network()
-        val hit = all.cityKey.equals(city.key, true) ||
-            (all.cityKey.isNotBlank() && all.cityKey.equals(city.pinyin, true)) ||
-            (all.city.isNotBlank() && all.city == city.name)
+        val hit = MetroCity(all.city, all.cityKey).matches(city)
         return all.takeIf { hit && it.openedLines.isNotEmpty() }
     }
 

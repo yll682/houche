@@ -7,15 +7,24 @@
 
 | 项目 | 结果 |
 | --- | --- |
-| 线网数据来源 | **官方 App 内置运营线路图** `res/raw/xm_20260609_1.svg`，元素 ID 自带线路与站序 |
-| 线路 | 1/2/3/4 号线，合计 83 站（24 + 30 + 21 + 8） |
-| 线路色 | 1 号线 `#DA7028`、2 号线 `#52A441`、3 号线 `#52B5C8`、4 号线 `#E50012` |
+| 线网数据来源 | **官方在线站表接口优先**；`assets/metro.json` 保存同接口抓取的内置兜底快照 |
+| 线路 | 1/2/3/4/6 号线，合计 102 站（24 + 32 + 21 + 8 + 17），另有 BRT 45 站不作地铁展示 |
+| 线路色 | 1 号线 `#DA7028`、2 号线 `#52A441`、3 号线 `#52B5C8`、4 号线 `#E50012`，取自官方线路图；6 号线 `#92308D` 取自 `bg_route_line6` |
 | 加固 | 蛮犀（`com.mx.shell` + `libmxldd.so` / `libvmd.so`） |
 | 脱壳 | **成功**：MX 容器两层变换全解，四份 DEX 原始 SHA-1 / Adler-32 全部吻合，恢复 19,054 个方法体 |
 | 网关签名 | **已还原**（见第 4 节） |
-| 线上验证 | **未完成**：实测期间官方处于后台维护窗口（2026-11-07 00:30–4:30），响应不可信 |
+| 线上验证 | **已在境内网络实测通过**：福建厦门机器匿名请求成功，空 token 被接受 |
+| 架构 | 每次进页先启动在线请求，内置快照供等待时展示；在线成功整份替换并标「在线」，失败静默保留内置 |
 
-## 1. 数据来源：官方 App 内置线网图
+## 1. 数据来源：官方站表与线路图
+
+当前内置资源与在线数据均取自 `POST https://app.i-amtr.com/iets-web-app/pub/station/allStation`。
+境内实测返回 147 个站点：METRO 102 个，BRT 45 个；客户端只把 `vehicle=METRO` 分组成地铁线路。
+二号线接口有 32 站，六号线有 17 站，均完整保留，不受旧线路图的节点数量限制。
+`showFlag=false` 的四、六号线仍可查看站序，并使用「未运营」短标签和弱化样式。
+逐站首末班及经纬度均来自接口；缺失时间留空，不从旧快照补入在线站表。
+
+以下保留线路图提取的历史证据，用于核对线路色与解释旧数据的差异，不再作为站表主来源。
 
 APK 里带 6 份线路图 SVG（资源名被混淆成 `Xlu.svg` 这类随机短码，原始名在 `resources.arsc` 里）：
 
@@ -54,15 +63,15 @@ SVG 元素 ID 是结构化的，站序不用靠几何推断：
 提取脚本：[`analysis/extract_svg.py`](../../analysis/extract_svg.py)（纯标准库）。
 独立复核：Codex 从同一批 SVG 另行提取，两边**逐站一致、颜色一致**。
 
-### 1.1 口径
+### 1.1 历史线路图提取口径
 
 - 灰色节点 = 待开通，不计入运营站序（4 号线「翔安机场」因此被排除）
 - 换乘只取图中共用坐标的站点，以及图上标注的火车站 / BRT 换乘
 - 首末班时间线路图里没有，置空，不用外部资料填
-- 6 号线只恢复了 UI 颜色 `#92308D`（`res/values/colors.xml#bg_route_line6`），
-  **没有站序**，因此不进 App；凭颜色编路线属于造假
+- 图中没有 6 号线站序，只能恢复 UI 颜色 `#92308D`（`res/values/colors.xml#bg_route_line6`）。
+  当前六号线的 17 个站点由官方站表接口提供，不由颜色或外部资料推测。
 
-### 1.2 与旧数据的差异
+### 1.2 历史线路图与早期数据的差异
 
 此前 App 里的地铁资料来自中文维基百科，与官方线网图有实质出入：
 
@@ -159,6 +168,9 @@ pub/login/oauth                 pub/auth/queryChannelInfo
 
 ## 4. 签名算法（原生生产版本）
 
+请求方法固定为 **POST**，完整地址为 `https://app.i-amtr.com/iets-web-app/pub/station/allStation`。
+站表查询没有 query 参数，也不发送 `requestData`。
+
 地铁站表走 `/iets-web-app/`，由 `HeaderParamInterceptor` 处理
 （`analysis/work/mx/restored_jadx/sources/com/luqiao/xmmetro/base/api/HeaderParamInterceptor.java`）：
 
@@ -166,24 +178,36 @@ pub/login/oauth                 pub/auth/queryChannelInfo
 S = QLJ1aZjhhTEm6RiN
 K = AMTR-IETS-0002
 
-origin = S&app-version=V&client-key=K&client-id=1&client-type=android&device-id=D
-         &timestamp=T&token=TOKEN&ticket-log=L&S[&k=v...]
+origin = S&app-version=V&client-key=K&client-id=1&client-type=android&device-id=D&timestamp=T&token=TOKEN&ticket-log=L&S[&k=v...]
 sign   = Base64_NO_WRAP(ASCII(uppercaseHex(MD5(UTF8(origin)))))
 
 V = 4.0.9（实际安装版本）  D = DeviceIdUtil 派生  T = 毫秒时间戳
 TOKEN = 登录态，未登录为空串   L = 票务日志，通常为空
 ```
 
+若其他接口 query 带 `requestData`，先用同一 AES 密钥解密其中的 JSON 参数，按 TreeMap 的键升序在末尾追加 `&k=v`。
+
 请求头：`client-id: 1`、`client-type: android`、`client-key: AMTR-IETS-0002`、
 `device-id: D`、`timestamp: T`、`token: TOKEN`、`app-version: 4.0.9`、
 `version: 3.0`、`sign`、`ticket-log`、`device-model`、`area-code`、
 `Accept-Encoding: gzip`、`longitude`、`latitude`。**这一支没有 `app-id` 头。**
+未登录的 `token`、`ticket-log`、`device-model`、`area-code`、`longitude`、`latitude` 均发送空串。
+仅在响应的 `Content-Encoding` 含 `gzip` 时用 JDK `GZIPInputStream` 解压；声明接受 gzip 但响应无压缩头时，直接读取明文 JSON。
 
 `device-id` 的派生（`DeviceIdUtil.getDeviceId`）：`AES/ECB/PKCS5Padding(android_id, "QLJ1aZjhhTEm6RiN")`
 的前 50 个字符，十六进制转字符串、大写。
+候车使用固定自有编号 `houche-android-metro-client` 代替 Android ID，按同一算法派生稳定设备编号；不生成随机数。
 
-响应体是 `{"responseData": "<大写hex>"}`，用同一密钥 AES/ECB/PKCS5Padding 解密，
-即得 JSON。
+成功外层响应只有 `{"responseData":"<大写hex>"}`，不要求 `code` 或 `msg`；若显式返回非零 `code`，则按网关拒绝处理。
+用同一密钥 AES/ECB/PKCS5Padding 解密 `responseData`，得到 UTF-8 JSON：
+`{"code":0,"msg":"success","data":[站点对象,...],"ts":...,"traceId":...}`。内层 `code` 必须为零，非零时按站表接口报错处理。
+AES 密钥取 `QLJ1aZjhhTEm6RiN` 的 UTF-8 原文十六字节，不足补零，无 IV，密文是大写十六进制。
+
+站点按 `lineCode` 分组、`stationCode` 排序；`name` 为站名，`firstBusTime` / `lastBusTime` 为本方向首末班，
+`longitude` / `latitude` 为坐标，`showFlag` / `activeFlag` 为状态。
+反向时间另有 `revFirstBusTime` / `revLastBusTime`；当前页面展示本方向时间，不混用反向字段。
+`showFlag=false` 的站点照常保留、弱化显示；换乘线路依据同份站表的同名地铁站推导，不补造 BRT / 国铁信息。
+字段缺失或类型不符时安全读取；没有有效站名的条目跳过，未知线路名仍可按线路码展示，未知颜色退回主题色。
 
 ### 4.1 另两套签名（不要混用）
 
@@ -210,20 +234,40 @@ TOKEN = 登录态，未登录为空串   L = 票务日志，通常为空
 | `TRAVEL_CLIENT_SECRET_APP` | `e2tIvG8WzZaR9dmPqL5sNfKcA6xY7bHn` | 新请求 client-key 与 SM3 尾盐 |
 | `TRAVEL_SM4SECRET` | `4218fc2ebe0af24d` | 新请求 SM4 key 文本（16 字节 ASCII） |
 
-## 5. 线上验证状态
+## 5. 境内实测与架构决定
 
-**未完成。** 计划中的实测落在官方维护窗口内：
+**已在境内网络实测通过。** 2026-11-07 使用位于福建厦门的机器按上述协议请求，
+匿名空 token 被服务端接受，外层仅有 `responseData`，解密后的内层返回 `code=0`。
+共取得 147 个站点：地铁一号线 24、二号线 32、三号线 21、四号线 8、六号线 17，加 BRT 45。
+四、六号线整条 `showFlag=false`；六号线虽未进入官方 App 内置线路图，接口已有完整站序。
+早前在维护窗口内的请求不足以判断匿名可用性，该疑问现已由境内成功实测解决。
 
-> 2026年11月7日00:30-4:30进行后台系统维护
-> 发布者：厦门地铁 发布时间：2026-11-06 23:09:15
-> 2026年11月7日00:30-4:30进行后台系统维护，期间将关闭购票业务
+采用「在线优先、内置兜底」：
 
-维护期内网关返回的一切响应都不能作为签名正确性或匿名可用性的证据。
-已知事实：客户端代码允许空 token 并继续签名发请求（53 个 wrapper 无 token 检查，
-`Retrofit` 注解也没有 token-required 标签），但**服务端是否接受空 token 尚未证实**。
+1. 每次进入地铁页，先用轻量 `assets/metro-cities.json` 索引判断当前城市有无内置地铁资料，不使用电话区号。有资料时由 `MetroLoader` 以 `UNDISPATCHED` 先进入在线调用，再读取完整内置站表供即时展示；无资料时不请求在线接口，也不读取完整站表。索引随内置站表一起维护，测试核对两者城市与有效线路一致。
+2. 在线成功后整份替换线路、站序、时间与状态，并标「在线」。不与内置旧线路合并，不用内置站数限制新线路；不沿用内置发布日期。
+3. 网络、HTTP、签名、JSON、AES 或有效站序校验失败时，完全静默保留内置页面，不弹窗、不显示红色错误，也不更新现有展示状态。
+4. 请求总超时八秒，临时网络 / HTTP 故障最多重试一次；只记录最近诊断，不缓存失败结果。离开页面取消请求，再次进入重新查询。
 
-App 的处理方式保持不变：`MetroRemote` 每次只探测一次，命中就换成在线站序并标「在线」，
-未命中完全静默、继续用内置资料，探测结论只写到「设置 → 关于」。
+这种方式把数据采用的优先级与首屏展示分开：在线结果始终覆盖快照，内置仅服务等待与离线可用性。
+严格等待请求失败才绘制内置会让正常页面在断网时空等八秒，不符合即时可用的体验要求。
+逐站首末班在站名下用小字「首 / 末」展示，保留「次日00:00」等原文；四、六号线在分区标题标「未运营」（三字），轨道与站名弱化。
+
+本轮验证不请求官方网关。离线测试使用 `analysis/fixtures/metro-response-sample.json` 中真实密文验证解密与解析，
+使用 `metro-from-api.json` 校验完整内置快照，并覆盖在线三号线站序替换内置、增线与失败静默兜底。
+本次外层响应回归不运行 Gradle / build.sh，也不请求线上接口。
+
+前次离线核对结果：样本的 OpenSSL 解密与明文逐字一致；内置资源与完整抓取素材逐字段一致。
+直接调用现有 Kotlin 2.0.21 编译器、序列化与 Compose 编译插件，全部生产 Kotlin 源码检查通过；
+Android 资源经 AAPT2 编译与链接通过。直接用 JUnit 运行三组地铁测试共 29 项，全部通过。
+这些检查没有启动 Gradle / build.sh，没有访问官方接口，也没有生成或验收新的 APK；
+生产源码仅出现原有设置页的恒真条件告警。
+
+本次外层响应回归：成功外层仅含 `responseData`，`outerKeys` 同步，并增加 `10004 sign缺失` 网关错误样本。
+原有裁剪样本只有四条站点、未保留 `ts` / `traceId`，原始密文与明文均保持不变；另用明确构造的变体验证这两个字段的兼容性。
+OpenSSL 以 `enc -d -aes-128-ecb -K <密钥十六进制> -nosalt` 解密后与样本明文逐字节一致。
+直接用现有 Kotlin 编译器与 JUnit 运行三组地铁测试共 37 项，全部通过，覆盖无外层状态码的在线成功、网关拒绝、内层报错、gzip / 明文响应、城市覆盖与在线调用先于完整站表读取。
+全部生产 Kotlin 源码编译检查通过，仅有上述原有设置页告警；本次未运行 Gradle / build.sh，未请求线上接口。
 
 ## 6. 相关文件
 
@@ -239,3 +283,9 @@ App 的处理方式保持不变：`MetroRemote` 每次只探测一次，命中�
 | `analysis/work/mx/evidence/native-api-inventory.json` | 203 条原生接口清单 |
 | `analysis/work/mx/metro-official.json` | 官方线网图提取结果 |
 | `app/src/main/assets/metro.json` | App 内置的地铁资料 |
+| `app/src/main/assets/metro-cities.json` | 内置资料的轻量城市索引，供在线请求前判断覆盖范围 |
+| `analysis/fixtures/metro-response-sample.json` | 现有裁剪样本的 AES 密文与明文，外层仅含 responseData；另含网关错误样本 |
+| `analysis/fixtures/metro-from-api.json` | 官方接口完整抓取，五条线共 102 站的内置兜底基准 |
+| `app/src/main/java/com/yll682/houche/core/MetroLoader.kt` | 在线请求与即时兜底展示的加载流程 |
+
+逆向分析工作素材位于 `/data/projects/houche/analysis/`，本轮只读；当前仓库中的离线回归素材位于 `analysis/fixtures/`。

@@ -109,6 +109,7 @@
     <string name="metro_stop_transfer">%1$s，可换乘 %2$s</string>
     <string name="metro_updated">地铁资料 %1$s</string>
     <string name="metro_online">在线</string>
+    <string name="metro_not_open">未运营</string>
     <string name="metro_transfer">地铁换乘</string>
     <string name="metro_source">地铁站序来源：%1$s</string>
     <string name="metro_search_meta">%1$s，%2$d 站</string>

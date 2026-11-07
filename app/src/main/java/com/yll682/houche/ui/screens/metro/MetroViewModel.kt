@@ -3,9 +3,12 @@ package com.yll682.houche.ui.screens.metro
 import com.yll682.houche.AppGraph
 import com.yll682.houche.core.City
 import com.yll682.houche.core.MetroLine
+import com.yll682.houche.core.MetroLoader
 import com.yll682.houche.core.MetroProbe
 import com.yll682.houche.ui.StateViewModel
 import com.yll682.houche.ui.UiState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 
 /** online 表示这一屏用的是官方接口拿到的站序；note 只在「设置 → 关于」里露脸。 */
 data class MetroData(
@@ -25,44 +28,39 @@ class MetroViewModel(
     val city: City,
     initial: String? = null
 ) : StateViewModel<MetroData>(MetroData()) {
+    private val loader = MetroLoader(graph.metro::networkFor, graph.metroRemote::latest, graph.metro::supports)
+    private var loading: Job? = null
+    private var preferred = initial
+
     init {
+        mutable.value = UiState.Loading(data)
         load(initial)
     }
 
     /**
-     * 先用内置 metro.json 把界面铺满，再后台探一次官方接口。
-     * 接口通了就整体替换成在线站序；不通就保持内置，只有 note 变化，界面不该出现错误态。
+     * 进入页面立即发起在线请求；等待期间用内置资料即时展示，成功后整体采用在线资料。
+     * 新一次加载会取消上一次，避免较旧的响应覆盖最新站序。
      */
-    fun load(initial: String? = null) = action {
-        val network = graph.metro.networkFor(city)
-        if (network == null) {
-            update(MetroData(), empty = true)
-            return@action
-        }
-        val lines = network.openedLines
-        update(
-            MetroData(
-                lines = lines,
-                selected = pick(initial, lines),
-                updated = network.updated,
-                source = network.source
-            )
-        )
-
-        val probe = graph.metroRemote.latest()
-        if (!probe.online || probe.lines.isEmpty()) {
-            update(data.copy(note = probe.note))
-            return@action
-        }
-        val online = probe.lines
-        update(
-            data.copy(
-                lines = online,
-                selected = pick(data.selected.ifBlank { initial }, online),
-                online = true,
-                note = probe.note
-            )
-        )
+    fun load(initial: String? = null): Job {
+        loading?.cancel()
+        if (initial != null) preferred = initial
+        return action {
+            loader.load(city).collect { snapshot ->
+                val network = snapshot.network
+                val lines = network?.openedLines.orEmpty()
+                update(
+                    MetroData(
+                        lines = lines,
+                        selected = pick(preferred ?: data.selected, lines),
+                        updated = network?.updated.orEmpty(),
+                        source = network?.source.orEmpty(),
+                        online = snapshot.online,
+                        note = snapshot.note
+                    ),
+                    empty = lines.isEmpty()
+                )
+            }
+        }.also { loading = it }
     }
 
     private fun pick(candidate: String?, lines: List<MetroLine>): String =
@@ -70,6 +68,7 @@ class MetroViewModel(
 
     fun select(id: String) {
         if (data.lines.none { it.id == id }) return
+        preferred = id
         val value = data.copy(selected = id)
         mutable.value = when (val old = mutable.value) {
             is UiState.Error -> old.copy(data = value)
@@ -81,6 +80,6 @@ class MetroViewModel(
 
     fun retry() = load(data.selected.ifBlank { null })
 
-    /** 供「设置 → 关于」读取的最近一次探测结论。 */
-    fun lastProbe(): MetroProbe = MetroProbe(online = data.online, note = data.note)
+    /** 读取最近一次请求的诊断；失败原因不进入地铁页状态。 */
+    fun lastProbe(): MetroProbe = graph.metroRemote.last ?: MetroProbe(online = false, note = "")
 }

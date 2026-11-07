@@ -1,512 +1,1290 @@
 {
   "city": "厦门市",
   "cityKey": "11",
-  "updated": "2026-11-06",
-  "source": "厦门地铁官方App线路图 xm_20260609_1.svg",
+  "updated": "2026-11-07",
+  "source": "厦门地铁官方接口 pub/station/allStation（线路色取自官方线路图）",
   "lines": [
     {
       "id": "1",
-      "name": "地铁1号线",
+      "name": "地铁一号线",
       "color": "#DA7028",
       "from": "镇海路",
       "to": "岩内",
       "opened": true,
-      "first": "",
-      "last": "",
+      "first": "06:00",
+      "last": "23:00",
       "stations": [
         {
           "order": 1,
           "name": "镇海路",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01010000",
+          "first": "06:00",
+          "last": "23:00",
+          "lng": "118.089852",
+          "lat": "24.457147",
+          "english": "Zhenhai Rd"
         },
         {
           "order": 2,
           "name": "中山公园",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01020000",
+          "first": "06:01",
+          "last": "23:01",
+          "lng": "118.096517",
+          "lat": "24.462541",
+          "english": "Zhongshan Park"
         },
         {
           "order": 3,
           "name": "将军祠",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01030000",
+          "first": "06:03",
+          "last": "23:04",
+          "lng": "118.106506",
+          "lat": "24.467113",
+          "english": "Jiangjunci"
         },
         {
           "order": 4,
           "name": "文灶",
-          "transfer": [
-            "BRT"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "01040000",
+          "first": "06:05",
+          "last": "23:06",
+          "lng": "118.110495",
+          "lat": "24.472211",
+          "english": "Wenzao"
         },
         {
           "order": 5,
           "name": "湖滨东路",
-          "transfer": [
-            "3号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "01050000",
+          "first": "06:00",
+          "last": "23:08",
+          "lng": "118.118005",
+          "lat": "24.480301",
+          "english": "Hubin East Rd"
         },
         {
           "order": 6,
           "name": "莲坂",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01060000",
+          "first": "06:01",
+          "last": "23:10",
+          "lng": "118.124706",
+          "lat": "24.482011",
+          "english": "Lianban"
         },
         {
           "order": 7,
           "name": "莲花路口",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01070000",
+          "first": "06:03",
+          "last": "23:12",
+          "lng": "118.127006",
+          "lat": "24.48257",
+          "english": "Lianhua Intersection"
         },
         {
           "order": 8,
           "name": "吕厝",
-          "transfer": [
-            "2号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "01080000",
+          "first": "06:05",
+          "last": "23:14",
+          "lng": "118.134372",
+          "lat": "24.495066",
+          "english": "Lücuo"
         },
         {
           "order": 9,
           "name": "乌石浦",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01090000",
+          "first": "06:00",
+          "last": "23:16",
+          "lng": "118.133024",
+          "lat": "24.504289",
+          "english": "Wushipu"
         },
         {
           "order": 10,
           "name": "塘边",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01100000",
+          "first": "06:01",
+          "last": "23:18",
+          "lng": "118.129359",
+          "lat": "24.512131",
+          "english": "Tangbian"
         },
         {
           "order": 11,
           "name": "火炬园",
-          "transfer": [
-            "3号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "01110000",
+          "first": "06:03",
+          "last": "23:20",
+          "lng": "118.125225",
+          "lat": "24.517852",
+          "english": "Torch Hi-tech Park"
         },
         {
           "order": 12,
           "name": "殿前",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01120000",
+          "first": "06:06",
+          "last": "23:22",
+          "lng": "118.121131",
+          "lat": "24.528208",
+          "english": "Dianqian"
         },
         {
           "order": 13,
           "name": "高崎",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01130000",
+          "first": "06:00",
+          "last": "23:24",
+          "lng": "118.121436",
+          "lat": "24.54346",
+          "english": "Gaoqi"
         },
         {
           "order": 14,
           "name": "集美学村",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01140000",
+          "first": "06:04",
+          "last": "23:29",
+          "lng": "118.098386",
+          "lat": "24.570854",
+          "english": "Jimei School Village"
         },
         {
           "order": 15,
           "name": "园博苑",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01150000",
+          "first": "06:07",
+          "last": "23:32",
+          "lng": "118.073107",
+          "lat": "24.576112",
+          "english": "Horticulture Expo Garden"
         },
         {
           "order": 16,
           "name": "杏林村",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01160000",
+          "first": "06:09",
+          "last": "23:34",
+          "lng": "118.064843",
+          "lat": "24.587958",
+          "english": "Xinglin Village"
         },
         {
           "order": 17,
           "name": "杏锦路",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01170000",
+          "first": "06:00",
+          "last": "23:36",
+          "lng": "118.059489",
+          "lat": "24.592312",
+          "english": "Xingjin Rd"
         },
         {
           "order": 18,
           "name": "官任",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01180000",
+          "first": "06:02",
+          "last": "23:38",
+          "lng": "118.065552",
+          "lat": "24.599029",
+          "english": "Guanren"
         },
         {
           "order": 19,
           "name": "诚毅广场",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01190000",
+          "first": "06:04",
+          "last": "23:40",
+          "lng": "118.060953",
+          "lat": "24.611809",
+          "english": "Chengyi Plaza"
         },
         {
           "order": 20,
           "name": "集美软件园",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01200000",
+          "first": "06:06",
+          "last": "23:42",
+          "lng": "118.056785",
+          "lat": "24.619102",
+          "english": "Jimei Software Park"
         },
         {
           "order": 21,
           "name": "集美大道",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01210000",
+          "first": "06:08",
+          "last": "23:44",
+          "lng": "118.06469",
+          "lat": "24.62288",
+          "english": "Jimei Blvd"
         },
         {
           "order": 22,
           "name": "天水路",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01220000",
+          "first": "06:11",
+          "last": "23:47",
+          "lng": "118.073062",
+          "lat": "24.632011",
+          "english": "Tianshui Rd"
         },
         {
           "order": 23,
           "name": "厦门北站",
-          "transfer": [
-            "4号线",
-            "BRT",
-            "国铁"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "01230000",
+          "first": "06:13",
+          "last": "23:49",
+          "lng": "118.078596",
+          "lat": "24.638548",
+          "english": "Xiamen North Railway Station"
         },
         {
           "order": 24,
           "name": "岩内",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "01240000",
+          "first": "",
+          "last": "",
+          "lng": "118.076368",
+          "lat": "24.647383",
+          "english": "Yannei"
         }
       ]
     },
     {
       "id": "2",
-      "name": "地铁2号线",
+      "name": "地铁二号线",
       "color": "#52A441",
       "from": "天竺山",
       "to": "五缘湾",
       "opened": true,
-      "first": "",
-      "last": "",
+      "first": "06:00",
+      "last": "23:00",
       "stations": [
         {
           "order": 1,
           "name": "天竺山",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "02010000",
+          "first": "06:00",
+          "last": "23:00",
+          "lng": "117.943239",
+          "lat": "24.584835",
+          "english": "Tianzhushan"
         },
         {
           "order": 2,
           "name": "东孚",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "02020000",
+          "first": "06:02",
+          "last": "23:02",
+          "lng": "117.954019",
+          "lat": "24.573005",
+          "english": "Dongfu"
         },
         {
           "order": 3,
           "name": "东瑶",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "02030000",
+          "first": "06:05",
+          "last": "23:05",
+          "lng": "117.96832",
+          "lat": "24.555784",
+          "english": "Dongyao"
         },
         {
           "order": 4,
-          "name": "新阳大道",
-          "transfer": []
+          "name": "鼎美",
+          "transfer": [],
+          "opened": true,
+          "code": "02040000",
+          "first": "06:08",
+          "last": "23:08",
+          "lng": "117.980997",
+          "lat": "24.553244",
+          "english": "Dingmei"
         },
         {
           "order": 5,
-          "name": "新垵",
-          "transfer": []
+          "name": "马銮中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02050000",
+          "first": "06:10",
+          "last": "23:10",
+          "lng": "117.994008",
+          "lat": "24.552047",
+          "english": "Maluan Center"
         },
         {
           "order": 6,
-          "name": "翁角路",
-          "transfer": []
+          "name": "新阳大道",
+          "transfer": [],
+          "opened": true,
+          "code": "02060000",
+          "first": "06:13",
+          "last": "23:13",
+          "lng": "118.00188",
+          "lat": "24.543097",
+          "english": "Xinyang Ave"
         },
         {
           "order": 7,
-          "name": "马青路",
-          "transfer": []
+          "name": "新垵",
+          "transfer": [],
+          "opened": true,
+          "code": "02070000",
+          "first": "06:00",
+          "last": "23:15",
+          "lng": "118.012085",
+          "lat": "24.536654",
+          "english": "XinAn"
         },
         {
           "order": 8,
-          "name": "海沧行政中心",
-          "transfer": []
+          "name": "翁角路",
+          "transfer": [],
+          "opened": true,
+          "code": "02080000",
+          "first": "06:02",
+          "last": "23:17",
+          "lng": "118.020637",
+          "lat": "24.532381",
+          "english": "Wengjiao Rd"
         },
         {
           "order": 9,
-          "name": "海沧商务中心",
-          "transfer": []
+          "name": "马青路",
+          "transfer": [],
+          "opened": true,
+          "code": "02090000",
+          "first": "06:06",
+          "last": "23:22",
+          "lng": "118.036591",
+          "lat": "24.499833",
+          "english": "Maqing Rd"
         },
         {
           "order": 10,
-          "name": "海沧湾公园",
-          "transfer": []
+          "name": "海沧行政中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02100000",
+          "first": "06:08",
+          "last": "23:24",
+          "lng": "118.040041",
+          "lat": "24.49273",
+          "english": "Haicang Administrative Center"
         },
         {
           "order": 11,
-          "name": "邮轮中心",
-          "transfer": []
+          "name": "海沧商务中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02110000",
+          "first": "06:10",
+          "last": "23:26",
+          "lng": "118.046149",
+          "lat": "24.486745",
+          "english": "Haicang Business Center"
         },
         {
           "order": 12,
-          "name": "建业路",
-          "transfer": []
+          "name": "海沧湾公园",
+          "transfer": [],
+          "opened": true,
+          "code": "02120000",
+          "first": "06:00",
+          "last": "23:28",
+          "lng": "118.056354",
+          "lat": "24.490165",
+          "english": "Haicang Bay Park"
         },
         {
           "order": 13,
-          "name": "湖滨中路",
-          "transfer": []
+          "name": "邮轮中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02130000",
+          "first": "06:03",
+          "last": "23:32",
+          "lng": "118.083518",
+          "lat": "24.491612",
+          "english": "Cruise Center"
         },
         {
           "order": 14,
-          "name": "体育中心",
-          "transfer": [
-            "3号线"
-          ]
+          "name": "建业路",
+          "transfer": [],
+          "opened": true,
+          "code": "02140000",
+          "first": "06:06",
+          "last": "23:34",
+          "lng": "118.090438",
+          "lat": "24.484433",
+          "english": "Jianye Rd"
         },
         {
           "order": 15,
-          "name": "育秀东路",
-          "transfer": []
+          "name": "湖滨中路",
+          "transfer": [],
+          "opened": true,
+          "code": "02150000",
+          "first": "06:08",
+          "last": "23:36",
+          "lng": "118.101413",
+          "lat": "24.486877",
+          "english": "Hubin Middle Rd"
         },
         {
           "order": 16,
-          "name": "吕厝",
-          "transfer": [
-            "1号线"
-          ]
+          "name": "体育中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02160000",
+          "first": "06:10",
+          "last": "23:38",
+          "lng": "118.112134",
+          "lat": "24.489802",
+          "english": "Sports Center"
         },
         {
           "order": 17,
-          "name": "江头",
-          "transfer": []
+          "name": "育秀东路",
+          "transfer": [],
+          "opened": true,
+          "code": "02170000",
+          "first": "06:12",
+          "last": "23:40",
+          "lng": "118.124645",
+          "lat": "24.492786",
+          "english": "Yuxiu East Rd"
         },
         {
           "order": 18,
-          "name": "后埔",
-          "transfer": []
+          "name": "吕厝",
+          "transfer": [],
+          "opened": true,
+          "code": "02180000",
+          "first": "06:00",
+          "last": "23:42",
+          "lng": "118.134372",
+          "lat": "24.495066",
+          "english": "Lücuo"
         },
         {
           "order": 19,
-          "name": "蔡塘",
-          "transfer": [
-            "BRT"
-          ]
+          "name": "江头",
+          "transfer": [],
+          "opened": true,
+          "code": "02190000",
+          "first": "06:02",
+          "last": "23:44",
+          "lng": "118.144336",
+          "lat": "24.497948",
+          "english": "Jiangtou"
         },
         {
           "order": 20,
-          "name": "古地石",
-          "transfer": []
+          "name": "后埔",
+          "transfer": [],
+          "opened": true,
+          "code": "02200000",
+          "first": "06:04",
+          "last": "23:46",
+          "lng": "118.152457",
+          "lat": "24.495581",
+          "english": "Houpu"
         },
         {
           "order": 21,
-          "name": "岭兜",
-          "transfer": []
+          "name": "蔡塘",
+          "transfer": [],
+          "opened": true,
+          "code": "02210000",
+          "first": "06:06",
+          "last": "23:48",
+          "lng": "118.159967",
+          "lat": "24.492983",
+          "english": "Caitang"
         },
         {
           "order": 22,
-          "name": "软件园二期",
-          "transfer": []
+          "name": "古地石",
+          "transfer": [],
+          "opened": true,
+          "code": "02220000",
+          "first": "06:07",
+          "last": "23:50",
+          "lng": "118.169489",
+          "lat": "24.491733",
+          "english": "Gudishi"
         },
         {
           "order": 23,
-          "name": "何厝",
-          "transfer": []
+          "name": "岭兜",
+          "transfer": [],
+          "opened": true,
+          "code": "02230000",
+          "first": "06:10",
+          "last": "23:52",
+          "lng": "118.180125",
+          "lat": "24.490385",
+          "english": "Lingdou"
         },
         {
           "order": 24,
-          "name": "观音山",
-          "transfer": []
+          "name": "软件园二期",
+          "transfer": [],
+          "opened": true,
+          "code": "02240000",
+          "first": "06:12",
+          "last": "23:54",
+          "lng": "118.190473",
+          "lat": "24.48713",
+          "english": "Software Park Phase Ⅱ"
         },
         {
           "order": 25,
-          "name": "东宅",
-          "transfer": []
+          "name": "何厝",
+          "transfer": [],
+          "opened": true,
+          "code": "02250000",
+          "first": "06:00",
+          "last": "23:56",
+          "lng": "118.198881",
+          "lat": "24.491174",
+          "english": "Hecuo"
         },
         {
           "order": 26,
-          "name": "两岸金融中心",
-          "transfer": []
+          "name": "观音山",
+          "transfer": [],
+          "opened": true,
+          "code": "02260000",
+          "first": "06:01",
+          "last": "23:58",
+          "lng": "118.199348",
+          "lat": "24.499329",
+          "english": "Guanyinshan"
         },
         {
           "order": 27,
-          "name": "五通",
-          "transfer": []
+          "name": "东宅",
+          "transfer": [],
+          "opened": true,
+          "code": "02270000",
+          "first": "06:03",
+          "last": "次日00:00",
+          "lng": "118.199241",
+          "lat": "24.505281",
+          "english": "Dongzhai"
         },
         {
           "order": 28,
-          "name": "湿地公园",
-          "transfer": []
+          "name": "两岸金融中心",
+          "transfer": [],
+          "opened": true,
+          "code": "02280000",
+          "first": "06:05",
+          "last": "次日00:01",
+          "lng": "118.200426",
+          "lat": "24.512514",
+          "english": "Cross-Strait Financial Center"
         },
         {
           "order": 29,
-          "name": "钟宅",
-          "transfer": []
+          "name": "五通",
+          "transfer": [],
+          "opened": true,
+          "code": "02290000",
+          "first": "06:07",
+          "last": "次日00:03",
+          "lng": "118.196725",
+          "lat": "24.517216",
+          "english": "Wutong"
         },
         {
           "order": 30,
+          "name": "湿地公园",
+          "transfer": [],
+          "opened": true,
+          "code": "02300000",
+          "first": "06:09",
+          "last": "次日00:05",
+          "lng": "118.189323",
+          "lat": "24.523199",
+          "english": "Wetland Park"
+        },
+        {
+          "order": 31,
+          "name": "钟宅",
+          "transfer": [],
+          "opened": true,
+          "code": "02310000",
+          "first": "06:11",
+          "last": "次日00:07",
+          "lng": "118.177322",
+          "lat": "24.532535",
+          "english": "Zhongzhai"
+        },
+        {
+          "order": 32,
           "name": "五缘湾",
-          "transfer": [
-            "3号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "02320000",
+          "first": "",
+          "last": "",
+          "lng": "118.17342",
+          "lat": "24.538694",
+          "english": "Wuyuanwan"
         }
       ]
     },
     {
       "id": "3",
-      "name": "地铁3号线",
+      "name": "地铁三号线",
       "color": "#52B5C8",
       "from": "厦门火车站",
       "to": "蔡厝",
       "opened": true,
-      "first": "",
-      "last": "",
+      "first": "06:00",
+      "last": "23:00",
       "stations": [
         {
           "order": 1,
           "name": "厦门火车站",
-          "transfer": [
-            "BRT",
-            "国铁"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03010000",
+          "first": "06:00",
+          "last": "23:00",
+          "lng": "118.121275",
+          "lat": "24.475054",
+          "english": "Xiamen Railway Station"
         },
         {
           "order": 2,
           "name": "湖滨东路",
-          "transfer": [
-            "1号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03020000",
+          "first": "06:01",
+          "last": "23:01",
+          "lng": "118.117676",
+          "lat": "24.480195",
+          "english": "Hubin East Rd"
         },
         {
           "order": 3,
           "name": "体育中心",
-          "transfer": [
-            "2号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03030000",
+          "first": "06:03",
+          "last": "23:04",
+          "lng": "118.112134",
+          "lat": "24.489802",
+          "english": "Sports Center"
         },
         {
           "order": 4,
           "name": "人才中心",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03040000",
+          "first": "06:05",
+          "last": "23:05",
+          "lng": "118.109495",
+          "lat": "24.495844",
+          "english": "HR Service Center"
         },
         {
           "order": 5,
           "name": "湖里公园",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03050000",
+          "first": "06:08",
+          "last": "23:08",
+          "lng": "118.112135",
+          "lat": "24.512547",
+          "english": "Huli Park"
         },
         {
           "order": 6,
           "name": "华荣路",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03060000",
+          "first": "06:10",
+          "last": "23:10",
+          "lng": "118.115031",
+          "lat": "24.517631",
+          "english": "Huarong Rd"
         },
         {
           "order": 7,
           "name": "火炬园",
-          "transfer": [
-            "1号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03070000",
+          "first": "06:00",
+          "last": "23:12",
+          "lng": "118.125225",
+          "lat": "24.517852",
+          "english": "Torch Hi-tech Park"
         },
         {
           "order": 8,
           "name": "小东山",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03080000",
+          "first": "06:01",
+          "last": "23:14",
+          "lng": "118.131882",
+          "lat": "24.519797",
+          "english": "Xiaodongshan"
         },
         {
           "order": 9,
           "name": "安兜",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03090000",
+          "first": "06:03",
+          "last": "23:16",
+          "lng": "118.144838",
+          "lat": "24.523474",
+          "english": "Andou"
         },
         {
           "order": 10,
           "name": "坂尚",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03100000",
+          "first": "06:06",
+          "last": "23:19",
+          "lng": "118.1535",
+          "lat": "24.52488",
+          "english": "Banshang"
         },
         {
           "order": 11,
           "name": "湖里创新园",
-          "transfer": [
-            "BRT"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03110000",
+          "first": "06:08",
+          "last": "23:21",
+          "lng": "118.162748",
+          "lat": "24.528773",
+          "english": "Huli Innovation Park"
         },
         {
           "order": 12,
           "name": "五缘湾",
-          "transfer": [
-            "2号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03120000",
+          "first": "06:00",
+          "last": "23:24",
+          "lng": "118.17342",
+          "lat": "24.538694",
+          "english": "Wuyuanwan"
         },
         {
           "order": 13,
           "name": "国际博览中心",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03130000",
+          "first": "06:05",
+          "last": "23:29",
+          "lng": "118.214706",
+          "lat": "24.562719",
+          "english": "International Expo Center"
         },
         {
           "order": 14,
           "name": "东界",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03140000",
+          "first": "06:07",
+          "last": "23:31",
+          "lng": "118.225773",
+          "lat": "24.570935",
+          "english": "Dongjie"
         },
         {
           "order": 15,
           "name": "洪坑",
-          "transfer": [
-            "4号线"
-          ]
+          "transfer": [],
+          "opened": true,
+          "code": "03150000",
+          "first": "06:09",
+          "last": "23:33",
+          "lng": "118.23253",
+          "lat": "24.577064",
+          "english": "Hongkeng"
         },
         {
           "order": 16,
           "name": "林前",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03160000",
+          "first": "06:00",
+          "last": "23:35",
+          "lng": "118.237453",
+          "lat": "24.582156",
+          "english": "Linqian"
         },
         {
           "order": 17,
           "name": "鼓锣",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03170000",
+          "first": "06:02",
+          "last": "23:37",
+          "lng": "118.250011",
+          "lat": "24.585039",
+          "english": "Guluo"
         },
         {
           "order": 18,
           "name": "翔安市民公园",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03180000",
+          "first": "06:04",
+          "last": "23:39",
+          "lng": "118.260295",
+          "lat": "24.584375",
+          "english": "XiangAn Public Park"
         },
         {
           "order": 19,
           "name": "浦边",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03190000",
+          "first": "06:06",
+          "last": "23:41",
+          "lng": "118.269964",
+          "lat": "24.585905",
+          "english": "Pubian"
         },
         {
           "order": 20,
           "name": "后村",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03200000",
+          "first": "06:07",
+          "last": "23:43",
+          "lng": "118.277919",
+          "lat": "24.586014",
+          "english": "Houcun"
         },
         {
           "order": 21,
           "name": "蔡厝",
-          "transfer": []
+          "transfer": [],
+          "opened": true,
+          "code": "03210000",
+          "first": "",
+          "last": "",
+          "lng": "118.287264",
+          "lat": "24.577753",
+          "english": "Caicuo"
         }
       ]
     },
     {
       "id": "4",
-      "name": "地铁4号线",
+      "name": "地铁四号线",
       "color": "#E50012",
       "from": "集美软件园北",
       "to": "前浯",
       "opened": true,
-      "first": "",
-      "last": "",
+      "first": "08:00",
+      "last": "20:00",
       "stations": [
         {
           "order": 1,
           "name": "集美软件园北",
-          "transfer": []
+          "transfer": [],
+          "opened": false,
+          "code": "04010000",
+          "first": "08:00",
+          "last": "20:00",
+          "lng": "118.043093",
+          "lat": "24.623114",
+          "english": "Jimei Software Park North"
         },
         {
           "order": 2,
           "name": "后溪",
-          "transfer": []
+          "transfer": [],
+          "opened": false,
+          "code": "04020000",
+          "first": "08:02",
+          "last": "20:02",
+          "lng": "118.055573",
+          "lat": "24.630442",
+          "english": "Houxi"
         },
         {
           "order": 3,
           "name": "厦门北站",
-          "transfer": [
-            "1号线",
-            "BRT",
-            "国铁"
-          ]
+          "transfer": [],
+          "opened": false,
+          "code": "04030000",
+          "first": "08:05",
+          "last": "20:05",
+          "lng": "118.080001",
+          "lat": "24.643390",
+          "english": "Xiamen North Railway Station"
         },
         {
           "order": 4,
           "name": "官浔",
-          "transfer": [
-            "BRT"
-          ]
+          "transfer": [],
+          "opened": false,
+          "code": "04040000",
+          "first": "08:11",
+          "last": "20:11",
+          "lng": "118.155301",
+          "lat": "24.658169",
+          "english": "Guanxun"
         },
         {
           "order": 5,
           "name": "丙洲",
-          "transfer": []
+          "transfer": [],
+          "opened": false,
+          "code": "04050000",
+          "first": "08:14",
+          "last": "20:14",
+          "lng": "118.155301",
+          "lat": "24.658169",
+          "english": "Bingzhou"
         },
         {
           "order": 6,
           "name": "城场",
-          "transfer": []
+          "transfer": [],
+          "opened": false,
+          "code": "04060000",
+          "first": "08:00",
+          "last": "20:18",
+          "lng": "118.216633",
+          "lat": "24.637581",
+          "english": "Chengchang"
         },
         {
           "order": 7,
           "name": "洪坑",
-          "transfer": [
-            "3号线"
-          ]
+          "transfer": [],
+          "opened": false,
+          "code": "04080000",
+          "first": "08:05",
+          "last": "20:24",
+          "lng": "118.232614",
+          "lat": "24.577668",
+          "english": "Hongkeng"
         },
         {
           "order": 8,
           "name": "前浯",
-          "transfer": []
+          "transfer": [],
+          "opened": false,
+          "code": "04090000",
+          "first": "",
+          "last": "",
+          "lng": "118.261317",
+          "lat": "24.567529",
+          "english": "Qianwu"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "name": "地铁六号线",
+      "color": "#92308D",
+      "from": "角江路",
+      "to": "华侨大学",
+      "opened": true,
+      "first": "06:00",
+      "last": "23:00",
+      "stations": [
+        {
+          "order": 1,
+          "name": "角江路",
+          "transfer": [],
+          "opened": false,
+          "code": "06030000",
+          "first": "06:00",
+          "last": "23:00",
+          "lng": "117.901852",
+          "lat": "24.505936",
+          "english": "Jiaojiang Rd"
+        },
+        {
+          "order": 2,
+          "name": "角美中心",
+          "transfer": [],
+          "opened": false,
+          "code": "06040000",
+          "first": "06:02",
+          "last": "23:01",
+          "lng": "117.898897",
+          "lat": "24.514833",
+          "english": "Jiaomei Center"
+        },
+        {
+          "order": 3,
+          "name": "文圃路",
+          "transfer": [],
+          "opened": false,
+          "code": "06050000",
+          "first": "06:00",
+          "last": "23:04",
+          "lng": "117.905944",
+          "lat": "24.522268",
+          "english": "Wenpu Rd"
+        },
+        {
+          "order": 4,
+          "name": "角海路",
+          "transfer": [],
+          "opened": false,
+          "code": "06060000",
+          "first": "06:01",
+          "last": "23:06",
+          "lng": "117.915382",
+          "lat": "24.526382",
+          "english": "Jiaohai Rd"
+        },
+        {
+          "order": 5,
+          "name": "角美东",
+          "transfer": [],
+          "opened": false,
+          "code": "06070000",
+          "first": "06:04",
+          "last": "23:08",
+          "lng": "117.927523",
+          "lat": "24.532977",
+          "english": "Jiaomei East"
+        },
+        {
+          "order": 6,
+          "name": "一农",
+          "transfer": [],
+          "opened": false,
+          "code": "06080000",
+          "first": "06:08",
+          "last": "23:11",
+          "lng": "117.954444",
+          "lat": "24.542565",
+          "english": "Yinong"
+        },
+        {
+          "order": 7,
+          "name": "林埭",
+          "transfer": [],
+          "opened": false,
+          "code": "06090000",
+          "first": "06:10",
+          "last": "23:13",
+          "lng": "117.966715",
+          "lat": "24.550229",
+          "english": "Lindai"
+        },
+        {
+          "order": 8,
+          "name": "鼎美",
+          "transfer": [],
+          "opened": false,
+          "code": "06100000",
+          "first": "06:00",
+          "last": "23:16",
+          "lng": "117.980997",
+          "lat": "24.553244",
+          "english": "Dingmei"
+        },
+        {
+          "order": 9,
+          "name": "马銮中心",
+          "transfer": [],
+          "opened": false,
+          "code": "06110000",
+          "first": "06:02",
+          "last": "23:18",
+          "lng": "117.994008",
+          "lat": "24.552047",
+          "english": "Maluan Center"
+        },
+        {
+          "order": 10,
+          "name": "西滨",
+          "transfer": [],
+          "opened": false,
+          "code": "06130000",
+          "first": "06:00",
+          "last": "23:24",
+          "lng": "118.026659",
+          "lat": "24.571100",
+          "english": "Xibin"
+        },
+        {
+          "order": 11,
+          "name": "碑头",
+          "transfer": [],
+          "opened": false,
+          "code": "06140000",
+          "first": "06:01",
+          "last": "23:26",
+          "lng": "118.035457",
+          "lat": "24.570899",
+          "english": "Beitou"
+        },
+        {
+          "order": 12,
+          "name": "杏滨",
+          "transfer": [],
+          "opened": false,
+          "code": "06150000",
+          "first": "06:04",
+          "last": "23:28",
+          "lng": "118.046702",
+          "lat": "24.571910",
+          "english": "Xingbin"
+        },
+        {
+          "order": 13,
+          "name": "内茂",
+          "transfer": [],
+          "opened": false,
+          "code": "06160000",
+          "first": "06:00",
+          "last": "23:30",
+          "lng": "118.050217",
+          "lat": "24.577802",
+          "english": "Neimao"
+        },
+        {
+          "order": 14,
+          "name": "董任",
+          "transfer": [],
+          "opened": false,
+          "code": "06170000",
+          "first": "06:01",
+          "last": "23:31",
+          "lng": "118.054296",
+          "lat": "24.585513",
+          "english": "Dongren"
+        },
+        {
+          "order": 15,
+          "name": "官任",
+          "transfer": [],
+          "opened": false,
+          "code": "06180000",
+          "first": "06:04",
+          "last": "23:34",
+          "lng": "118.065828",
+          "lat": "24.599452",
+          "english": "Guanren"
+        },
+        {
+          "order": 16,
+          "name": "杏林湾",
+          "transfer": [],
+          "opened": false,
+          "code": "06190000",
+          "first": "06:07",
+          "last": "23:37",
+          "lng": "118.083798",
+          "lat": "24.609531",
+          "english": "Xinglinwan"
+        },
+        {
+          "order": 17,
+          "name": "华侨大学",
+          "transfer": [],
+          "opened": false,
+          "code": "06200000",
+          "first": "",
+          "last": "",
+          "lng": "118.095257",
+          "lat": "24.602929",
+          "english": "Huaqiao University"
         }
       ]
     }
