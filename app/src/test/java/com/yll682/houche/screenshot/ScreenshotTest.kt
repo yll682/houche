@@ -348,11 +348,16 @@ class ScreenshotTest {
         val reference = "03030000"
         val index = codes.indexOf(reference)
         val source = MetroObservationSource(reference)
+        // 到站行照官方真实响应的形态造（见 analysis/fixtures/metro-realtime-line2-flag2-sample.json）：
+        // 第 1 行的下一站就是本站（flag=2，画在本站），第 2、3 行是本站**上游**的更远站（flag=1）。
+        // 之前这里写成 codes[index + step]，把 ETA 越大的车摆到越下游，位置序与到站先后正好相反，
+        // 于是「第N班」看起来整体错位一格（最近那班成了第 2 班，最远那格没班号）。真实数据不会这样。
         val trains = (1..3).map { step ->
-            val next = codes[(index + step).coerceAtMost(codes.lastIndex)]
+            val next = codes[(index - step + 1).coerceAtLeast(0)]
             MetroTrain(
                 arriveSeconds = step * 180, nextStationCode = next, nextStationName = names.getValue(next),
-                scale = 0.0, arrivingFlag = 1, specialPosition = 0, specialPositionDesc = "", source = source
+                scale = 0.0, arrivingFlag = if (step == 1) 2 else 1, specialPosition = 0, specialPositionDesc = "",
+                source = source
             )
         }
         MetroData(
@@ -364,7 +369,8 @@ class ScreenshotTest {
                     MetroDirection(
                         origin = names.getValue(codes.first()), destination = names.getValue(codes.last()),
                         startTime = "06:00", endTime = "23:00", delayMinutes = 0, trains = trains,
-                        stationCodes = codes, source = source, positionTrains = trains.take(2),
+                        // 本站三行都在位置批次里（生产 merge 就是这么给的），三格班号才不会缺一格。
+                        stationCodes = codes, source = source, positionTrains = trains,
                         arrivalsAvailable = true
                     )
                 )
@@ -379,6 +385,32 @@ class ScreenshotTest {
     }
     @Test fun metroTransfer_dark() = capture("metro-transfer", true) {
         MetroContent(UiState.Success(transferData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 截图用的演示数据本身也要自洽：本站第 k 行必须正好是全方向第 k 班（越近越靠前）。
+     *
+     * 这里守的是曾经的坑：`nextStationCode = codes[index + step]` 把 ETA 越大的车摆到越下游，
+     * 于是 ETA 三格的班号整体反了（3 分钟那格成了第 2 班），最左一格还因为没有位置记录
+     * 退化成「预计到达」。真实响应里第 1 行的下一站就是本站（flag=2），第 2、3 行在本站上游。
+     */
+    @Test
+    fun metroTransferFixtureKeepsArrivalOrderAndOrdinalsInStep() {
+        val direction = requireNotNull(transferData.direction)
+        val presentations = direction.positionPresentations()
+        assertEquals("三行到站行都要有位置记录，否则 ETA 会少一个班号", 3, presentations.size)
+        assertEquals("本站第 k 行必须就是第 k 班", listOf(1, 2, 3), presentations.map { it.arrivalRowOrder })
+        assertEquals("班号必须连续没有空格", listOf(1, 2, 3), presentations.map { it.ordinal })
+        assertEquals("最近的一班必须是第 1 班", 1, presentations.first().ordinal)
+        assertTrue(
+            "位置必须随行序向该方向上游回退，实际 ${presentations.map { it.stationPosition }}",
+            presentations.map { it.stationPosition }.zipWithNext().all { (near, far) -> near > far }
+        )
+        assertEquals(
+            "第 1 行的分钟数必须是三行里最小的",
+            direction.trains.minOf { it.arriveSeconds },
+            direction.trains.first().arriveSeconds
+        )
     }
 
     /**
