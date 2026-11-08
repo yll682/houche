@@ -110,10 +110,14 @@ private fun MetroLine.fallbackStripDirection(): MetroDirection? {
 }
 
 /**
- * 站名行：站名 + 线路号圆徽标 +（有换乘目标时）换乘徽标 + 右侧「刷新」；所有元素同一条水平中线。
+ * 站名行：站名 + 线路号徽标 +（有换乘目标时）换乘徽标 + 右侧「刷新」；所有元素同一条水平中线。
  *
  * 换乘徽标取的是**当前参考站自己**的 `transferTargets`：换成别的站，徽标跟着换。
  * 徽标底色是目标线路官方色（[TransferBadges]），所以「吕厝」这行会同时出现 1 号线橙和 2 号线绿。
+ *
+ * 2026-11-08 统一：这里原本是「13.3dp 圆徽标 + 胶囊换乘徽标」两套规格（用户反馈两个数字
+ * 明显不一样大），现在两枚都用共享徽标 [MetroLineBadge] 的小档（[SmallBadgeSize] 19.3dp），
+ * 同一行并排时同规格、同尺寸、白字。
  */
 @Composable
 internal fun StationRow(
@@ -134,7 +138,8 @@ internal fun StationRow(
             maxLines = 1
         )
         Spacer(Modifier.width(8.dp))
-        MetroStationBadge(line.id, officialLineColor(line))
+        // 本站线路号：与右边那枚换乘徽标同一个共享组件、同一档尺寸。
+        MetroLineBadge(SmallBadgeSize, line.id, officialLineColor(line))
         if (targets.isNotEmpty()) {
             Spacer(Modifier.width(6.dp))
             TransferBadges(targets, onSelect = { onTransfer(it.lineId, it.stationCode) })

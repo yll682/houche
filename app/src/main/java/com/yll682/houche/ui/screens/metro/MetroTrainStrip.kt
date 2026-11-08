@@ -256,8 +256,9 @@ internal fun MetroTrainStrip(
                             maxLines = 8
                         )
                         // 换乘徽标：一行一枚，竖排逐行排在站名下方（官方基准图就是这个位置）。
-                        // 色块底色＝该线路的官方色；块内「数字 ＋ 竖排线字」与 tab 徽标同一套
-                        // 画法（[MetroLineBadge]），浅色底自动切深墨（[onLineColor]）。
+                        // 色块底色＝该线路的官方色；块内「数字 ＋ 竖排线字」与 tab 徽标、
+                        // 列表里的线路号/换乘徽标是**同一个共享组件**（[MetroLineBadge]），
+                        // 字色一律白（官方徽标实测就是白字，浅色底也不例外）。
                         badges.forEachIndexed { row, (digit, fill) ->
                             Box(
                                 Modifier.offset(
@@ -266,7 +267,7 @@ internal fun MetroTrainStrip(
                                     y = transferTop + (StripTransferBadge + StripTransferBadgeGap) * row - hitTop
                                 ).size(StripTransferBadge).clearAndSetSemantics {}
                             ) {
-                                MetroLineBadge(StripTransferBadge, digit, fill, onLineColor(fill))
+                                MetroLineBadge(StripTransferBadge, digit, fill)
                             }
                         }
                     }

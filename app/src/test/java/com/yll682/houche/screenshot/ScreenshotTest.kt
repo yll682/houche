@@ -489,6 +489,23 @@ class ScreenshotTest {
     }
 
     /**
+     * 徽标统一验图：2 号线、参考站「鼎美」（02040000，可换 6 号线 06100000）。
+     *
+     * 这正是用户截图里的那一站——站名后面并排两枚徽标：本站线路号（2 号线绿）与换乘
+     * （6 号线紫）。统一之后两枚是**同一个共享徽标的小档**（19.3dp 圆角方块 + 大数字 +
+     * 竖排「号线」），尺寸完全相同、字色都是白，不再是「一个圆、一个胶囊、两套设计语言」。
+     * 浅深各一张。
+     */
+    private val dingmeiData: MetroData by lazy { stripTransferScene(metroLine2, "02040000") }
+
+    @Test fun metroBadgePair_light() = capture("metro-badge-pair", false) {
+        MetroContent(UiState.Success(dingmeiData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroBadgePair_dark() = capture("metro-badge-pair", true) {
+        MetroContent(UiState.Success(dingmeiData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
      * 截图用的演示数据本身也要自洽：本站第 k 行必须正好是全方向第 k 班（越近越靠前）。
      *
      * 这里守的是曾经的坑：`nextStationCode = codes[index + step]` 把 ETA 越大的车摆到越下游，

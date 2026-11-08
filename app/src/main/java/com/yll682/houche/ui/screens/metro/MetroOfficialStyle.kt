@@ -181,7 +181,7 @@ internal fun officialLineColor(line: MetroLine): Color = metroColor(line.color)
 internal val OfficialLineFallback = Color(0xFF1E6FF3)
 
 /**
- * 线路色底上的文字色：`luminance() ≥ 0.20` 用近黑 [LineInk]，否则白字。
+ * 线路色底上的文字色（**非徽标场景**专用）：`luminance() ≥ 0.20` 用近黑 [LineInk]，否则白字。
  * 0.20 是这套官方色的**对比度交叉点**（白字与 `#1A1A1A` 的对比度相等处 L≈0.245，
  * 取 0.20 让 1/2 号线这种中亮度色也走深字）。逐线实测：
  * 1 `#DA7028` 深字 5.13 / 白字 3.32；2 `#52A441` 深字 5.47 / 白字 3.11；
@@ -189,6 +189,10 @@ internal val OfficialLineFallback = Color(0xFF1E6FF3)
  * 6 `#92308D` 白字 6.93 / 深字 1.82。取高者，全表 ≥ 4.5:1。
  *
  * 线路色与深浅模式无关，所以这个结果也不分模式。
+ *
+ * **徽标内部不用它**（2026-11-08 决定）：官方三个徽标实测字色都是白（240,240,240），
+ * 连浅绿、浅青的徽标官方也用白字，所以徽标字色写死在 [LineBadgeInk] 里，
+ * 不再按底色亮度切深墨。这里只留给「浅色线路色上写普通文字」这类非徽标场景。
  */
 internal fun onLineColor(tint: Color): Color =
     if (tint.luminance() >= LineInkThreshold) LineInk else Color.White
@@ -226,9 +230,6 @@ internal fun listLineColor(tint: Color, palette: OfficialPalette): Color =
 
 /** 官方卡片 10dp 圆角、无描边无阴影；本页专用，不替换全局 `CardShape`。 */
 internal val OfficialCardShape = RoundedCornerShape(10.dp)
-
-/** 线路徽标色块 32dp、圆角约 12.5px≈4dp。 */
-internal val OfficialBadgeShape = RoundedCornerShape(4.dp)
 
 /** ETA 蓝块圆角 13px≈4.3dp。 */
 internal val OfficialEtaShape = RoundedCornerShape(4.dp)
@@ -286,9 +287,6 @@ internal class OfficialTypography(palette: OfficialPalette) {
 
     /** 站名 14.3sp。 */
     val StationName = official(14.3.sp, palette.Ink, 20.sp)
-
-    /** 站名右侧线路号徽标里的白字（约 12.5sp，Bold）；颜色按线路色亮度另算。 */
-    val StationBadge = official(12.5.sp, Color.White, 15.sp, FontWeight.Bold)
 
     /** 「刷新」文字 11.3sp。 */
     val RefreshLabel = official(11.3.sp, palette.SubInk, 15.sp)
@@ -462,8 +460,13 @@ internal val StripNameLineSelected = 21.7.dp
  */
 internal val StripTransferGap = 4.dp
 
-/** 换乘徽标色块边长：基准图 58×58px＝19.33dp（与 tab 徽标同一套画法，只是缩小）。 */
-internal val StripTransferBadge = 19.33.dp
+/**
+ * 换乘徽标色块边长：官方 58×58px＝19.33dp。
+ *
+ * 与共享徽标的小档（[SmallBadgeSize]）是同一个值——位置条换乘标注、列表里的
+ * 「本站线路号」与「换乘」徽标全部同规格（19.3dp、圆角 2.3dp、白字）。
+ */
+internal val StripTransferBadge = SmallBadgeSize
 
 /** 相邻两枚换乘徽标的间距：基准图 12px＝4dp。 */
 internal val StripTransferBadgeGap = 4.dp

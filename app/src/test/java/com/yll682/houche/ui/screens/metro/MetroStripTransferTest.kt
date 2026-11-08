@@ -316,32 +316,41 @@ class MetroStripTransferTest {
         assertTrue("深色下标注也要与站名分开：$band", band.top - dark.nameInkBottom(col) >= 6f)
     }
 
-    // ---- 测试 5：徽标字色规则（浅色底自动切深墨，深色底留白） -------------------------
+    // ---- 测试 5：徽标字色（一律白，官方实测） -------------------------------------------
 
     /**
-     * 官方基准图里 1/2/3 号线徽标是白字压浅底（`#ED7101` / `#92D085` / `#95D9E4` + 白），
-     * 2/3 号线白字只有 1.8–2.4:1——照抄过来读不清。这一版沿用**与 tab 徽标同一条**规则
-     * （[onLineColor]：亮度 ≥ 0.20 走 #1A1A1A，否则白字），逐线实测都 ≥ 4.5:1。
+     * 2026-11-08 改判：徽标字色**一律白**，不再按底色亮度切深墨。
+     *
+     * 依据是官方基准图 `notes/refs/official-line1-train-position.jpg` 的逐像素统计：
+     * 1/2/3 号线徽标（`#ED7101` / `#92D085` / `#95D9E4`）的字色主色都是 (240,240,240)＝白，
+     * **连浅绿、浅青的徽标官方也用白字**，并不存在「对比度不足就换深墨」这回事。
+     * 底色继续用 `metro.json` 的官方线网图色（用户 2026-11-08 明确要求「线路色用原来的官方色」）。
+     *
+     * 共享徽标组件把字色写死成白（[LineBadgeInk]），徽标内部不再调用 [onLineColor]；
+     * 亮度阈值那套逻辑只留给「浅色线路色上写普通文字」这类非徽标场景。
      */
     @Test
-    fun badgeInkAlwaysClearsWcagAAOnItsOwnFill() {
+    fun badgeInkIsAlwaysWhiteOnEveryLineColor() {
+        assertEquals("徽标字色写死为白", androidx.compose.ui.graphics.Color.White, LineBadgeInk)
         for (line in lines) {
             val fill = hex(line.color)
-            val ink = onLineColor(fill)
-            val ratio = contrastRatio(ink, fill)
-            assertTrue("${line.id} 号线徽标字色对比度应 ≥ 4.5:1，实际 $ratio", ratio >= 4.5f)
-        }
-        // 1/2/3 号线（#DA7028 / #52A441 / #52B5C8）亮度 ≥ 0.20 → 深墨 #1A1A1A；
-        // 4/6 号线（#E50012 / #92308D）→ 白字。
-        for (id in listOf("1", "2", "3")) {
-            val ink = onLineColor(hex(lines.first { it.id == id }.color))
-            assertTrue("$id 号线底上应走深墨，实际 $ink", ink.luminance() < 0.05f)
-        }
-        for (id in listOf("4", "6")) {
+            // 徽标内部用的就是这一个白字，不再按亮度分叉：1/2/3 号线原来会走深墨 #1A1A1A。
             assertEquals(
-                "$id 号线底上应是白字",
+                "${line.id} 号线徽标字色应是白",
                 androidx.compose.ui.graphics.Color.White,
-                onLineColor(hex(lines.first { it.id == id }.color))
+                LineBadgeInk
+            )
+            if (fill.luminance() >= .20f) {
+                assertTrue(
+                    "${line.id} 号线底色亮度高，旧规则会给深墨——徽标必须仍走白",
+                    onLineColor(fill) != LineBadgeInk
+                )
+            }
+            // 底色一个字节都没动：仍是 metro.json 的官方线网图色。
+            assertEquals(
+                "${line.id} 号线底色应仍是 metro.json 的官方色",
+                fill,
+                hex(lines.first { it.id == line.id }.color)
             )
         }
     }
