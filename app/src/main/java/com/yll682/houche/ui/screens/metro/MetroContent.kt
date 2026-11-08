@@ -30,6 +30,7 @@ import com.yll682.houche.ui.theme.Capsule
 
 @Composable fun MetroContent(
     state: UiState<MetroData>, select: (String) -> Unit, back: () -> Unit,
+    selectStation: (String) -> Unit = {}, selectDirection: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val data = state.data ?: MetroData()
@@ -54,6 +55,20 @@ import com.yll682.houche.ui.theme.Capsule
                 }
             }
             item {
+                Box(Modifier.padding(bottom = 14.dp)) {
+                    MetroRealtimeCard(
+                        realtime = data.realtime,
+                        loading = data.realtimeLoading,
+                        note = data.realtimeNote,
+                        updatedAt = data.realtimeUpdated,
+                        stationName = data.realtimeStationName.ifBlank { line.liveStations.firstOrNull()?.name.orEmpty() },
+                        line = line,
+                        directionIndex = data.direction,
+                        onDirection = selectDirection
+                    )
+                }
+            }
+            item {
                 Box(Modifier.padding(bottom = 10.dp)) {
                     SectionHeader(
                         stringResource(R.string.metro_stations),
@@ -65,7 +80,10 @@ import com.yll682.houche.ui.theme.Capsule
                 }
             }
             itemsIndexed(line.liveStations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
-                MetroStopRow(stop, index, line.liveStations.size, tint, !stop.opened)
+                MetroStopRow(
+                    stop, index, line.liveStations.size, tint, !stop.opened,
+                    selected = stop.code.isNotBlank() && stop.code == data.realtimeStation
+                ) { selectStation(stop.code) }
             }
             if (data.updated.isNotBlank()) {
                 item {
@@ -135,19 +153,24 @@ import com.yll682.houche.ui.theme.Capsule
 }
 
 /** 竖向站序：左侧连续轨道，站名下方显示首末班与换乘。 */
-@Composable private fun MetroStopRow(stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean) {
+@Composable private fun MetroStopRow(
+    stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean,
+    selected: Boolean = false, onClick: () -> Unit = {}
+) {
     val transferText = stop.transfer.joinToString(" / ")
     val stationLabel = if (stop.transfer.isEmpty()) stop.name else
         stringResource(R.string.metro_stop_transfer, stop.name, transferText)
     val firstTime = if (stop.first.isNotBlank()) stringResource(R.string.first_time, stop.first) else ""
     val lastTime = if (stop.last.isNotBlank()) stringResource(R.string.last_time, stop.last) else ""
     val pendingText = if (pending) stringResource(R.string.metro_not_open) else ""
-    val label = listOf(stationLabel, firstTime, lastTime, pendingText).filter { it.isNotBlank() }.joinToString("，")
+    val selectedText = if (selected) stringResource(R.string.metro_realtime_station) else ""
+    val label = listOf(stationLabel, firstTime, lastTime, pendingText, selectedText).filter { it.isNotBlank() }.joinToString("，")
     val first = index == 0
     val last = index == total - 1
     // 未开通的站点用淡色，视觉上能和已运营的分开
     val track = tint.copy(alpha = if (pending) .16f else .38f)
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 52.dp)
+        .clickable(enabled = stop.code.isNotBlank()) { onClick() }
         .clearAndSetSemantics { contentDescription = label }) {
         Column(Modifier.width(34.dp).fillMaxHeight().clearAndSetSemantics {}) {
             // 上段只画到圆点中心，下段由 weight 撑到底，圆点带底色盖住接缝 → 轨道是连的。
@@ -165,8 +188,9 @@ import com.yll682.houche.ui.theme.Capsule
                 stop.name,
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (pending) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
-            if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty()) {
+            if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty() || selected) {
                 Spacer(Modifier.height(4.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
@@ -174,6 +198,7 @@ import com.yll682.houche.ui.theme.Capsule
                     if (firstTime.isNotEmpty()) Text(firstTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
                     if (lastTime.isNotEmpty()) Text(lastTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
                     stop.transfer.forEach { tag -> MetaPill(tag) }
+                    if (selected) MetaPill(stringResource(R.string.metro_realtime_station), tint = tint)
                 }
             }
         }

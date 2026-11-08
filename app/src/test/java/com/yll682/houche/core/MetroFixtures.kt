@@ -13,6 +13,7 @@ internal object MetroFixtures {
         .first { it.isFile }
 
     val sample: JsonElement by lazy { BusNetwork.json.parseToJsonElement(file("metro-response-sample.json").readText()) }
+    val realtime: JsonElement by lazy { BusNetwork.json.parseToJsonElement(file("metro-realtime-sample.json").readText()) }
     val plaintext: JsonElement get() = BusNetwork.json.parseToJsonElement(sample.s("plaintext"))
 
     /** 分支用例修改原有明文后重新封装；成功解密的基准始终是原始密文。 */

@@ -34,7 +34,9 @@ import java.io.InputStream
     val opened: Boolean = true,
     val first: String = "",
     val last: String = "",
-    val stations: List<MetroStation> = emptyList()
+    val stations: List<MetroStation> = emptyList(),
+    /** 官方八位线路码；旧快照缺失时由首站站码推导。 */
+    val apiCode: String = ""
 ) {
     /**
      * 全部站点按站序排好。
@@ -46,6 +48,10 @@ import java.io.InputStream
     /** 尚未正式运营的站点数量，用于界面上的状态提示。 */
     val pendingCount: Int get() = stations.count { !it.opened }
 }
+
+/** 内置快照没有线路码时，站码前两位仍可确定实时接口所需的线路。 */
+fun MetroLine.realtimeCode(): String = apiCode.takeIf { it.isNotEmpty() }
+    ?: stations.firstOrNull()?.code?.takeIf { it.isNotEmpty() }?.take(2)?.plus("000000").orEmpty()
 
 @Serializable data class MetroNetwork(
     val city: String = "",

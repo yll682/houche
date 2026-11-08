@@ -72,6 +72,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("io.ktor:ktor-client-mock:2.3.13")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(composeBom)
     implementation("androidx.core:core-ktx:1.15.0")

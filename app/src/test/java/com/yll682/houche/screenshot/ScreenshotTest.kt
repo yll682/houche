@@ -138,6 +138,24 @@ class ScreenshotTest {
         MetroContent(UiState.Success(metroData.copy(online = true)), {}, {})
     }
 
+    /** 实时到站用官方真实响应：一号线高崎站，两个方向各三班车，含列车位置示意。 */
+    private val metroRealtime: MetroRealtime by lazy {
+        MetroRealtimeRemote().parse(MetroFixtures.realtime.s("rawResponse"), "01000000", "01130000")
+    }
+    private val metroRealtimeData: MetroData get() = metroData.copy(
+        realtime = metroRealtime,
+        realtimeStation = "01130000",
+        realtimeStationName = "高崎",
+        realtimeUpdated = "08:12"
+    )
+
+    @Test fun metroRealtime_light() = capture("metro-realtime", false) {
+        MetroContent(UiState.Success(metroRealtimeData), {}, {}, {}, {})
+    }
+    @Test fun metroRealtime_dark() = capture("metro-realtime", true) {
+        MetroContent(UiState.Success(metroRealtimeData), {}, {}, {}, {})
+    }
+
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
         UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },

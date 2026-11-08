@@ -114,4 +114,23 @@
     <string name="metro_source">地铁站序来源：%1$s</string>
     <string name="metro_search_meta">%1$s，%2$d 站</string>
     <string name="metro_data_source">站序资料：%1$s</string>
+    <string name="metro_realtime">实时到站</string>
+    <string name="metro_realtime_station">参考站</string>
+    <string name="metro_realtime_hint">点下方站名切换参考站</string>
+    <string name="metro_realtime_updated">%1$s 更新</string>
+    <string name="metro_realtime_loading">正在获取实时到站</string>
+    <string name="metro_realtime_failed">实时到站获取失败：%1$s</string>
+    <string name="metro_realtime_direction">往 %1$s</string>
+    <string name="metro_realtime_stops">还有 %1$d 站</string>
+    <string name="metro_realtime_arrive_soon">即将到站</string>
+    <string name="metro_realtime_minutes">约 %1$d 分钟后到站</string>
+    <string name="metro_realtime_minutes_short">%1$d 分钟</string>
+    <string name="metro_realtime_waiting">等待发车</string>
+    <string name="metro_realtime_not_operating">非运营时间</string>
+    <string name="metro_realtime_not_started">未到首班 %1$s</string>
+    <string name="metro_realtime_finished">已过末班 %1$s</string>
+    <string name="metro_realtime_no_service">该方向暂无班次</string>
+    <string name="metro_realtime_position">列车位置</string>
+    <string name="metro_realtime_tip">只显示最近 3 班列车，预计到站时间仅供参考，请以实际运营情况为准</string>
+    <string name="metro_realtime_selected">已设为参考站</string>
 </resources>

@@ -24,6 +24,7 @@ class AppGraph(
     fun setLocatedCity(city: City) { located.value = city }
     val cities = Cities { app.assets.open("cities.json") }
     val metroRemote = MetroRemote()
+    val metroRealtime = MetroRealtimeRemote()
     val prefs = Prefs(app)
     val location = LocationProvider(app)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
