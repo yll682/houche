@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.0",
-  "versionCode": 11,
+  "versionName": "1.7.1",
+  "versionCode": 12,
   "released": "2026-11-08",
-  "notes": "地铁实时到站与列车位置：双方向三班车、剩余站数、列车位置示意，点站名切换参考站。",
+  "notes": "站点页按到站远近排序；修地铁首进实时失败；方向三处一致；横向站距收紧。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.0/houche-v1.7.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.0/houche-v1.7.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.1/houche-v1.7.1.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.1/houche-v1.7.1.apk"
   }
 }
