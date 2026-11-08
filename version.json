@@ -2,7 +2,7 @@
   "versionName": "1.7.4",
   "versionCode": 15,
   "released": "2026-11-08",
-  "notes": "地铁列车位置页：新增深色模式、站点可点切换所在站、刷新旋转动画、车标平滑位移；线路色沿用官方线网图色值。",
+  "notes": "地铁列车位置页：深色模式、换乘站跳转、按定位选站、班次编号到第N班；修换站后方向/到站时间框/间距/班号错乱，修正 4、6 号线开通状态。",
   "downloads": {
     "github": "https://github.com/yll682/houche/releases/download/v1.7.4/houche-v1.7.4.apk",
     "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.4/houche-v1.7.4.apk"
