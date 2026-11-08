@@ -1,10 +1,10 @@
 {
-  "versionName": "1.6.1",
-  "versionCode": 10,
-  "released": "2026-11-07",
-  "notes": "修复首页看不到地铁入口：按钮回调漏传，入口图标不显示。",
+  "versionName": "1.7.0",
+  "versionCode": 11,
+  "released": "2026-11-08",
+  "notes": "地铁实时到站与列车位置：双方向三班车、剩余站数、列车位置示意，点站名切换参考站。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.6.1/houche-v1.6.1.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.6.1/houche-v1.6.1.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.0/houche-v1.7.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.0/houche-v1.7.0.apk"
   }
 }
