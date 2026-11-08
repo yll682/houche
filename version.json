@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.5",
-  "versionCode": 16,
+  "versionName": "1.7.6",
+  "versionCode": 17,
   "released": "2026-11-08",
-  "notes": "修复列车位置条车辆重复（同一列车被多个参考站重复计入，曾显示 10 辆车挤在一处）；已过本站的列车标「已过」。",
+  "notes": "修复切站/刷新出现「本站到站暂不可用」；横向位置条在站名下方标出可换乘线路。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.5/houche-v1.7.5.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.5/houche-v1.7.5.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.6/houche-v1.7.6.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.6/houche-v1.7.6.apk"
   }
 }

@@ -217,6 +217,28 @@ internal fun needsLineEdge(tint: Color, palette: OfficialPalette): Boolean =
     palette.IsDark && contrastRatio(tint, palette.Card) < 3f
 
 /**
+ * 位置条「站名下方换乘线路」的字色：优先用目标线路自己的颜色（用户要求），
+ * 压在卡片底色上读不清时按 [onLineColor] 的同一套做法退字——浅色底退深墨 `#1A1A1A`，
+ * 深色底退白。
+ *
+ * 阈值取 **3:1**（WCAG 1.4.11 非文字 / 大字那档），不是正文的 4.5:1：官方线路色里
+ * 1 号线 `#DA7028` 压白只有 3.32、2 号线 `#52A441` 3.13——按 4.5 会双双退成深墨，
+ * 直接违反「用目标线路自己的颜色」。3:1 下只有 3 号线 `#52B5C8`（2.39）退深墨，
+ * 4 `#E50012`（4.84）、6 `#92308D`（6.93）留原色。
+ *
+ * 深色卡上先按 [listLineColor] 提亮 35%（6 号线原色压 `#181D23` 只有 2.45，4 号线 3.50），
+ * 提亮后五条线实测 5.05 / 5.16 / 7.92 / 8.39 / 9.78:1，**都还能认出是那条线的颜色**，不必退白。
+ */
+internal fun stripTransferInk(tint: Color, palette: OfficialPalette): Color {
+    val readable = if (palette.IsDark) listLineColor(tint, palette) else tint
+    return if (contrastRatio(readable, palette.Card) >= StripTransferMinContrast) readable
+    else onLineColor(palette.Card)
+}
+
+/** 换乘标注字色的最低对比度，见 [stripTransferInk]。 */
+private const val StripTransferMinContrast = 3f
+
+/**
  * 站序列表（官方这页没有，候车自有控件）的线路色：深色下把线路色往白里提 35% 再降透明度用，
  * 免得 4/6 号线在深底上只剩一团黑。**位置条、徽标这些官方版式里的元素仍用原色值**，
  * 这条只作用于「非官方版式」的装饰件。
@@ -307,6 +329,15 @@ internal class OfficialTypography(palette: OfficialPalette) {
 
     /** 选中站名：Bold + 靛蓝 + 行距 65px≈21.7dp。 */
     val StripeNameSelected = official(14.3.sp, palette.StationSelected, 21.7.sp, FontWeight.Bold)
+
+    /**
+     * 位置条站名下方的换乘线路（「1号线」/「2号线」）：10sp / 行高 13dp。
+     *
+     * 比站名（14.3sp）小一档、比站序列表的 MetaLabel（11sp）还小一点——它是站名的附注，
+     * 一行一个换乘目标竖排。这里给的是**兜底**颜色（[OfficialPalette.SubInk]），
+     * 实际字色逐个用目标线路色 + [stripTransferInk] 现算。
+     */
+    val StripeTransfer = official(10.sp, palette.SubInk, 13.sp)
 
     /** 车标下方「第N班」11.5sp。 */
     val TrainLabel = official(11.5.sp, palette.TrainLabel, 15.sp)
@@ -440,6 +471,15 @@ internal val StripLineEdge = .6.dp
 internal val StripNameGap = 16.dp
 internal val StripNameLine = 20.3.dp
 internal val StripNameLineSelected = 21.7.dp
+
+/**
+ * 站名最后一字到下方换乘标注第一行的间距。
+ *
+ * 站名按行盒（20.3dp / 21.7dp）算高、字墨迹比行盒矮一截，2dp 刚好在「看得出是两段、
+ * 又不脱开站名」之间；换乘标注的行距是行盒本身（13dp），所以第一行到最后一字的实际
+ * 墨迹间隙 ≥ 2dp + 行盒内留白，永远不小于 2dp。
+ */
+internal val StripTransferGap = 2.dp
 
 /** 位置条视口锚点：选中站落在视口 78% 处（官方截图实测 78.4%）。 */
 internal const val StripAnchorRatio = 0.78f

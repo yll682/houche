@@ -326,8 +326,8 @@ class MetroRealtimeTest {
         }
     }
 
-    @Test fun `HTTP 错误不能被有效响应体掩盖且只重试临时错误一次`() = runBlocking {
-        for ((status, expectedRequests) in listOf(HttpStatusCode.BadRequest to 1, HttpStatusCode.TooManyRequests to 2, HttpStatusCode.ServiceUnavailable to 2)) {
+    @Test fun `HTTP 错误不能被有效响应体掩盖且不隐式重试`() = runBlocking {
+        for ((status, expectedRequests) in listOf(HttpStatusCode.BadRequest to 1, HttpStatusCode.TooManyRequests to 1, HttpStatusCode.ServiceUnavailable to 1)) {
             var requests = 0
             client {
                 requests++
@@ -347,7 +347,7 @@ class MetroRealtimeTest {
         var requests = 0
         client {
             requests++
-            if (requests <= 2) throw IOException("离线")
+            if (requests == 1) throw IOException("离线")
             respond(response())
         }.use { http ->
             val source = MetroRealtimeRemote(http)
@@ -355,7 +355,7 @@ class MetroRealtimeTest {
             assertFalse(failed.online)
             assertTrue(failed.note, failed.note.contains("IOException"))
             assertTrue(source.latest("01000000").online)
-            assertEquals(3, requests)
+            assertEquals(2, requests)
         }
     }
 

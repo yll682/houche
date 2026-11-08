@@ -41,14 +41,14 @@ class MetroRealtimeSelectionStateTest {
         assertEquals(other.direction!!.directionKey, other.selectedDirectionKey)
     }
 
-    @Test fun `选中站不在缓存批次时完成为不可用且缓存采样不续命`() {
+    @Test fun `选中站不在缓存批次时继续Loading且缓存采样不续命`() {
         val original = frame("A", sourceA)
         val cachedAtB = original.copy(stationCode = "B", stationName = "乙站", directions = original.directions.map {
             it.copy(trains = emptyList(), positionTrains = it.allIdentifiedTrains, arrivalsAvailable = false)
         })
         val completed = MetroRealtimeState(frame = original).selectStation("B", "乙站").complete(cachedAtB)
 
-        assertTrue(completed.etaState is MetroEtaState.Unavailable)
+        assertTrue(completed.etaState is MetroEtaState.Loading)
         assertNull(completed.etaState.lastSuccessAt)
         assertEquals(original.directions.map { it.positions }, completed.displayFrame!!.directions.map { it.positions })
         assertEquals(sourceA, completed.lastSuccessAt)
@@ -57,13 +57,13 @@ class MetroRealtimeSelectionStateTest {
         assertEquals(20_000L, completed.positionsAt(21_000).ageMillis)
     }
 
-    @Test fun `真实成功空车和本站缺失分别是Empty和Unavailable`() {
+    @Test fun `真实成功空车和本站尚未采样分别是Empty和Loading`() {
         val empty = frame("B", sourceB).copy(directions = frame("B", sourceB).directions.map { it.copy(trains = emptyList()) })
         val completed = MetroRealtimeState().selectStation("B", "乙站").complete(empty)
         assertEquals(MetroEtaState.Empty("B", sourceB), completed.etaState)
 
         val missing = completed.complete(empty.copy(directions = empty.directions.map { it.copy(arrivalsAvailable = false) }))
-        assertTrue(missing.etaState is MetroEtaState.Unavailable)
+        assertTrue(missing.etaState is MetroEtaState.Loading)
         assertFalse(missing.loading)
     }
 
@@ -118,6 +118,33 @@ class MetroRealtimeSelectionStateTest {
         assertEquals(completed.selectedDirectionKey, completed.direction!!.directionKey)
     }
 
+    @Test fun `旧位置只有一个方向时本站新增方向可选且后续部分批次不抹掉选择`() {
+        val original = frame("A", sourceA).let { it.copy(directions = it.directions.take(1)) }
+        val arrivals = frame("B", sourceB)
+        val completed = MetroRealtimeState(frame = original).selectStation("B", "乙站").completeStation(arrivals)
+        assertSame(original, completed.frame)
+        assertEquals(sourceA, completed.lastSuccessAt)
+        assertEquals(2, completed.displayFrame!!.directions.size)
+
+        val reverse = completed.selectDirection(1)
+        assertEquals(1, reverse.selectedDirectionIndex)
+        assertEquals(MetroDirectionKey(codes.reversed()), reverse.selectedDirectionKey)
+        assertEquals(codes.reversed(), reverse.direction!!.stationCodes)
+        assertTrue(reverse.etaState is MetroEtaState.Ready)
+        assertEquals(sourceB, reverse.etaState.lastSuccessAt)
+        assertTrue(reverse.direction!!.positions.isNotEmpty())
+        assertEquals(5_000L, reverse.positionsAt(6_000).ageMillis)
+
+        val partialAgain = reverse.completePositions(original)
+        assertSame(original, partialAgain.frame)
+        assertEquals(sourceA, partialAgain.lastSuccessAt)
+        assertEquals(reverse.selectedDirectionKey, partialAgain.selectedDirectionKey)
+        assertEquals(1, partialAgain.selectedDirectionIndex)
+        assertEquals(codes.reversed(), partialAgain.direction!!.stationCodes)
+        assertEquals(reverse.etaState, partialAgain.etaState)
+        assertEquals(6_000L, partialAgain.positionsAt(7_000).ageMillis)
+    }
+
     @Test fun `首次响应前保留旧索引偏好并在真实方向到达后建立key和夹紧索引`() {
         val pending = MetroRealtimeState(directionIndex = 1).beginRequest()
         assertEquals(1, pending.directionIndex)
@@ -142,11 +169,11 @@ class MetroRealtimeSelectionStateTest {
             direction.copy(trains = direction.trains.map { it.copy(source = sourceA) })
         }) }
         val completed = MetroRealtimeState().selectStation("B", "乙站").complete(polluted)
-        assertTrue(completed.etaState is MetroEtaState.Unavailable)
+        assertTrue(completed.etaState is MetroEtaState.Loading)
         assertTrue(completed.direction!!.trains.isEmpty())
         assertTrue(completed.direction!!.positions.isNotEmpty())
         val emptyWithWrongSource = polluted.copy(directions = polluted.directions.map { it.copy(trains = emptyList(), source = sourceA) })
-        assertTrue(completed.complete(emptyWithWrongSource).etaState is MetroEtaState.Unavailable)
+        assertTrue(completed.complete(emptyWithWrongSource).etaState is MetroEtaState.Loading)
     }
 
     @Test fun `未知或异时域采样不会由墙钟或请求时间冒充新鲜位置`() {

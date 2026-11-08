@@ -208,6 +208,18 @@ class MetroInitialSelectionStateTest {
         assertEquals("02010000", online.beginRealtimeRequest(8)!!.second.stationCode)
     }
 
+    @Test fun `同id线路的API身份变化不保留旧位置或本站来源`() {
+        val original = withSuccessfulFrame().let { it.copy(realtimeArrivalFrame = it.realtime) }
+        val (pending, request) = original.beginRealtimeRequest(7)!!
+        val online = pending.withMetroSnapshot(snapshot(listOf(firstLine.copy(apiCode = "09000000"), secondLine)), "1")
+        assertNull(online.realtime)
+        assertNull(online.realtimeLastSuccessfulFrame)
+        assertNull(online.realtimeArrivalFrame)
+        assertEquals(0L, online.realtimeRequestId)
+        assertSame(online, online.completeRealtimeStationRequest(request, frame(), "10:02"))
+        assertEquals("09000000", online.beginRealtimeRequest(8)!!.second.lineCode)
+    }
+
     private fun station(order: Int, name: String, code: String, lat: Double, lng: Double) = MetroStation(
         order, name, code = code, lat = lat.toString(), lng = lng.toString(), coordinateSystem = "GCJ02"
     )

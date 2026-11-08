@@ -388,6 +388,73 @@ class ScreenshotTest {
     }
 
     /**
+     * 位置条站名下方的换乘标注：1 号线、选中「吕厝」。
+     *
+     * 吕厝在两套站表里都是换乘站（1 号线 01080000 ↔ 2 号线 02180000），所以站名下面
+     * 写的是 **2 号线自己的绿色**「2号线」；同屏左边还有湖滨东路（换 3 号线）。
+     * 3 号线青 `#52B5C8` 压白只有 2.39:1，按 [stripTransferInk] 退深墨——这一张能同时看到
+     * 「线路色」与「对比不足退深墨」两种结果。
+     *
+     * 车位照真实响应的形态摆在本站上游（下一站依次是本站 / 莲花路口 / 莲坂），
+     * 只从上方压过来，绝不进站名下面那块换乘区。
+     */
+    private fun stripTransferScene(
+        line: MetroLine, reference: String, step: Int = 1
+    ): MetroData {
+        val codes = line.liveStations.map { it.code }
+        val names = line.liveStations.associate { it.code to it.name }
+        val index = codes.indexOf(reference)
+        val source = MetroObservationSource(reference)
+        val trains = (1..3).map { k ->
+            val next = codes[(index - k + step).coerceIn(0, codes.lastIndex)]
+            MetroTrain(
+                arriveSeconds = k * 180, nextStationCode = next, nextStationName = names.getValue(next),
+                scale = 1.0, arrivingFlag = if (k == 1) 2 else 1, specialPosition = 0,
+                specialPositionDesc = "", source = source
+            )
+        }
+        return MetroData(
+            lines = metroLines, selected = line.id, updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "",
+                stationCode = reference, stationName = names.getValue(reference),
+                directions = listOf(
+                    MetroDirection(
+                        origin = line.from, destination = line.to, startTime = "06:00", endTime = "23:00",
+                        delayMinutes = 0, trains = trains, stationCodes = codes, source = source,
+                        positionTrains = trains, arrivalsAvailable = true
+                    )
+                )
+            ),
+            realtimeStation = reference, realtimeStationName = names.getValue(reference),
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    private val luocuoData: MetroData by lazy { stripTransferScene(metroLine1, "01080000") }
+
+    @Test fun metroStripTransfer_light() = capture("metro-strip-transfer", false) {
+        MetroContent(UiState.Success(luocuoData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroStripTransfer_dark() = capture("metro-strip-transfer", true) {
+        MetroContent(UiState.Success(luocuoData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 6 号线、选中「马銮中心」（换 2 号线）：这条线最长的站名就是 4 个字，所以
+     * 「站名块 + 换乘标注」比原来只写站名时更高，位置条**整体加高**——这张图验的就是
+     * 加高后最后一排换乘标注不会被裁掉，而且车标、站名、站心一个都没动。
+     */
+    private val malaunData: MetroData by lazy { stripTransferScene(metroLines.first { it.id == "6" }, "06110000") }
+
+    @Test fun metroStripTransfer6_light() = capture("metro-strip-transfer6", false) {
+        MetroContent(UiState.Success(malaunData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroStripTransfer6_dark() = capture("metro-strip-transfer6", true) {
+        MetroContent(UiState.Success(malaunData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
      * 截图用的演示数据本身也要自洽：本站第 k 行必须正好是全方向第 k 班（越近越靠前）。
      *
      * 这里守的是曾经的坑：`nextStationCode = codes[index + step]` 把 ETA 越大的车摆到越下游，

@@ -39,8 +39,8 @@ data class MetroPositionState(
 
 /**
  * 可独立验证的切站/方向/ETA reducer。
- * frame 永远是上一次真实成功批次；切站、失败、缓存重选都不改写其来源或采样时刻。
- * displayFrame 仅为当前站投影，保留同一批 positions，摘除其他站或失败后的 ETA。
+ * frame 是真实成功的位置批次，arrivalFrame 是独立的本站响应，两者各有采样时刻。
+ * displayFrame 仅为当前站投影，摘除其他站或失败后的 ETA；本站请求不能为旧位置续命。
  */
 data class MetroRealtimeState(
     val frame: MetroRealtime? = null,
@@ -49,24 +49,29 @@ data class MetroRealtimeState(
     val loading: Boolean = false,
     val unavailableNote: String? = null,
     val selectedDirectionKey: MetroDirectionKey? = null,
-    val directionIndex: Int = 0
+    val directionIndex: Int = 0,
+    val arrivalFrame: MetroRealtime? = null
 ) {
     val selectedDirectionIndex: Int get() {
-        val directions = frame?.directions.orEmpty()
+        val directions = combinedFrame?.directions.orEmpty()
         // 首次响应前还没有可夹紧的方向集合，保留旧调用方的索引偏好。
         if (directions.isEmpty()) return directionIndex.coerceAtLeast(0)
         val byKey = selectedDirectionKey?.let { key -> directions.indexOfFirst { it.directionKey == key } }
         return byKey?.takeIf { it >= 0 } ?: directionIndex.coerceIn(0, directions.lastIndex.coerceAtLeast(0))
     }
 
-    private val rawDirection: MetroDirection? get() = frame?.directions?.getOrNull(selectedDirectionIndex)
+    private val combinedFrame: MetroRealtime? = frame?.let { positions ->
+        arrivalFrame?.let { arrivals -> overlayMetroRealtimeArrivals(positions, arrivals) } ?: positions
+    } ?: arrivalFrame
+
+    private val rawDirection: MetroDirection? get() = combinedFrame?.directions?.getOrNull(selectedDirectionIndex)
 
     /** 只取真实来源，不以请求完成、选站或错误发生时间续命。 */
     val lastSuccessAt: MetroObservationSource? get() = frame?.source
         ?: frame?.sources?.maxByOrNull { it.receivedAtElapsedMillis ?: Long.MIN_VALUE }
-        ?: rawDirection?.source
+        ?: frame?.directions?.getOrNull(selectedDirectionIndex)?.source
 
-    val displayFrame: MetroRealtime? get() = frame?.let { successful ->
+    val displayFrame: MetroRealtime? get() = combinedFrame?.let { successful ->
         val directions = successful.directions.map { direction ->
             if (unavailableNote == null && hasStationArrivals(direction)) direction
             else direction.copy(trains = emptyList(), positionTrains = direction.allIdentifiedTrains, arrivalsAvailable = false)
@@ -85,15 +90,16 @@ data class MetroRealtimeState(
         return when {
             loading -> MetroEtaState.Loading(stationCode, sampledAt)
             unavailableNote != null -> MetroEtaState.Unavailable(stationCode, unavailableNote, sampledAt)
-            direction == null || !hasStationArrivals(direction) -> MetroEtaState.Unavailable(stationCode, "本站到站暂不可用")
+            // 没查询、批次没覆盖本站、预算排队都没有发生 HTTP 失败，继续等待本站响应。
+            direction == null || !hasStationArrivals(direction) -> MetroEtaState.Loading(stationCode)
             direction.trains.isEmpty() -> MetroEtaState.Empty(stationCode, sampledAt)
             else -> MetroEtaState.Ready(stationCode, direction.trains, sampledAt)
         }
     }
 
     private fun hasStationArrivals(direction: MetroDirection): Boolean =
-        frame?.stationCode == stationCode && direction.arrivalsAvailable &&
-            (direction.source ?: frame?.source).let { it == null || it.referenceStationCode == stationCode } &&
+        combinedFrame?.stationCode == stationCode && direction.arrivalsAvailable &&
+            (direction.source ?: arrivalFrame?.source ?: frame?.source).let { it == null || it.referenceStationCode == stationCode } &&
             direction.trains.all { train ->
                 val source = train.source ?: direction.source
                 source == null || source.referenceStationCode == stationCode
@@ -116,12 +122,13 @@ data class MetroRealtimeState(
         stationCode = code,
         stationName = name,
         loading = true,
+        unavailableNote = null,
         selectedDirectionKey = rawDirection?.directionKey ?: selectedDirectionKey,
         directionIndex = selectedDirectionIndex
     )
 
     fun selectDirection(index: Int): MetroRealtimeState {
-        val directions = frame?.directions.orEmpty()
+        val directions = combinedFrame?.directions.orEmpty()
         val selected = index.coerceIn(0, directions.lastIndex.coerceAtLeast(0))
         return copy(directionIndex = selected, selectedDirectionKey = directions.getOrNull(selected)?.directionKey)
     }
@@ -147,7 +154,28 @@ data class MetroRealtimeState(
             loading = false,
             unavailableNote = null,
             selectedDirectionKey = normalized.directions.getOrNull(selected)?.directionKey,
-            directionIndex = selected
+            directionIndex = selected,
+            arrivalFrame = null
         )
+    }
+
+    /** 本站结果立即进入 ETA；已有的位置批次及其年龄不等待、不被本站响应改写。 */
+    fun completeStation(result: MetroRealtime): MetroRealtimeState {
+        if (!result.online) return complete(result)
+        val completed = complete(result)
+        return completed.copy(frame = frame ?: completed.frame, arrivalFrame = completed.frame)
+    }
+
+    /** 广域位置批次不能结束本站等待、抹掉本站错误或覆盖刚成功的本站到站行。 */
+    fun completePositions(result: MetroRealtime): MetroRealtimeState {
+        if (!result.online) return this
+        val previousKey = rawDirection?.directionKey ?: selectedDirectionKey
+        // 即使此批覆盖本站，ETA 仍由独立本站请求负责，批次只提供位置。
+        val arrivals = arrivalFrame ?: frame?.takeIf { !loading && unavailableNote == null }
+        val combined = copy(frame = result, arrivalFrame = arrivals)
+        val directions = combined.combinedFrame?.directions.orEmpty()
+        val selected = previousKey?.let { key -> directions.indexOfFirst { it.directionKey == key } }
+            ?.takeIf { it >= 0 } ?: selectedDirectionIndex.coerceIn(0, directions.lastIndex.coerceAtLeast(0))
+        return combined.copy(selectedDirectionKey = directions.getOrNull(selected)?.directionKey, directionIndex = selected)
     }
 }

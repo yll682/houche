@@ -37,12 +37,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroDirection
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroTrain
+import com.yll682.houche.core.MetroTransferTarget
 import com.yll682.houche.core.positionOf
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -65,6 +67,10 @@ import kotlin.math.roundToInt
  *
  * 与旧版的差别（全部是「照抄」要求）：主线 7dp 实色方角、普通站点没有圆点只有白色箭头、
  * 选中站是三同心圆环 Ø20.7/Ø16.7/Ø8.7、车标 20.7dp 方块且「第N班」在图标下方。
+ *
+ * 换乘标注：有 `transferTargets` 的站，在**站名下面**一行写一条可换乘线路（官方就是把线号写在站名下方），
+ * 字色用目标线路自己的颜色（`stripTransferInk` 按卡片底色做对比度兜底）。标注只占站名下方的
+ * **垂直**空间：格宽 W、站心 `x=(i+0.5)·W`、车标的 lane 一律不动，条高不够时整条往下加高。
  */
 @Composable
 internal fun MetroTrainStrip(
@@ -77,6 +83,11 @@ internal fun MetroTrainStrip(
     val cells = direction.stationCodes
     if (cells.isEmpty()) return
     val names = remember(line) { line.liveStations.associate { it.code to it.name } }
+    // 换乘目标（数据层 `metroTransfers` 已按官方共站码/changeFlag/坐标过滤过，只用现成结果）：
+    // 位置条要把它们写在站名下面。整条线取一次，切站/换向不重算。
+    val transfers = remember(line) {
+        line.liveStations.associate { it.code to it.transferTargets }
+    }
     // selectStation 只认 liveStations 里的站码，别的点上去是死目标，直接不给点击语义。
     val selectable = remember(line) { line.liveStations.map { it.code }.toSet() }
     // metro.json 的官方线路色（深浅模式都不改色值）；主线、箭头、选中站圆环共用一套。
@@ -113,12 +124,25 @@ internal fun MetroTrainStrip(
     // 滚动时卡片高度不会跟着名字长短跳。
     val nameInkInset = 3.9.dp
     val namesTop = TrackCenter + StripNameGap - nameInkInset
-    val namesHeight = cells.maxOfOrNull { code ->
+    // 竖排站名自己的高度（字数 × 该站行距）：换乘标注要贴着**本列**最后一字往下排，
+    // 所以按站算，不能只留一个「本方向最长站名」的全局值。
+    fun nameHeightOf(code: String): Dp {
         val chars = (names[code]?.length ?: 0).coerceIn(1, 8)
         val lineHeight = if (code == stationCode) StripNameLineSelected else StripNameLine
-        lineHeight * chars
-    } ?: StripNameLine
-    val height = stackRoom + namesTop + namesHeight + 1.5.dp
+        return lineHeight * chars
+    }
+    val namesHeight = cells.maxOfOrNull { nameHeightOf(it) } ?: StripNameLine
+    // 换乘标注单行高度实测（字号随 fontScale 放大后要重算）；行距按它整除排布，
+    // 所以第 k 行顶 = 第 0 行顶 + k·transferLine，任两行都不会重叠。
+    val transferLine = rememberStripTransferLineHeight(type.StripeTransfer)
+    /** 站名块下面要给换乘标注留的垂直空间：0 个目标 = 0，否则「间距 + 每目标一行」。 */
+    fun transferRoomOf(code: String): Dp {
+        val count = transfers[code]?.size ?: 0
+        return if (count == 0) 0.dp else StripTransferGap + transferLine * count
+    }
+    val namesBottom = cells.maxOfOrNull { nameHeightOf(it) + transferRoomOf(it) } ?: namesHeight
+    // 格宽 W 与站心完全不参与这里：换乘标注只往下长，条高不够就整体加高（下面的命中列跟着变高）。
+    val height = stackRoom + namesTop + namesBottom + 1.5.dp
     // 站点命中区：上沿压在选中环下沿再让 6dp（车标那一行不参与点按，免得点车标误切参考站），
     // 下沿到整块底边。最矮的情况（单字站名）也有 50dp，满足 44dp 下限。
     val hitTop = stackRoom + TrackCenter - StripRingOuter / 2 - 6.dp
@@ -199,13 +223,21 @@ internal fun MetroTrainStrip(
                     if (name.isBlank()) return@forEachIndexed
                     val active = index == selectedIndex
                     val enabled = code.isNotBlank() && code in selectable
+                    val targets = transfers[code].orEmpty()
+                    val labels = targets.map { stripTransferLabel(it) }
+                    // 整列一句话读出来：站名 + 可换乘哪几条线（换乘标注自己不参与无障碍树，
+                    // 否则同一列会被读两遍）。换乘标注**不可点**，点它们等于点这一列 → 切参考站。
+                    val spoken = if (labels.isEmpty()) name else
+                        stringResource(R.string.metro_stop_transfer, name, labels.joinToString("、"))
+                    // 换乘标注第一行的 y（相对整条位置条顶）：紧贴**本站**站名块的下沿。
+                    val transferTop = stackRoom + namesTop + nameHeightOf(code) + StripTransferGap
                     Box(
                         Modifier.offset(x = cell * index, y = hitTop)
                             .width(cell).height(hitHeight)
                             .clip(StationHitShape)
                             .clickable(enabled = enabled, role = Role.Button) { onSelectStation(code) }
                             .clearAndSetSemantics {
-                                contentDescription = name
+                                contentDescription = spoken
                                 selected = active
                             }
                     ) {
@@ -216,6 +248,22 @@ internal fun MetroTrainStrip(
                             textAlign = TextAlign.Center,
                             maxLines = 8
                         )
+                        // 换乘线路：一行一条，竖排逐行写（用户要求「直接写在站名下面」）。
+                        // 字色＝目标线路自己的颜色；底色对比不足时退深墨/白字（[stripTransferInk]）。
+                        targets.forEachIndexed { row, target ->
+                            Text(
+                                labels[row],
+                                Modifier.offset(y = transferTop + transferLine * row - hitTop).width(cell),
+                                style = type.StripeTransfer.copy(
+                                    color = stripTransferInk(metroColor(target.color), palette)
+                                ),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                softWrap = false,
+                                // 一格只有 W 宽：更长的线路名宁可省略号，也不许溢出到隔壁站。
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 // 车标：方块图标 + 下方标签。未到站写「第N班」（编号按**到本站先后**，第 4、5 班有就画）；
@@ -282,6 +330,38 @@ private fun rememberStripLaneHeight(labelStyle: TextStyle, sample: String): Dp {
             maxOf(StripLaneMin, ceil((band + StripLaneGap.roundToPx()).toFloat()).toDp())
         }
     }
+}
+
+/**
+ * 换乘标注单行的高度：实测「1号线」这一行的行盒高度（px 直接折 dp，不四舍五入）。
+ *
+ * 实测而不是直接用 13sp：fontScale 调大后行盒会比 fontSize 高，写死会让第 2 行压住第 1 行。
+ * 行距＝这个值，所以第 k 行顶 = 第 0 行顶 + k·它，**任意两行永不重叠**；单行内容
+ * （`maxLines = 1` + `softWrap = false`）保证每行高度都不超过一个行盒。
+ */
+@Composable
+private fun rememberStripTransferLineHeight(style: TextStyle): Dp {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    return remember(measurer, style, density) {
+        val linePx = measurer.measure(AnnotatedString("1号线"), style = style, maxLines = 1).size.height
+        with(density) { linePx.toDp() }
+    }
+}
+
+/**
+ * 位置条站名下方那条换乘标注的字：内置站表的线路号都是 1/2/3/4/6，
+ * 数字线路号写成「2号线」（官方也是把线号写在站名下面）；不是数字的线路标识退回线路名。
+ *
+ * 与站序列表徽标里的 [transferBadgeLabel] 不同：那里是胶囊里只放数字，这里没有底色、
+ * 只有一行小字，光写「2」看不出是线路，所以补一个「号线」。
+ */
+@Composable
+private fun stripTransferLabel(target: MetroTransferTarget): String {
+    val id = target.lineId.trim()
+    return if (id.isNotEmpty() && id.length <= 2 && id.all { it in '0'..'9' })
+        stringResource(R.string.metro_line_short, id)
+    else target.lineName
 }
 
 /** 车标上沿到 lane 顶＝0；主线中心 47.5dp，站名 ink 顶 63.5dp（全部来自规格 3.5/3.6）。 */

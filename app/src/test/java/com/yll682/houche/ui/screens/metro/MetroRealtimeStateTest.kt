@@ -37,6 +37,110 @@ class MetroRealtimeStateTest {
         assertNull(initial.copy(lines = listOf(firstLine.copy(apiCode = "", stations = emptyList()))).beginRealtimeRequest(2))
     }
 
+    @Test fun `首次未查询和仅有其他站位置时都等本站而非报失败`() {
+        assertEquals(MetroEtaState.Loading("01010000"), initial.etaState)
+        val source = MetroObservationSource("01020000", receivedAtElapsedMillis = 1_000)
+        val partial = success().copy(source = source, directions = success().directions.map {
+            it.copy(source = source, arrivalsAvailable = false)
+        })
+        val (pending, request) = initial.beginRealtimeRequest(1)!!
+        val positions = pending.completeRealtimePositions(request.lineId, request.lineCode, partial)
+        assertEquals(request.id, positions.realtimeRequestId)
+        assertTrue(positions.realtimeLoading)
+        assertFalse(positions.realtimeUnavailable)
+        assertEquals(MetroEtaState.Loading("01010000"), positions.etaState)
+    }
+
+    @Test fun `前台本站成功立即Ready而迟到位置批次不改本站ETA和独立时钟`() {
+        val arrivalsSource = MetroObservationSource("01010000", receivedAtElapsedMillis = 2_000, receivedAtEpochMillis = 1_800_000_002_000)
+        val arrival = MetroTrain(50, "01010000", "镇海路", 0.6, 1, 0, "", source = arrivalsSource)
+        val station = success().copy(source = arrivalsSource, directions = success().directions.map {
+            it.copy(source = arrivalsSource, trains = listOf(arrival))
+        })
+        val (pending, request) = initial.beginRealtimeRequest(1)!!
+        val completed = pending.completeRealtimeStationRequest(request, station, "09:25")
+        assertTrue(completed.etaState is MetroEtaState.Ready)
+        assertFalse(completed.realtimeLoading)
+        assertEquals(listOf(arrival), (completed.etaState as MetroEtaState.Ready).trains)
+        assertEquals("09:25", completed.realtimeUpdated)
+
+        val positionSource = MetroObservationSource("01020000", receivedAtElapsedMillis = 1_000, receivedAtEpochMillis = 1_800_000_001_000)
+        val batch = success().copy(source = positionSource, sources = listOf(positionSource), directions = success().directions.map {
+            it.copy(trains = emptyList(), source = positionSource, arrivalsAvailable = false)
+        })
+        val positions = completed.completeRealtimePositions(request.lineId, request.lineCode, batch)
+        assertSame(batch, positions.realtimeLastSuccessfulFrame)
+        assertEquals(arrivalsSource, positions.etaState.lastSuccessAt)
+        assertEquals(positionSource, positions.realtimeState.lastSuccessAt)
+        assertEquals(4_000L, positions.realtimeState.positionsAt(5_000).ageMillis)
+        assertEquals(listOf(arrival), (positions.etaState as MetroEtaState.Ready).trains)
+        assertEquals("09:25", positions.realtimeUpdated)
+    }
+
+    @Test fun `旧位置存在时前台本站成功只更新ETA且不会把旧位置时间续命`() {
+        val positionsSource = MetroObservationSource("01010000", receivedAtElapsedMillis = 1_000, receivedAtEpochMillis = 1_800_000_001_000)
+        val arrivalsSource = positionsSource.copy(receivedAtElapsedMillis = 61_000, receivedAtEpochMillis = 1_800_000_061_000)
+        val oldPositions = success().copy(source = positionsSource)
+        val before = initial.copy(realtime = oldPositions, realtimeStation = "01010000", realtimeUpdated = "09:24")
+        val (pending, request) = before.beginRealtimeRequest(1)!!
+        val station = success().copy(source = arrivalsSource, directions = success().directions.map { it.copy(source = arrivalsSource) })
+        val completed = pending.completeRealtimeStationRequest(request, station, "09:25")
+        assertSame(oldPositions, completed.realtimeLastSuccessfulFrame)
+        assertEquals(arrivalsSource, completed.etaState.lastSuccessAt)
+        assertEquals(60_000L, completed.realtimeState.positionsAt(61_000).ageMillis)
+        assertTrue(completed.realtimeState.positionsAt(61_000).isStale)
+    }
+
+    @Test fun `本站补回旧位置批缺失方向后可选且再次部分位置批不会夹回旧方向`() {
+        val positionSource = MetroObservationSource("01010000", receivedAtElapsedMillis = 1_000)
+        val arrivalsSource = MetroObservationSource("01010000", receivedAtElapsedMillis = 4_000)
+        val original = success().copy(source = positionSource, directions = success().directions.take(1))
+        val before = initial.copy(realtime = original, realtimeStation = "01010000")
+        val (pending, request) = before.beginRealtimeRequest(1)!!
+        val current = success().copy(source = arrivalsSource, directions = success().directions.map { direction ->
+            direction.copy(source = arrivalsSource, trains = listOf(MetroTrain(70, "01010000", "镇海路", 0.4, 1, 0, "", arrivalsSource)))
+        })
+        val completed = pending.completeRealtimeStationRequest(request, current, "09:25")
+        assertSame(original, completed.realtimeLastSuccessfulFrame)
+        assertEquals(2, completed.realtime!!.directions.size)
+        val reverse = completed.selectRealtimeDirection(1)
+        assertEquals(current.directions[1].directionKey, reverse.selectedDirectionKey)
+        assertEquals(1, reverse.directionIndex)
+        assertTrue(reverse.etaState is MetroEtaState.Ready)
+        assertEquals(arrivalsSource, reverse.etaState.lastSuccessAt)
+        assertEquals(positionSource, reverse.realtimeState.lastSuccessAt)
+
+        val partialAgain = reverse.completeRealtimePositions(request.lineId, request.lineCode, original)
+        assertEquals(reverse.selectedDirectionKey, partialAgain.selectedDirectionKey)
+        assertEquals(1, partialAgain.directionIndex)
+        assertEquals(reverse.direction!!.stationCodes, partialAgain.direction!!.stationCodes)
+        assertEquals(reverse.etaState, partialAgain.etaState)
+        assertSame(original, partialAgain.realtimeLastSuccessfulFrame)
+        assertEquals(6_000L, partialAgain.realtimeState.positionsAt(7_000).ageMillis)
+    }
+
+    @Test fun `同站Loading重新选中不作废在途上下文且切站清除旧站错误`() {
+        val (pending, request) = initial.selectRealtimeStation("01010000").beginRealtimeRequest(1)!!
+        assertSame(pending, pending.selectRealtimeStation("01010000"))
+        assertTrue(pending.hasRealtimeTarget("1", "01010000"))
+        assertSame(pending, pending.selectRealtimeTarget("1", "01010000"))
+        assertFalse(pending.hasRealtimeTarget("1", "不存在的站码"))
+        assertEquals(request.id, pending.selectRealtimeStation("01010000").realtimeRequestId)
+        val failed = pending.completeRealtimeStationRequest(request, MetroRealtime(false, "旧站超时"), "")
+        val switched = failed.selectRealtimeStation("01020000")
+        assertFalse(switched.realtimeUnavailable)
+        assertEquals(MetroEtaState.Loading("01020000"), switched.etaState)
+    }
+
+    @Test fun `前台响应不能把用户已选站替换为其他参考站且换线后旧位置失效`() {
+        val (pending, request) = initial.beginRealtimeRequest(1)!!
+        assertSame(pending, pending.completeRealtimeStationRequest(request, success("01020000", "中山公园"), "09:25"))
+        val changed = pending.selectRealtimeTarget("2", "02090000")
+        assertSame(changed, changed.completeRealtimePositions(request.lineId, request.lineCode, success()))
+        assertSame(changed, changed.completeRealtimeStationRequest(request, success(), "09:25"))
+        assertEquals(MetroEtaState.Loading("02090000"), changed.etaState)
+    }
+
     @Test fun `请求失败保留旧位置批次并明确ETA不可用且不改成功时间和参考站`() {
         val before = initial.copy(
             realtime = success(), realtimeStation = "01010000", realtimeStationName = "镇海路", realtimeUpdated = "09:24"
@@ -279,7 +383,7 @@ class MetroRealtimeStateTest {
         assertEquals(value.direction!!.stationCodes, missingReference.direction!!.stationCodes)
         assertEquals(value.direction!!.positions, missingReference.direction!!.positions)
         assertTrue(missingReference.direction!!.trains.isEmpty())
-        assertTrue(missingReference.etaState is MetroEtaState.Unavailable)
+        assertTrue(missingReference.etaState is MetroEtaState.Loading)
     }
 
     private fun direction() = MetroDirection(

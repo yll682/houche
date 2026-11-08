@@ -107,6 +107,7 @@
     <string name="metro_stations">站点</string>
     <string name="metro_ends">%1$s → %2$s</string>
     <string name="metro_stop_transfer">%1$s，可换乘 %2$s</string>
+    <string name="metro_line_short">%1$s号线</string>
     <string name="metro_updated">地铁资料 %1$s</string>
     <string name="metro_online">在线</string>
     <string name="metro_not_open">未运营</string>

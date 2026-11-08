@@ -87,7 +87,7 @@ class MetroRealtimeClientTest {
         }
     }
 
-    @Test fun `每批最多八次物理请求且两条线路合计并发也不超过二`() = runBlocking {
+    @Test fun `每批最多八次物理请求且自动采样只占一个全局并发位`() = runBlocking {
         withTimeout(5_000) {
             val entered = CompletableDeferred<Unit>()
             val release = CompletableDeferred<Unit>()
@@ -98,7 +98,7 @@ class MetroRealtimeClientTest {
                 val count = requests.incrementAndGet()
                 val simultaneous = active.incrementAndGet()
                 peak.updateAndGet { maxOf(it, simultaneous) }
-                if (count == 2) entered.complete(Unit)
+                if (count == 1) entered.complete(Unit)
                 try {
                     release.await()
                     respond(response(request.reference()))
@@ -111,12 +111,12 @@ class MetroRealtimeClientTest {
                 val first = async { remote.latestLine("02000000", stations, stations[12]) }
                 val second = async { remote.latestLine("03000000", stations, stations[12]) }
                 entered.await()
-                assertEquals(2, requests.get())
-                assertEquals(2, peak.get())
+                assertEquals(1, requests.get())
+                assertEquals(1, peak.get())
                 release.complete(Unit)
                 assertTrue(awaitAll(first, second).all { it.online })
                 assertEquals(16, requests.get())
-                assertEquals(2, peak.get())
+                assertEquals(1, peak.get())
             }
         }
     }
@@ -248,7 +248,7 @@ class MetroRealtimeClientTest {
             val requests = AtomicInteger()
             val cancelled = AtomicInteger()
             client { request ->
-                if (requests.incrementAndGet() == 2) entered.complete(Unit)
+                if (requests.incrementAndGet() == 1) entered.complete(Unit)
                 try {
                     release.await()
                     respond(response(request.reference()))
@@ -284,17 +284,17 @@ class MetroRealtimeClientTest {
         withTimeout(5_000) {
             val now = AtomicLong(1_000)
             val entered = CompletableDeferred<Unit>()
-            val cancelledBoth = CompletableDeferred<Unit>()
+            val cancelledRequest = CompletableDeferred<Unit>()
             val release = CompletableDeferred<Unit>()
             val requests = AtomicInteger()
             val cancelled = AtomicInteger()
             client { request ->
-                if (requests.incrementAndGet() == 2) entered.complete(Unit)
+                if (requests.incrementAndGet() == 1) entered.complete(Unit)
                 try {
                     release.await()
                     respond(response(request.reference()))
                 } catch (error: CancellationException) {
-                    if (cancelled.incrementAndGet() == 2) cancelledBoth.complete(Unit)
+                    if (cancelled.incrementAndGet() == 1) cancelledRequest.complete(Unit)
                     throw error
                 }
             }.use { http ->
@@ -303,13 +303,13 @@ class MetroRealtimeClientTest {
                 entered.await()
                 call.cancelAndJoin()
                 assertTrue(call.isCancelled)
-                cancelledBoth.await()
+                cancelledRequest.await()
                 assertFalse(remote.latestLine("02000000", stations, stations[12]).online)
-                assertEquals(2, requests.get())
+                assertEquals(1, requests.get())
                 now.addAndGet(20_000)
                 release.complete(Unit)
                 assertTrue(remote.latestLine("02000000", stations, selected).online)
-                assertEquals(10, requests.get())
+                assertEquals(9, requests.get())
             }
         }
     }
@@ -322,10 +322,10 @@ class MetroRealtimeClientTest {
         }
     }
 
-    @Test fun `错峰批次在t20只发两次并等待t23再发其余六次`() = runBlocking {
+    @Test fun `错峰批次在t20只发一次并等待t23再发其余七次`() = runBlocking {
         withTimeout(5_000) {
             val now = AtomicLong(0)
-            val firstTwo = CompletableDeferred<Unit>()
+            val firstOne = CompletableDeferred<Unit>()
             val releaseFirst = CompletableDeferred<Unit>()
             val waits = Channel<Long>(Channel.UNLIMITED)
             val releaseBudget = CompletableDeferred<Unit>()
@@ -334,8 +334,8 @@ class MetroRealtimeClientTest {
             client { request ->
                 physicalStarts.add(now.get())
                 val sent = requests.incrementAndGet()
-                if (sent == 2) firstTwo.complete(Unit)
-                if (sent <= 2) releaseFirst.await()
+                if (sent == 1) firstOne.complete(Unit)
+                if (sent <= 1) releaseFirst.await()
                 respond(response(request.reference()))
             }.use { http ->
                 val remote = MetroRealtimeRemote(http, now::get, budgetDelay = { duration ->
@@ -343,19 +343,18 @@ class MetroRealtimeClientTest {
                     releaseBudget.await()
                 })
                 val first = async { remote.latestLine("02000000", stations, stations[12]) }
-                firstTwo.await()
+                firstOne.await()
                 now.set(3_000)
                 releaseFirst.complete(Unit)
                 assertTrue(first.await().online)
                 assertEquals(8, requests.get())
-                assertEquals(2, physicalStarts.count { it == 0L })
-                assertEquals(6, physicalStarts.count { it == 3_000L })
+                assertEquals(1, physicalStarts.count { it == 0L })
+                assertEquals(7, physicalStarts.count { it == 3_000L })
 
                 now.set(20_000)
                 val second = async { remote.latestLine("02000000", stations, stations[12]) }
                 assertEquals(3_000L, waits.receive())
-                assertEquals(3_000L, waits.receive())
-                assertEquals(10, requests.get())
+                assertEquals(9, requests.get())
                 now.set(23_000)
                 releaseBudget.complete(Unit)
                 assertTrue(second.await().online)
@@ -371,7 +370,7 @@ class MetroRealtimeClientTest {
     @Test fun `预算等待可取消并归还全局并发许可供别线继续`() = runBlocking {
         withTimeout(5_000) {
             val now = AtomicLong(0)
-            val firstTwo = CompletableDeferred<Unit>()
+            val firstOne = CompletableDeferred<Unit>()
             val releaseFirst = CompletableDeferred<Unit>()
             val budgetWaits = Channel<Unit>(Channel.UNLIMITED)
             val cancelledWaits = Channel<Unit>(Channel.UNLIMITED)
@@ -379,8 +378,8 @@ class MetroRealtimeClientTest {
             val requests = AtomicInteger()
             client { request ->
                 val sent = requests.incrementAndGet()
-                if (sent == 2) firstTwo.complete(Unit)
-                if (sent <= 2) releaseFirst.await()
+                if (sent == 1) firstOne.complete(Unit)
+                if (sent <= 1) releaseFirst.await()
                 respond(response(request.reference()))
             }.use { http ->
                 val remote = MetroRealtimeRemote(http, now::get, budgetDelay = {
@@ -393,20 +392,18 @@ class MetroRealtimeClientTest {
                     }
                 })
                 val first = async { remote.latestLine("02000000", stations, stations[12]) }
-                firstTwo.await()
+                firstOne.await()
                 now.set(3_000)
                 releaseFirst.complete(Unit)
                 first.await()
                 now.set(20_000)
                 val waiting = async { remote.latestLine("02000000", stations, stations[12]) }
                 budgetWaits.receive()
-                budgetWaits.receive()
-                assertEquals(10, requests.get())
+                assertEquals(9, requests.get())
                 waiting.cancelAndJoin()
                 cancelledWaits.receive()
-                cancelledWaits.receive()
                 assertTrue(remote.latestLine("03000000", stations, stations[12]).online)
-                assertEquals(18, requests.get())
+                assertEquals(17, requests.get())
             }
         }
     }
