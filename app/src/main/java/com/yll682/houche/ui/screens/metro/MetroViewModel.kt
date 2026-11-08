@@ -2,6 +2,7 @@ package com.yll682.houche.ui.screens.metro
 
 import com.yll682.houche.AppGraph
 import com.yll682.houche.core.City
+import com.yll682.houche.core.MetroDirection
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroLoader
 import com.yll682.houche.core.MetroProbe
@@ -32,9 +33,27 @@ data class MetroData(
     val realtimeNote: String = "",
     val realtimeLoading: Boolean = false,
     /** 当前展开的方向，两边站序相反，切换方向才能看清车往哪开。 */
-    val direction: Int = 0
+    val directionIndex: Int = 0
 ) {
     val line: MetroLine? get() = lines.firstOrNull { it.id == selected } ?: lines.firstOrNull()
+
+    /** 当前展开的方向；没有实时数据时为 null，界面退回线路自身的起终点。 */
+    val direction: MetroDirection? get() = realtime?.directions?.getOrNull(directionIndex)
+
+    /**
+     * 展示站序跟随所选方向的行驶顺序（始发在前），三处「方向」讲同一件事；
+     * 没有方向或站码对不上时退回线路自身顺序。
+     */
+    val orderedLine: MetroLine? get() {
+        val current = line ?: return null
+        val order = direction?.stationCodes.orEmpty()
+        if (order.isEmpty()) return current
+        val byCode = current.liveStations.associateBy { it.code }
+        val travel = order.mapNotNull { byCode[it] }
+        if (travel.isEmpty()) return current
+        val missing = current.liveStations.filter { it.code !in order }
+        return current.copy(stations = travel + missing)
+    }
 }
 
 class MetroViewModel(
@@ -54,6 +73,8 @@ class MetroViewModel(
     /**
      * 进入页面立即发起在线请求；等待期间用内置资料即时展示，成功后整体采用在线资料。
      * 新一次加载会取消上一次，避免较旧的响应覆盖最新站序。
+     * 实时到站是另一条通道的成果：同一波站序刷新不能把它冲掉，否则刚进页面的
+     * 第一次实时数据会被迟到的站表响应抹掉，看起来就像「首次必失败」。
      */
     fun load(initial: String? = null): Job {
         loading?.cancel()
@@ -62,14 +83,25 @@ class MetroViewModel(
             loader.load(city).collect { snapshot ->
                 val network = snapshot.network
                 val lines = network?.openedLines.orEmpty()
+                // 换的还是同一条线时保留已有实时；整份资料换线则作废，避免站码错位。
+                val previous = data
+                val keep = lines.any { it.id == previous.selected } &&
+                    previous.line?.id == lines.firstOrNull { it.id == previous.selected }?.id
                 update(
                     MetroData(
                         lines = lines,
-                        selected = pick(preferred ?: data.selected, lines),
+                        selected = pick(preferred ?: previous.selected, lines),
                         updated = network?.updated.orEmpty(),
                         source = network?.source.orEmpty(),
                         online = snapshot.online,
-                        note = snapshot.note
+                        note = snapshot.note,
+                        realtime = previous.realtime.takeIf { keep },
+                        realtimeStation = previous.realtimeStation.takeIf { keep }.orEmpty(),
+                        realtimeStationName = previous.realtimeStationName.takeIf { keep }.orEmpty(),
+                        realtimeUpdated = previous.realtimeUpdated.takeIf { keep }.orEmpty(),
+                        realtimeNote = previous.realtimeNote.takeIf { keep }.orEmpty(),
+                        realtimeLoading = previous.realtimeLoading && keep,
+                        directionIndex = previous.directionIndex.takeIf { keep } ?: 0
                     ),
                     empty = lines.isEmpty()
                 )
@@ -84,7 +116,7 @@ class MetroViewModel(
         if (data.lines.none { it.id == id }) return
         preferred = id
         // 换线后原来那条线的参考站码不再有效，清掉让实时到站回到新线的首站。
-        val value = data.copy(selected = id, direction = 0, realtimeStation = "", realtimeStationName = "", realtime = null, realtimeUpdated = "")
+        val value = data.copy(selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null, realtimeUpdated = "")
         mutable.value = when (val old = mutable.value) {
             is UiState.Error -> old.copy(data = value)
             is UiState.Loading -> old.copy(data = value)
@@ -107,7 +139,7 @@ class MetroViewModel(
     }
 
     fun selectDirection(index: Int) {
-        update(data.copy(direction = index))
+        update(data.copy(directionIndex = index))
     }
 
     /**

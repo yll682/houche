@@ -201,9 +201,9 @@ import com.yll682.houche.ui.theme.*
 @Composable private fun RouteStrip(route: Route, selected: RouteStation?, vehicles: List<Vehicle>, preview: (RouteStation) -> Unit) {
     val primary = MaterialTheme.colorScheme.primary
     val listState = rememberLazyListState()
-    // 列宽跟着最长站名走：短站名保持紧凑，长站名有足够宽度，竖排不会被挤成一条线。
+    // 列宽只保证最长站名竖排不折行：基础 44dp、每多一字加 5dp，站密时一屏能看更多站。
     val longest = route.stations.maxOfOrNull { it.name.length } ?: 3
-    val column = (58 + (longest - 3).coerceAtLeast(0) * 6).coerceAtMost(92).dp
+    val column = (44 + (longest - 3).coerceAtLeast(0) * 5).coerceAtMost(72).dp
     LaunchedEffect(route.name, route.direction) {
         val target = selected ?: vehicles.firstOrNull()?.order?.let { order -> route.stations.firstOrNull { it.order == order } }
         // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图形。

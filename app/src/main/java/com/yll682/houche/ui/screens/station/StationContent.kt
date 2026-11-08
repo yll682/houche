@@ -95,9 +95,19 @@ import com.yll682.houche.ui.theme.Capsule
                 } else {
                     item {
                         CardSurface {
-                            stop.lines.forEachIndexed { index, summary ->
+                            // 行序跟到站走：有实时信息的按「近→远」排，没有的按线路号垫底。
+                            val paired = stop.lines.mapNotNull { summary ->
+                                val matches = data.arrivals.filter { it.name == summary.name && it.direction == summary.direction }
+                                matches.firstOrNull()?.let { Triple(summary, it, matches.drop(1)) }
+                            }.sortedWith { (_, a), (_, b) -> arrivalComparator.compare(a, b) }
+                            val rest = stop.lines.filter { summary ->
+                                paired.none { it.first.name == summary.name && it.first.direction == summary.direction }
+                            }
+                            val rows: List<Pair<LineSummary, List<Arrival>>> =
+                                paired.map { (summary, first, extra) -> summary to (listOf(first) + extra) } +
+                                    rest.map { it to emptyList() }
+                            rows.forEachIndexed { index, (summary, arrivals) ->
                                 if (index > 0) Hairline()
-                                val arrivals = data.arrivals.filter { it.name == summary.name && it.direction == summary.direction }
                                 LineRow(summary, arrivals.firstOrNull(), arrivals.drop(1)) { line(summary, stop) }
                             }
                         }

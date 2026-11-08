@@ -34,16 +34,27 @@ import com.yll682.houche.ui.theme.Capsule
     modifier: Modifier = Modifier
 ) {
     val data = state.data ?: MetroData()
-    val line = data.line
-    Page(line?.name ?: stringResource(R.string.metro), back, modifier) { padding ->
-        if (line == null) {
+    // 站序跟随所选方向（始发在前），与实时卡片的「往 XX」讲同一个方向；
+    // 没有实时方向时退回线路自身顺序，行为与 1.6.x 一致。
+    val line = data.orderedLine ?: run {
+        Page(stringResource(R.string.metro), back, modifier) {
+            Box(Modifier.fillMaxSize().padding(it).padding(16.dp)) {
+                if (state is UiState.Loading) LoadingSkeleton(cards = 2)
+                else EmptyState(stringResource(R.string.metro_empty))
+            }
+        }
+        return
+    }
+    val heading = data.line
+    Page(heading?.name ?: stringResource(R.string.metro), back, modifier) { padding ->
+        if (heading == null) {
             Box(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
                 if (state is UiState.Loading) LoadingSkeleton(cards = 2)
                 else EmptyState(stringResource(R.string.metro_empty))
             }
             return@Page
         }
-        val tint = metroColor(line.color)
+        val tint = metroColor(heading.color)
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
@@ -51,7 +62,11 @@ import com.yll682.houche.ui.theme.Capsule
         ) {
             item {
                 Box(Modifier.padding(bottom = 10.dp)) {
-                    MetroHeader(line, data.lines, data.selected, data.online, select, tint)
+                    MetroHeader(
+                        heading, data.lines, data.selected, data.online, select, tint,
+                        from = data.direction?.origin ?: heading.from,
+                        to = data.direction?.destination ?: heading.to
+                    )
                 }
             }
             item {
@@ -62,8 +77,8 @@ import com.yll682.houche.ui.theme.Capsule
                         note = data.realtimeNote,
                         updatedAt = data.realtimeUpdated,
                         stationName = data.realtimeStationName.ifBlank { line.liveStations.firstOrNull()?.name.orEmpty() },
-                        line = line,
-                        directionIndex = data.direction,
+                        line = heading,
+                        directionIndex = data.directionIndex,
                         onDirection = selectDirection
                     )
                 }
@@ -100,14 +115,16 @@ import com.yll682.houche.ui.theme.Capsule
 
 @Composable private fun MetroHeader(
     line: MetroLine, lines: List<MetroLine>, selected: String, online: Boolean,
-    select: (String) -> Unit, tint: Color
+    select: (String) -> Unit, tint: Color,
+    from: String = line.from, to: String = line.to
 ) {
     CardSurface {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).clip(Capsule).background(tint))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.metro_ends, line.from, line.to), Modifier.weight(1f, fill = false),
+                // 起终点跟随所选方向，与实时卡片的「往 XX」、下方站序保持同一个方向。
+                Text(stringResource(R.string.metro_ends, from, to), Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 // 只有官方接口真的返回了站序才显示；请求失败时不出现任何提示。
                 if (online) {

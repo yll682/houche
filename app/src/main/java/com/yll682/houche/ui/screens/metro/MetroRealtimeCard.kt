@@ -235,7 +235,7 @@ private fun MetroTrainStrip(realtime: MetroRealtime, direction: MetroDirection, 
     if (cells.isEmpty()) return
     val names = remember(line) { line.liveStations.associate { it.code to it.name } }
     val scroll = rememberScrollState()
-    val cell = 58.dp
+    val cell = 52.dp
     val width = cell * cells.size
     val reference = cells.indexOf(realtime.stationCode)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -246,7 +246,7 @@ private fun MetroTrainStrip(realtime: MetroRealtime, direction: MetroDirection, 
                 // 参考站与最近一班车取中点作锚，两边都留在视野里；没有车就居中参考站。
                 val nearest = direction.trains.map { direction.positionOf(it) }.filter { it >= 0 }.maxOrNull()
                 val anchor = if (nearest == null) reference.toDouble() else (nearest + reference) / 2
-                val cellPx = 58f * scale
+                val cellPx = 52f * scale
                 val viewportPx = maxWidth.value * scale
                 val centerPx = (anchor * cellPx + cellPx / 2f).toFloat()
                 scroll.scrollTo((centerPx - viewportPx / 2f).toInt().coerceAtLeast(0))
@@ -302,7 +302,7 @@ private fun MetroTrainStrip(realtime: MetroRealtime, direction: MetroDirection, 
                             val arriving = train.arriving || train.arriveSeconds < 45
                             val accent = if (arriving) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                             Box(
-                                Modifier.offset(x = (offset * 58).dp - 8.dp, y = 4.dp)
+                                Modifier.offset(x = (offset * 52).dp - 8.dp, y = 4.dp)
                                     .size(16.dp, 10.dp)
                                     .clip(MaterialTheme.shapes.extraSmall)
                                     .background(accent)
