@@ -32,13 +32,17 @@ data class MetroData(
     val realtimeUpdated: String = "",
     val realtimeNote: String = "",
     val realtimeLoading: Boolean = false,
+    /** 当前实时请求的序号；换线或换参考站后置零，迟到的响应不能回写。 */
+    val realtimeRequestId: Long = 0,
     /** 当前展开的方向，两边站序相反，切换方向才能看清车往哪开。 */
     val directionIndex: Int = 0
 ) {
     val line: MetroLine? get() = lines.firstOrNull { it.id == selected } ?: lines.firstOrNull()
 
     /** 当前展开的方向；没有实时数据时为 null，界面退回线路自身的起终点。 */
-    val direction: MetroDirection? get() = realtime?.directions?.getOrNull(directionIndex)
+    val direction: MetroDirection? get() = realtime?.directions?.let {
+        it.getOrNull(directionIndex.coerceIn(0, it.lastIndex.coerceAtLeast(0)))
+    }
 
     /**
      * 展示站序跟随所选方向的行驶顺序（始发在前），三处「方向」讲同一件事；
@@ -60,6 +64,43 @@ data class MetroData(
     }
 }
 
+/** 请求发起时固定查询上下文，完成后只允许最新的同线路请求回写。 */
+internal data class MetroRealtimeRequest(
+    val id: Long,
+    val lineId: String,
+    val lineCode: String,
+    val stationCode: String,
+    val stationCodes: List<String>
+)
+
+internal fun MetroData.beginRealtimeRequest(id: Long): Pair<MetroData, MetroRealtimeRequest>? {
+    val current = line ?: return null
+    val code = current.realtimeCode()
+    if (code.isBlank()) return null
+    val station = realtimeStation.takeIf { it.isNotBlank() } ?: current.liveStations.firstOrNull()?.code.orEmpty()
+    val request = MetroRealtimeRequest(id, current.id, code, station, current.liveStations.map { it.code })
+    return copy(realtimeLoading = true, realtimeRequestId = id) to request
+}
+
+/** 失败与成功空车分别处理；时间只记录成功响应，参考站码和名称始终一起归并。 */
+internal fun MetroData.completeRealtimeRequest(request: MetroRealtimeRequest, result: MetroRealtime, updatedAt: String): MetroData {
+    if (realtimeRequestId != request.id || line?.id != request.lineId) return this
+    val currentStation = realtimeStation.ifBlank { line?.liveStations?.firstOrNull()?.code.orEmpty() }
+    if (currentStation != request.stationCode || line?.realtimeCode() != request.lineCode) return this
+    if (!result.online) return copy(realtime = null, realtimeNote = result.note, realtimeLoading = false)
+    val station = result.stationCode.ifBlank { request.stationCode }
+    val name = result.stationName.ifBlank { line?.liveStations?.firstOrNull { it.code == station }?.name.orEmpty() }
+    return copy(
+        realtime = result.copy(stationCode = station, stationName = name),
+        realtimeStation = station,
+        realtimeStationName = name,
+        realtimeUpdated = updatedAt.ifBlank { realtimeUpdated },
+        realtimeNote = result.note,
+        realtimeLoading = false,
+        directionIndex = directionIndex.coerceIn(0, result.directions.lastIndex.coerceAtLeast(0))
+    )
+}
+
 class MetroViewModel(
     private val graph: AppGraph,
     val city: City,
@@ -68,6 +109,7 @@ class MetroViewModel(
     private val loader = MetroLoader(graph.metro::networkFor, graph.metroRemote::latest, graph.metro::supports)
     private var loading: Job? = null
     private var preferred = initial
+    private var realtimeRequestSequence = 0L
 
     init {
         mutable.value = UiState.Loading(data)
@@ -89,12 +131,12 @@ class MetroViewModel(
                 val lines = network?.openedLines.orEmpty()
                 // 换的还是同一条线时保留已有实时；整份资料换线则作废，避免站码错位。
                 val previous = data
-                val keep = lines.any { it.id == previous.selected } &&
-                    previous.line?.id == lines.firstOrNull { it.id == previous.selected }?.id
+                val selected = pick(preferred ?: previous.selected, lines)
+                val keep = previous.line?.id != null && previous.line?.id == lines.firstOrNull { it.id == selected }?.id
                 update(
                     MetroData(
                         lines = lines,
-                        selected = pick(preferred ?: previous.selected, lines),
+                        selected = selected,
                         updated = network?.updated.orEmpty(),
                         source = network?.source.orEmpty(),
                         online = snapshot.online,
@@ -105,6 +147,7 @@ class MetroViewModel(
                         realtimeUpdated = previous.realtimeUpdated.takeIf { keep }.orEmpty(),
                         realtimeNote = previous.realtimeNote.takeIf { keep }.orEmpty(),
                         realtimeLoading = previous.realtimeLoading && keep,
+                        realtimeRequestId = previous.realtimeRequestId.takeIf { keep } ?: 0,
                         directionIndex = previous.directionIndex.takeIf { keep } ?: 0
                     ),
                     empty = lines.isEmpty()
@@ -120,7 +163,10 @@ class MetroViewModel(
         if (data.lines.none { it.id == id }) return
         preferred = id
         // 换线后原来那条线的参考站码不再有效，清掉让实时到站回到新线的首站。
-        val value = data.copy(selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null, realtimeUpdated = "")
+        val value = data.copy(
+            selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null,
+            realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0
+        )
         mutable.value = when (val old = mutable.value) {
             is UiState.Error -> old.copy(data = value)
             is UiState.Loading -> old.copy(data = value)
@@ -138,42 +184,35 @@ class MetroViewModel(
     /** 换参考站；换站后旧数据立刻作废，避免旧站的到站信息留在屏上。 */
     fun selectStation(code: String) {
         val station = data.line?.liveStations?.firstOrNull { it.code == code } ?: return
-        update(data.copy(realtimeStation = station.code, realtimeStationName = station.name, realtime = null, realtimeUpdated = ""))
+        update(data.copy(
+            realtimeStation = station.code, realtimeStationName = station.name, realtime = null,
+            realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0
+        ))
         refreshRealtime()
     }
 
     fun selectDirection(index: Int) {
-        update(data.copy(directionIndex = index))
+        val last = data.realtime?.directions?.lastIndex?.coerceAtLeast(0) ?: 0
+        update(data.copy(directionIndex = index.coerceIn(0, last)))
     }
 
     /**
-     * 拉一次实时到站。官方 App 每 30 秒问一次，两边节奏接近；
-     * 失败只留诊断，不打断站序展示。
+     * 拉一次整批实时快照；客户端在二十秒内复用同线路批次，换站也不会额外逐站请求。
+     * 同线旧调用保持等待，让换站后的调用共享在途批次；只有最新请求序号可以回写。
      */
     fun refreshRealtime() = action {
-        val line = data.line ?: return@action
-        val code = line.realtimeCode()
-        if (code.isBlank()) return@action
-        val station = data.realtimeStation.takeIf { it.isNotBlank() }
-            ?: line.liveStations.firstOrNull()?.code.orEmpty()
-        update(data.copy(realtimeLoading = true))
-        val result = graph.metroRealtime.latest(code, station)
-        val name = result.stationName.ifBlank { line.liveStations.firstOrNull { it.code == station }?.name.orEmpty() }
-        update(
-            data.copy(
-                realtime = result,
-                realtimeStation = station,
-                realtimeStationName = name,
-                realtimeUpdated = clock(),
-                realtimeNote = result.note,
-                realtimeLoading = false
-            )
-        )
+        val (pending, request) = data.beginRealtimeRequest(++realtimeRequestSequence) ?: return@action
+        update(pending)
+        val result = graph.metroRealtime.latestLine(request.lineCode, request.stationCodes, request.stationCode)
+        val current = data
+        val sampledAt = result.source?.receivedAtEpochMillis?.let(::clock).orEmpty()
+        val completed = current.completeRealtimeRequest(request, result, sampledAt)
+        if (completed !== current) update(completed)
     }
 
     /** 只显示时分秒，秒级精度对到站信息没有意义。 */
-    private fun clock(): String {
-        val now = Calendar.getInstance()
+    private fun clock(sampledAtEpochMillis: Long): String {
+        val now = Calendar.getInstance().apply { timeInMillis = sampledAtEpochMillis }
         return String.format("%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
     }
 }

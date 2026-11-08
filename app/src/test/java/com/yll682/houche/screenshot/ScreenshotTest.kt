@@ -23,6 +23,11 @@ import com.yll682.houche.model
 import com.yll682.houche.core.*
 import com.yll682.houche.data.Position
 import com.yll682.houche.ui.UiState
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.http.HttpStatusCode
 import com.yll682.houche.ui.screens.home.*
 import com.yll682.houche.ui.screens.search.*
 import com.yll682.houche.ui.screens.line.*
@@ -154,6 +159,71 @@ class ScreenshotTest {
     }
     @Test fun metroRealtime_dark() = capture("metro-realtime", true) {
         MetroContent(UiState.Success(metroRealtimeData), {}, {}, {}, {})
+    }
+
+    /**
+     * 多参考站合并：同一秒的行政中心（02100000）与马青路（02090000）两份原始响应，
+     * 走线上同一条路径——按站序计划最多八个参考站、只有这两份真有响应、再 mergeMetroRealtime 合并。
+     * 画面要回答用户那句话：「海沧行政中心—马青路之间那班车画出来了没有」。
+     * 两份都是抓包原样字节，取自 analysis/fixtures/metro-round2/（该目录已入库，
+     * manifest.json 里带 sha256：a510e6d8… 与 65f7f883…），不手写、不改值。
+     */
+    private fun mergedRealtime(): MetroRealtime = kotlinx.coroutines.runBlocking {
+        val admin = MetroFixtures.file("metro-round2/rt-02000000-095729.json").readText()
+        val maqing = MetroFixtures.file("metro-round2/rt-02000000-095729-mq.json").readText()
+        val http = HttpClient(MockEngine { request ->
+            when (request.url.parameters["stationCode"]) {
+                "02100000" -> respond(admin)
+                "02090000" -> respond(maqing)
+                // 其余参考站这一批本来就没有响应；线上也缺，不能让它们凭空长出车。
+                else -> respond("", HttpStatusCode.ServiceUnavailable)
+            }
+        }) { install(HttpTimeout) }
+        try {
+            MetroRealtimeRemote(http).latestLine("02000000", metroLine2.liveStations.map { it.code }, "02100000")
+        } finally {
+            http.close()
+        }
+    }
+
+    private val metroMerged: MetroRealtime by lazy { mergedRealtime() }
+    private val metroMergedData: MetroData get() = MetroData(
+        lines = metroLines,
+        selected = "2",
+        updated = "2026-11-08",
+        realtime = metroMerged,
+        realtimeStation = "02100000",
+        realtimeStationName = "海沧行政中心",
+        realtimeUpdated = "09:57",
+        // 该方向（五缘湾 → 天竺山）里行政中心下一站才是马青路，缺车的那一段正在这里。
+        directionIndex = metroMerged.directions.indexOfFirst { it.origin == "五缘湾" && it.destination == "天竺山" }
+    )
+
+    /** 截图之外的硬断言：合并真的补了位置，而且没有把别站的 ETA 冒充成本站到站行。 */
+    private fun assertMergedMarker() {
+        val direction = metroMerged.directions[metroMergedData.directionIndex]
+        val adminIndex = direction.stationCodes.indexOf("02100000")
+        val maqingIndex = direction.stationCodes.indexOf("02090000")
+        assertEquals("该方向行政中心的下一站必须是马青路", adminIndex + 1, maqingIndex)
+        assertEquals(listOf(332, 692, 1052), direction.trains.map { it.arriveSeconds })
+        assertTrue(direction.trains.all { it.source?.referenceStationCode == "02100000" })
+        assertFalse("马青路那份的区间车不能进本站到站行", direction.trains.any { it.nextStationCode == "02090000" })
+        assertTrue("位置条必须多于一个车标，实际 ${direction.positions.size}", direction.positions.size > 1)
+        val between = direction.positions.single { it.nextStationCode == "02090000" }
+        assertEquals("02090000", between.source?.referenceStationCode)
+        assertEquals(82, between.arriveSeconds)
+        assertEquals(1, between.arrivingFlag)
+        assertEquals(0.30, between.scale, 0.0)
+        assertEquals(adminIndex + 0.5, direction.positionOf(between), 0.0)
+        assertNull("补位置的区间车没有本站班序", direction.arrivalOrderOf(between))
+    }
+
+    @Test fun metroRealtimeMerge_light() {
+        assertMergedMarker()
+        capture("metro-realtime-merge", false) { MetroContent(UiState.Success(metroMergedData), {}, {}, {}, {}) }
+    }
+    @Test fun metroRealtimeMerge_dark() = capture("metro-realtime-merge", true) {
+        MetroContent(UiState.Success(metroMergedData), {}, {}, {}, {})
     }
 
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(

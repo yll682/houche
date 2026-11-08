@@ -80,34 +80,22 @@ class MetroRealtimeTest {
         assertEquals(listOf(1, 2), result.directions.map { result.remainingStops(it, it.trains.first()) })
     }
 
-    @Test fun `真实六班列车的位置按各自方向的下一站下标与进度换算`() {
+    @Test fun `真实六班列车按官方规则放在各自方向的下一站前一段中点`() {
         val result = remote.parse(sample.s("rawResponse"))
         // 样本下一站下标分别为 10、7、4 和 10、8、5；不能共用正向站序。
-        val expectedPositions = listOf(listOf(9.31, 6.54, 3.59), listOf(9.62, 7.05, 4.11))
+        val expectedPositions = listOf(listOf(9.5, 6.5, 3.5), listOf(9.5, 7.5, 4.5))
         expectedPositions.forEachIndexed { directionIndex, positions ->
             val direction = result.directions[directionIndex]
             positions.forEachIndexed { trainIndex, position ->
-                assertEquals("方向 $directionIndex 第 $trainIndex 班", position, direction.positionOf(direction.trains[trainIndex]), 0.02)
+                assertEquals("方向 $directionIndex 第 $trainIndex 班", position, direction.positionOf(direction.trains[trainIndex]), 0.0)
             }
         }
     }
 
-    @Test fun `列车位置限制进度到区间内且首站之前不返回负位置`() {
-        val direction = remote.parse(response()).directions.single()
-        val train = direction.trains.single().copy(nextStationCode = direction.stationCodes.last())
-        assertEquals(0.0, direction.positionOf(train.copy(scale = -0.5)), 0.0)
-        assertEquals(0.0, direction.positionOf(train.copy(scale = 0.0)), 0.0)
-        assertEquals(1.0, direction.positionOf(train.copy(scale = 1.0)), 0.0)
-        assertEquals(1.0, direction.positionOf(train.copy(scale = 1.5)), 0.0)
-        assertEquals(0.0, direction.positionOf(train.copy(nextStationCode = direction.stationCodes.first(), scale = 0.5)), 0.0)
-        assertEquals(-1.0, direction.positionOf(train.copy(nextStationCode = "未知")), 0.0)
-        assertEquals(-1.0, direction.copy(stationCodes = emptyList()).positionOf(train), 0.0)
-    }
-
-    @Test fun `进站原值透传并区分接近与已经停靠`() {
+    @Test fun `进站原值透传且不把未知状态推断为已到站`() {
         val direction = minimalDirection()
         val train = direction.list("transTimes").single() as JsonObject
-        val expectedStates = mapOf(-1 to (false to false), 0 to (false to false), 1 to (false to true), 2 to (true to false), 3 to (true to false))
+        val expectedStates = mapOf(-1 to (false to false), 0 to (false to false), 1 to (false to true), 2 to (true to false), 3 to (false to false))
         expectedStates.forEach { (flag, states) ->
             val changed = JsonObject(train + ("arrivingFlag" to JsonPrimitive(flag)))
             val body = JsonObject(direction + ("transTimes" to JsonArray(listOf(changed))))
@@ -119,7 +107,7 @@ class MetroRealtimeTest {
         val missing = JsonObject(train - "arrivingFlag")
         val body = JsonObject(direction + ("transTimes" to JsonArray(listOf(missing))))
         val parsed = remote.parse(response(JsonArray(listOf(body)))).directions.single().trains.single()
-        assertEquals(0, parsed.arrivingFlag)
+        assertNull(parsed.arrivingFlag)
         assertFalse(parsed.arriving)
         assertFalse(parsed.approaching)
     }
@@ -133,6 +121,29 @@ class MetroRealtimeTest {
         assertEquals(-1, result.remainingStops(direction, train.copy(nextStationCode = "未知")))
         assertEquals(-1, result.copy(stationCode = "").remainingStops(direction.copy(stationCodes = listOf("")), train))
         assertEquals(-1, result.remainingStops(direction.copy(stationCodes = listOf("", result.stationCode)), train.copy(nextStationCode = "")))
+    }
+
+    @Test fun `整批未知空和缺失flag保留原状态且已知下一站仍有车标位置`() {
+        val direction = minimalDirection()
+        val original = direction.list("transTimes").single() as JsonObject
+        val trains = listOf(JsonPrimitive(3), JsonNull, null).mapIndexed { index, flag ->
+            val values = original + mapOf(
+                "arriveTime" to JsonPrimitive(60 + index * 60),
+                "arriveNextStationCode" to JsonPrimitive("01020000"),
+                "arriveNextStationScale" to JsonPrimitive(0.3 + index * 0.1)
+            )
+            JsonObject(if (flag == null) values - "arrivingFlag" else values + ("arrivingFlag" to flag))
+        }
+        val body = JsonObject(direction + ("transTimes" to JsonArray(trains)))
+        val parsed = remote.parse(response(JsonArray(listOf(body)))).directions.single()
+        assertEquals(3, parsed.trains.size)
+        assertEquals(listOf(3, null, null), parsed.trains.map { it.arrivingFlag })
+        parsed.trains.forEachIndexed { index, train ->
+            assertEquals(0.3 + index * 0.1, train.scale, 0.0)
+            assertEquals(0.5, parsed.positionOf(train), 0.0)
+            assertFalse(train.arriving)
+            assertFalse(train.approaching)
+        }
     }
 
     @Test fun `站码缺失保留站序空位而不缩短剩余站数`() {

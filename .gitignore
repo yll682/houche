@@ -20,4 +20,16 @@ Thumbs.db
 .kotlin/
 
 # 逆向分析过程产物，不入库
-analysis/
+analysis/*
+!analysis/fixtures/
+!analysis/metro_round2_audit.py
+!analysis/metro_round3_audit.py
+analysis/fixtures/*
+# 位置语义回归所需的官方历史响应与可追溯证据
+!analysis/fixtures/metro-realtime-line2-flag2-sample.json
+!analysis/fixtures/metro-official-position-evidence.json
+!analysis/fixtures/metro-round2/
+!analysis/fixtures/metro-round3-audit.json
+
+# 内部交接笔记，不入库
+notes/
