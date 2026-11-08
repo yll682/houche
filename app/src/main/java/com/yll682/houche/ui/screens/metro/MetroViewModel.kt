@@ -43,16 +43,20 @@ data class MetroData(
     /**
      * 展示站序跟随所选方向的行驶顺序（始发在前），三处「方向」讲同一件事；
      * 没有方向或站码对不上时退回线路自身顺序。
+     * 站点的 order 字段保留原值，liveStations 的按 order 排序只在数据层有意义；
+     * 展示顺序以这里重排后的列表为准，不能再用 liveStations。
      */
     val orderedLine: MetroLine? get() {
         val current = line ?: return null
         val order = direction?.stationCodes.orEmpty()
         if (order.isEmpty()) return current
-        val byCode = current.liveStations.associateBy { it.code }
+        val byCode = current.stations.associateBy { it.code }
         val travel = order.mapNotNull { byCode[it] }
         if (travel.isEmpty()) return current
-        val missing = current.liveStations.filter { it.code !in order }
-        return current.copy(stations = travel + missing)
+        val missing = current.stations.filter { it.code !in order }
+        val reordered = travel + missing
+        // order 重排后与位置脱钩，重编号保证「第 N 站」等文案跟视觉一致。
+        return current.copy(stations = reordered.mapIndexed { index, stop -> stop.copy(order = index + 1) })
     }
 }
 

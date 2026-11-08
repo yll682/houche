@@ -76,7 +76,7 @@ import com.yll682.houche.ui.theme.Capsule
                         loading = data.realtimeLoading,
                         note = data.realtimeNote,
                         updatedAt = data.realtimeUpdated,
-                        stationName = data.realtimeStationName.ifBlank { line.liveStations.firstOrNull()?.name.orEmpty() },
+                        stationName = data.realtimeStationName.ifBlank { line.stations.firstOrNull()?.name.orEmpty() },
                         line = heading,
                         directionIndex = data.directionIndex,
                         onDirection = selectDirection
@@ -87,16 +87,16 @@ import com.yll682.houche.ui.theme.Capsule
                 Box(Modifier.padding(bottom = 10.dp)) {
                     SectionHeader(
                         stringResource(R.string.metro_stations),
-                        line.liveStations.size,
+                        line.stations.size,
                         // 整条线尚未运营时给短标签，同时保留全部站序。
-                        if (line.pendingCount == line.liveStations.size && line.pendingCount > 0)
+                        if (line.pendingCount == line.stations.size && line.pendingCount > 0)
                             stringResource(R.string.metro_not_open) else null
                     )
                 }
             }
-            itemsIndexed(line.liveStations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
+            itemsIndexed(line.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
                 MetroStopRow(
-                    stop, index, line.liveStations.size, tint, !stop.opened,
+                    stop, index, line.stations.size, tint, !stop.opened,
                     selected = stop.code.isNotBlank() && stop.code == data.realtimeStation
                 ) { selectStation(stop.code) }
             }

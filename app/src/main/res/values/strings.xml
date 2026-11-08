@@ -131,6 +131,8 @@
     <string name="metro_realtime_finished">已过末班 %1$s</string>
     <string name="metro_realtime_no_service">该方向暂无班次</string>
     <string name="metro_realtime_position">列车位置</string>
+    <string name="metro_realtime_train_no">第%1$d班</string>
+    <string name="metro_realtime_train_row">第%1$d班</string>
     <string name="metro_realtime_tip">只显示最近 3 班列车，预计到站时间仅供参考，请以实际运营情况为准</string>
     <string name="metro_realtime_selected">已设为参考站</string>
 </resources>

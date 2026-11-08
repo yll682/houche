@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yll682.houche.R
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.components.CardSurface
@@ -133,25 +134,14 @@ private fun MetroDirectionBlock(
     val now = remember(direction) { Calendar.getInstance().let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) } }
     val state = remember(direction, now) { metroServiceState(direction.startTime, direction.endTime, now) }
     Column {
-        if (showTitle || direction.startTime.isNotBlank() || direction.endTime.isNotBlank()) {
+        if (showTitle) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (showTitle) {
-                    Text(
-                        stringResource(R.string.metro_realtime_direction, direction.destination),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f, fill = false),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-                if (direction.startTime.isNotBlank()) {
-                    MetaPill(stringResource(R.string.first_time, direction.startTime), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(6.dp))
-                }
-                if (direction.endTime.isNotBlank()) {
-                    MetaPill(stringResource(R.string.last_time, direction.endTime), tint = MaterialTheme.colorScheme.tertiary)
-                }
+                Text(
+                    stringResource(R.string.metro_realtime_direction, direction.destination),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -166,8 +156,8 @@ private fun MetroDirectionBlock(
             Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(6.dp))
         }
-        direction.trains.forEach { train ->
-            MetroTrainRow(realtime, direction, train)
+        direction.trains.forEachIndexed { index, train ->
+            MetroTrainRow(realtime, direction, train, index + 1)
         }
         if (direction.trains.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
@@ -176,9 +166,9 @@ private fun MetroDirectionBlock(
     }
 }
 
-/** 一班车：还剩几站、还要几分钟，下一站是哪一站。 */
+/** 一班车：官方语序「第 N 班」，主文案给站数/分钟，次要行给下一站与特殊位置。 */
 @Composable
-private fun MetroTrainRow(realtime: MetroRealtime, direction: MetroDirection, train: MetroTrain) {
+private fun MetroTrainRow(realtime: MetroRealtime, direction: MetroDirection, train: MetroTrain, order: Int) {
     val stops = realtime.remainingStops(direction, train)
     val minutes = minutesUntil(train.arriveSeconds)
     // 下一站就是本站、而且车已经进站，才叫「即将到站」；还在上一段路上就报分钟数。
@@ -204,6 +194,11 @@ private fun MetroTrainRow(realtime: MetroRealtime, direction: MetroDirection, tr
         Box(Modifier.size(8.dp).clip(Capsule).background(accent))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.metro_realtime_train_row, order),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             if (detail.isNotBlank()) {
                 Text(
@@ -282,36 +277,46 @@ private fun MetroTrainStrip(realtime: MetroRealtime, direction: MetroDirection, 
                                                 .border(2.dp, if (current) tint else tint.copy(alpha = .45f), Capsule)
                                         )
                                     }
+                                    // 站名竖排一字一行，与公交站点条同一套排法；再长的名字也不会被裁。
                                     Text(
-                                        names[code].orEmpty(),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        names[code].orEmpty().chunked(1).joinToString("\n"),
+                                        style = MaterialTheme.typography.labelSmall.copy(lineHeight = 14.sp),
                                         color = if (code == realtime.stationCode) MaterialTheme.colorScheme.onSurface
                                         else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = if (code == realtime.stationCode) FontWeight.SemiBold else FontWeight.Normal,
                                         textAlign = TextAlign.Center,
-                                        maxLines = 1,
+                                        maxLines = 8,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(horizontal = 2.dp)
+                                        modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                 }
                             }
                         }
-                        direction.trains.forEach { train ->
+                        direction.trains.forEachIndexed { trainIndex, train ->
                             val offset = direction.positionOf(train)
-                            if (offset < 0) return@forEach
+                            if (offset < 0) return@forEachIndexed
                             val arriving = train.arriving || train.arriveSeconds < 45
                             val accent = if (arriving) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
-                            Box(
-                                Modifier.offset(x = (offset * 52).dp - 8.dp, y = 4.dp)
-                                    .size(16.dp, 10.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .background(accent)
-                                    .semantics { contentDescription = "" }
+                            Column(
+                                Modifier.offset(x = (offset * 52).dp - 9.dp, y = (-6).dp)
+                                    .width(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Box(
-                                    Modifier.align(Alignment.Center).size(8.dp, 2.dp)
-                                        .background(MaterialTheme.colorScheme.surface)
+                                Text(
+                                    stringResource(R.string.metro_realtime_train_no, trainIndex + 1),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = accent
                                 )
+                                Box(
+                                    Modifier.size(18.dp, 11.dp)
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .background(accent)
+                                ) {
+                                    Box(
+                                        Modifier.align(Alignment.Center).size(9.dp, 2.dp)
+                                            .background(MaterialTheme.colorScheme.surface)
+                                    )
+                                }
                             }
                         }
                     }
