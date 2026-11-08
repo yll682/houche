@@ -2,7 +2,7 @@
   "versionName": "1.7.7",
   "versionCode": 18,
   "released": "2026-11-08",
-  "notes": "修复主页「暂无到站资料」而点进站点却有数据（多站台站点漏查），统一首页与详情取数路径；地铁位置条换乘标注改为官方式彩色徽标。",
+  "notes": "修复主页「暂无到站资料」而点进站点却有数据（多站台站点漏查）；地铁位置条换乘标注改为官方式彩色徽标。",
   "downloads": {
     "github": "https://github.com/yll682/houche/releases/download/v1.7.7/houche-v1.7.7.apk",
     "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.7/houche-v1.7.7.apk"
