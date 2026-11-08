@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.2",
-  "versionCode": 13,
+  "versionName": "1.7.3",
+  "versionCode": 14,
   "released": "2026-11-08",
-  "notes": "列车位置条补全整条线：多参考站合并，站与站之间不再缺车；车标半格偏移修正；第几班标签不再折行。",
+  "notes": "地铁列车位置页按官方 App 版式重做：线路 tab、开往方向头、三班 ETA 块、带方向箭头的位置条、官方式列车图标。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.2/houche-v1.7.2.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.2/houche-v1.7.2.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.3/houche-v1.7.3.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.3/houche-v1.7.3.apk"
   }
 }

@@ -14,6 +14,8 @@ import com.yll682.houche.ui.components.PollEvery20Seconds
         select = { vm.select(it) },
         back = back,
         selectStation = { vm.selectStation(it) },
-        selectDirection = { vm.selectDirection(it) }
+        selectDirection = { vm.selectDirection(it) },
+        // 手动刷新沿用现有的实时轮询入口（二十秒批次复用策略不动，只是提前问一次）。
+        refresh = { vm.refreshRealtime() }
     )
 }

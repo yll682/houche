@@ -1,24 +1,33 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.yll682.houche.ui.screens.metro
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.*
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroStation
 import com.yll682.houche.ui.UiState
-import com.yll682.houche.ui.components.*
+import com.yll682.houche.ui.components.EmptyState
+import com.yll682.houche.ui.components.LoadingSkeleton
 import com.yll682.houche.ui.theme.Capsule
 
 /** 地图配色里给的是十六进制串，解析失败就退回主题色，不要因为一个色值把页面搞崩。 */
@@ -28,75 +37,75 @@ import com.yll682.houche.ui.theme.Capsule
             .getOrElse { Color(0xFF1E6FF3) }
     }
 
-@Composable fun MetroContent(
+/**
+ * 地铁「列车位置」页：照官方厦门地铁 App 的版式做（见 `notes/spec-official-train-position.md`）。
+ *
+ * 骨架：白顶栏（居中标题 + 细 chevron）→ 线路 tab 条（色块徽标 + 方形下划线）→
+ * 白卡片（方向行 / 站名+刷新 / ETA 蓝块 / 位置条）→ 卡片外居中免责说明 → 站序列表。
+ *
+ * 站序列表官方这页没有，但候车用它在换参考站（`selectStation` 的唯一入口），
+ * 删掉就没有切站能力了，所以保留在免责说明下面，样式沿用原有控件不动。
+ */
+@Composable
+fun MetroContent(
     state: UiState<MetroData>, select: (String) -> Unit, back: () -> Unit,
     selectStation: (String) -> Unit = {}, selectDirection: (Int) -> Unit = {},
+    refresh: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val data = state.data ?: MetroData()
-    // 站序跟随所选方向（始发在前），与实时卡片的「往 XX」讲同一个方向；
-    // 没有实时方向时退回线路自身顺序，行为与 1.6.x 一致。
-    val line = data.orderedLine ?: run {
-        Page(stringResource(R.string.metro), back, modifier) {
-            Box(Modifier.fillMaxSize().padding(it).padding(16.dp)) {
-                if (state is UiState.Loading) LoadingSkeleton(cards = 2)
-                else EmptyState(stringResource(R.string.metro_empty))
-            }
-        }
-        return
-    }
+    // 站序跟随所选方向（始发在前），与实时卡片的「开往 XX」讲同一个方向。
+    val line = data.orderedLine
     val heading = data.line
-    Page(heading?.name ?: stringResource(R.string.metro), back, modifier) { padding ->
-        if (heading == null) {
-            Box(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+    Column(modifier.fillMaxSize().background(Official.Page)) {
+        MetroTopBar(stringResource(R.string.metro_realtime_position), back)
+        MetroLineTabs(data.lines, data.selected, select)
+        if (line == null || heading == null) {
+            Box(Modifier.fillMaxSize().padding(16.dp)) {
                 if (state is UiState.Loading) LoadingSkeleton(cards = 2)
                 else EmptyState(stringResource(R.string.metro_empty))
             }
-            return@Page
+            return@Column
         }
-        val tint = metroColor(heading.color)
-        LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.Top
-        ) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
             item {
-                Box(Modifier.padding(bottom = 10.dp)) {
-                    MetroHeader(
-                        heading, data.lines, data.selected, data.online, select, tint,
-                        from = data.direction?.origin ?: heading.from,
-                        to = data.direction?.destination ?: heading.to
-                    )
-                }
+                MetroRealtimeCard(
+                    realtime = data.realtime,
+                    loading = data.realtimeLoading,
+                    note = data.realtimeNote,
+                    stationName = data.realtimeStationName.ifBlank { line.stations.firstOrNull()?.name.orEmpty() },
+                    line = heading,
+                    directionIndex = data.directionIndex,
+                    onDirection = selectDirection,
+                    onRefresh = refresh,
+                    modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+                )
             }
             item {
-                Box(Modifier.padding(bottom = 14.dp)) {
-                    MetroRealtimeCard(
-                        realtime = data.realtime,
-                        loading = data.realtimeLoading,
-                        note = data.realtimeNote,
-                        updatedAt = data.realtimeUpdated,
-                        stationName = data.realtimeStationName.ifBlank { line.stations.firstOrNull()?.name.orEmpty() },
-                        line = heading,
-                        directionIndex = data.directionIndex,
-                        onDirection = selectDirection
-                    )
-                }
+                // 免责说明在卡片外面，居中、珊瑚红——官方这页就是这样（规格 2.7）。
+                Text(
+                    stringResource(R.string.metro_realtime_tip),
+                    Modifier.fillMaxWidth().padding(start = 30.dp, end = 30.dp, top = 15.3.dp),
+                    style = OfficialType.Disclaimer,
+                    textAlign = TextAlign.Center
+                )
             }
             item {
-                Box(Modifier.padding(bottom = 10.dp)) {
-                    SectionHeader(
-                        stringResource(R.string.metro_stations),
-                        line.stations.size,
-                        // 整条线尚未运营时给短标签，同时保留全部站序。
-                        if (line.pendingCount == line.stations.size && line.pendingCount > 0)
-                            stringResource(R.string.metro_not_open) else null
-                    )
-                }
+                // 官方这页没有站序列表，这段是候车切换参考站的唯一入口，沿用原信息层级；
+                // 颜色写死本页浅色，避免深色模式下浅底配浅字（官方没有深色版）。
+                val pending = line.pendingCount == line.stations.size && line.pendingCount > 0
+                Text(
+                    listOfNotNull(
+                        stringResource(R.string.group_count, stringResource(R.string.metro_stations), line.stations.size),
+                        stringResource(R.string.metro_not_open).takeIf { pending }
+                    ).joinToString("  "),
+                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 18.dp),
+                    style = OfficialType.SectionLabel
+                )
             }
             itemsIndexed(line.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
                 MetroStopRow(
-                    stop, index, line.stations.size, tint, !stop.opened,
+                    stop, index, line.stations.size, officialLineColor(heading), !stop.opened,
                     selected = stop.code.isNotBlank() && stop.code == data.realtimeStation
                 ) { selectStation(stop.code) }
             }
@@ -104,8 +113,8 @@ import com.yll682.houche.ui.theme.Capsule
                 item {
                     Text(
                         stringResource(R.string.metro_updated, data.updated),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp),
+                        style = OfficialType.MetaLabel
                     )
                 }
             }
@@ -113,63 +122,19 @@ import com.yll682.houche.ui.theme.Capsule
     }
 }
 
-@Composable private fun MetroHeader(
-    line: MetroLine, lines: List<MetroLine>, selected: String, online: Boolean,
-    select: (String) -> Unit, tint: Color,
-    from: String = line.from, to: String = line.to
-) {
-    CardSurface {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(10.dp).clip(Capsule).background(tint))
-                Spacer(Modifier.width(8.dp))
-                // 起终点跟随所选方向，与实时卡片的「往 XX」、下方站序保持同一个方向。
-                Text(stringResource(R.string.metro_ends, from, to), Modifier.weight(1f, fill = false),
-                    style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                // 只有官方接口真的返回了站序才显示；请求失败时不出现任何提示。
-                if (online) {
-                    Spacer(Modifier.width(8.dp))
-                    MetaPill(stringResource(R.string.metro_online), tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-            if (line.first.isNotBlank() || line.last.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MetaPill(stringResource(R.string.first_time, line.first.ifBlank { stringResource(R.string.no_time) }), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(6.dp))
-                    MetaPill(stringResource(R.string.last_time, line.last.ifBlank { stringResource(R.string.no_time) }), tint = MaterialTheme.colorScheme.tertiary)
-                }
-            }
-            if (lines.size > 1) {
-                Spacer(Modifier.height(10.dp))
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    lines.forEach { item ->
-                        val active = item.id == selected
-                        val itemTint = metroColor(item.color)
-                        // 用 Box + clickable 而不是 Surface(onClick)：后者有 48dp 最小触控高度，胶囊会被撑大。
-                        Box(
-                            Modifier.height(34.dp).clip(Capsule)
-                                .background(if (active) itemTint.copy(alpha = .14f) else MaterialTheme.colorScheme.surfaceContainerHigh)
-                                .clickable { select(item.id) }
-                                .semantics { contentDescription = item.name }
-                                .padding(horizontal = 14.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                item.name,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (active) itemTint else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-            }
-        }
+/** 站序行里的小胶囊（换乘线路 / 参考站）：本页固定浅色，不跟深色主题走。 */
+@Composable private fun StopPill(text: String, tint: Color? = null) {
+    val color = tint ?: Official.SubInk
+    Box(
+        Modifier.background(color.copy(alpha = if (tint == null) .07f else .12f), Capsule)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, style = OfficialType.MetaLabel.copy(color = color), maxLines = 1)
     }
 }
 
-/** 竖向站序：左侧连续轨道，站名下方显示首末班与换乘。 */
+/** 竖向站序：左侧连续轨道，站名下方显示首末班与换乘（本次照抄范围之外，保持原样）。 */
 @Composable private fun MetroStopRow(
     stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean,
     selected: Boolean = false, onClick: () -> Unit = {}
@@ -195,7 +160,7 @@ import com.yll682.houche.ui.theme.Capsule
             Box(
                 Modifier.align(Alignment.CenterHorizontally).padding(top = if (first) 8.dp else 0.dp)
                     .size(if (stop.transfer.isEmpty()) 10.dp else 13.dp).clip(Capsule)
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(Official.Page)
                     .border(2.dp, if (pending) tint.copy(alpha = .45f) else tint, Capsule)
             )
             if (!last) Box(Modifier.align(Alignment.CenterHorizontally).weight(1f).width(2.dp).background(track))
@@ -203,19 +168,18 @@ import com.yll682.houche.ui.theme.Capsule
         Column(Modifier.weight(1f).padding(end = 4.dp, bottom = 12.dp)) {
             Text(
                 stop.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (pending) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                style = OfficialType.StopName,
+                color = if (pending) Official.SubInk else Official.Ink,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
             if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty() || selected) {
                 Spacer(Modifier.height(4.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
-                    val metaColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    if (firstTime.isNotEmpty()) Text(firstTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
-                    if (lastTime.isNotEmpty()) Text(lastTime, style = MaterialTheme.typography.labelSmall, color = metaColor)
-                    stop.transfer.forEach { tag -> MetaPill(tag) }
-                    if (selected) MetaPill(stringResource(R.string.metro_realtime_station), tint = tint)
+                    if (firstTime.isNotEmpty()) Text(firstTime, style = OfficialType.MetaLabel)
+                    if (lastTime.isNotEmpty()) Text(lastTime, style = OfficialType.MetaLabel)
+                    stop.transfer.forEach { tag -> StopPill(tag) }
+                    if (selected) StopPill(stringResource(R.string.metro_realtime_station), tint)
                 }
             }
         }

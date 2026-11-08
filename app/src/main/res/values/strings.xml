@@ -133,6 +133,11 @@
     <string name="metro_realtime_position">列车位置</string>
     <string name="metro_realtime_train_no">第%1$d班</string>
     <string name="metro_realtime_train_row">第%1$d班</string>
-    <string name="metro_realtime_tip">只显示最近 3 班列车，预计到站时间仅供参考，请以实际运营情况为准</string>
+    <string name="metro_realtime_tip">当前只显示最近3班列车时间，预计到站时间仅供参考，请以实际运营情况为准</string>
     <string name="metro_realtime_selected">已设为参考站</string>
+    <!-- 照抄官方「列车位置」页的元素文案（官方这页没有首末班、在线胶囊、约N分钟后到站） -->
+    <string name="metro_position_swap">换向</string>
+    <string name="metro_position_open_to">开往</string>
+    <string name="metro_position_minutes">分钟</string>
+    <string name="metro_position_eta">第%1$d班预计到达</string>
 </resources>

@@ -226,6 +226,56 @@ class ScreenshotTest {
         MetroContent(UiState.Success(metroMergedData), {}, {}, {}, {})
     }
 
+    /**
+     * 2 号线、选中「新垵」：与官方基准图 `notes/refs/official-train-position.jpg` 同场景，
+     * 也按官方那张的 360dp×780dp（1080×2340）出图，方便逐块对照版式。
+     *
+     * 到站分钟取官方截图里的同一组（第1班 3 分钟 / 第2班 9 分钟 / 第3班 16 分钟），
+     * 车位也按官方那两段：第1班在马青路前一段、第2班在翁角路前一段（都有本站班序）；
+     * 第3班只在 ETA 蓝块里出现、不画车位——和官方截图一致。
+     * 抓包目录里没有 02070000（新垵）的原始响应，这组值是按官方截图场景重建的演示数据。
+     */
+    private fun xinanDirection(codes: List<String>): MetroDirection {
+        val source = MetroObservationSource("02070000")
+        fun train(seconds: Int, next: String, name: String, flag: Int) = MetroTrain(
+            arriveSeconds = seconds, nextStationCode = next, nextStationName = name,
+            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
+        )
+        val first = train(170, "02080000", "翁角路", 1)
+        val second = train(510, "02090000", "马青路", 1)
+        val third = train(950, "02090000", "马青路", 1)
+        return MetroDirection(
+            origin = "五缘湾", destination = "天竺山", startTime = "06:00", endTime = "23:00",
+            delayMinutes = 0, trains = listOf(first, second, third), stationCodes = codes,
+            source = source, positionTrains = listOf(first, second), arrivalsAvailable = true
+        )
+    }
+
+    private val xinanData: MetroData by lazy {
+        // 往天竺山 = 五缘湾 → 天竺山，与 metro.json 的站序相反。
+        val codes = metroLine2.liveStations.map { it.code }.reversed()
+        val toTianzhu = xinanDirection(codes)
+        val toWuyuan = toTianzhu.copy(
+            origin = "天竺山", destination = "五缘湾", stationCodes = codes.reversed(),
+            trains = emptyList(), positionTrains = emptyList()
+        )
+        MetroData(
+            lines = metroLines, selected = "2", updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "02000000",
+                stationCode = "02070000", stationName = "新垵",
+                directions = listOf(toTianzhu, toWuyuan)
+            ),
+            realtimeStation = "02070000", realtimeStationName = "新垵",
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine2Xinan_light() = capture("metro-line2-xinan", false, 1080, 2340) {
+        MetroContent(UiState.Success(xinanData), {}, {}, {}, {}, refresh = {})
+    }
+
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
         UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
