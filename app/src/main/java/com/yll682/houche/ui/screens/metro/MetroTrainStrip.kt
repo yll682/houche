@@ -16,8 +16,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,31 +33,40 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroDirection
 import com.yll682.houche.core.MetroLine
-import com.yll682.houche.core.MetroRealtime
 import com.yll682.houche.core.MetroTrain
 import com.yll682.houche.core.positionOf
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
  * 列车位置条（规格 2.6 / 第三节几何模型）。
  *
- * 坐标全部由格宽 P＝68.2dp 推出：站 i 的站心 `x = (i + 0.5)·P`，
- * 车 `x = (p + 0.5)·P`（p 来自 core 的 `positionOf`，整数表示站点、i−0.5 表示前一段），
+ * 格宽 W 由 [rememberStripCell] **按整条线量一次**（站名竖排 + 普通/Bold 两种样式的最大宽度），
+ * 与方向、参考站、viewport、位置批次都无关：站心 `x = (i + 0.5)·W`，
+ * 车 `x = (p + 0.5)·W`（p 来自 core 的 `positionOf`，整数表示站点、i−0.5 表示前一段），
  * 视口锚点＝选中站落在视口 78%（官方实测 78.4%）。
+ *
+ * 车标按 `positionPresentations()` 逐条画：`ordinal` 就是**全方向**第 1..N 班
+ * （不再按 `arrivalOrder == null` 丢标签），`stackIndex` 决定垂直 lane。
+ * 消除碰撞只靠错层，**不改 p、不横向挪站**；lane 高度见 [rememberStripLaneHeight]。
  *
  * 与旧版的差别（全部是「照抄」要求）：主线 7dp 实色方角、普通站点没有圆点只有白色箭头、
  * 选中站是三同心圆环 Ø20.7/Ø16.7/Ø8.7、车标 20.7dp 方块且「第N班」在图标下方。
  */
 @Composable
 internal fun MetroTrainStrip(
-    realtime: MetroRealtime,
+    stationCode: String,
     direction: MetroDirection,
     line: MetroLine,
     onSelectStation: (String) -> Unit = {},
@@ -78,7 +87,16 @@ internal fun MetroTrainStrip(
     val edge = needsLineEdge(tint, palette)
     val scroll = rememberScrollState()
     val scale = LocalDensity.current.density
-    val selectedIndex = cells.indexOf(realtime.stationCode)
+    val selectedIndex = cells.indexOf(stationCode)
+
+    // 整线测一次的格宽：切站/换向/滚动都不重测（key 里没有它们）。
+    val cell = rememberStripCell(line)
+    // 全方向编号 + 错层元数据；阈值用默认 1.0 站（保守覆盖同格与半格），只影响 lane，不删记录。
+    val presentations = remember(direction) { direction.positionPresentations() }
+    val lanes = presentations.maxOfOrNull { maxOf(it.stackSize, it.stackIndex + 1) }?.coerceAtLeast(1) ?: 1
+    val laneHeight = rememberStripLaneHeight(type.TrainLabel, stringResource(R.string.metro_realtime_train_no, presentations.maxOfOrNull { it.ordinal } ?: 1))
+    // 上层 lane 预留的空间：轨道、站名、命中列整体同步下移，最上层不会被裁。
+    val stackRoom = laneHeight * (lanes - 1)
 
     // 站名块高度按本方向最长的站名算（选中站行距比普通站大 4px，要分开算），
     // 滚动时卡片高度不会跟着名字长短跳。
@@ -86,24 +104,24 @@ internal fun MetroTrainStrip(
     val namesTop = TrackCenter + StripNameGap - nameInkInset
     val namesHeight = cells.maxOfOrNull { code ->
         val chars = (names[code]?.length ?: 0).coerceIn(1, 8)
-        val line = if (code == realtime.stationCode) StripNameLineSelected else StripNameLine
-        line * chars
+        val lineHeight = if (code == stationCode) StripNameLineSelected else StripNameLine
+        lineHeight * chars
     } ?: StripNameLine
-    val height = namesTop + namesHeight + 1.5.dp
+    val height = stackRoom + namesTop + namesHeight + 1.5.dp
     // 站点命中区：上沿压在选中环下沿再让 6dp（车标那一行不参与点按，免得点车标误切参考站），
     // 下沿到整块底边。最矮的情况（单字站名）也有 50dp，满足 44dp 下限。
-    val hitTop = TrackCenter - StripRingOuter / 2 - 6.dp
+    val hitTop = stackRoom + TrackCenter - StripRingOuter / 2 - 6.dp
     val hitHeight = height - hitTop
 
     BoxWithConstraints(modifier.fillMaxWidth().clipToBounds()) {
         val viewport = maxWidth
-        val contentWidth = StripCell * cells.size
+        val contentWidth = cell * cells.size
         // 锚点只跟站序/参考站/视口/格宽走；列车轮询变化刻意不进 key，免得抢用户滚动。
-        LaunchedEffect(cells, realtime.stationCode, viewport, contentWidth) {
+        LaunchedEffect(cells, stationCode, viewport, contentWidth) {
             val anchorDp = when {
-                selectedIndex >= 0 -> StripCell * (selectedIndex + .5f)
-                else -> direction.positions.map { direction.positionOf(it) }.filter { it >= 0 }
-                    .maxOrNull()?.let { StripCell * (it.toFloat() + .5f) }
+                selectedIndex >= 0 -> cell * (selectedIndex + .5f)
+                else -> presentations.map { it.stationPosition }.filter { it >= 0 }
+                    .maxOrNull()?.let { cell * (it.toFloat() + .5f) }
             }
             if (anchorDp != null) {
                 val maxPx = ((contentWidth - viewport).value * scale).roundToInt().coerceAtLeast(0)
@@ -115,7 +133,10 @@ internal fun MetroTrainStrip(
         Row(Modifier.horizontalScroll(scroll)) {
             Box(Modifier.width(contentWidth).height(height)) {
                 // 主线 + 站间白色箭头 + 选中站圆环，同一张画布上按站心逐个画。
-                Canvas(Modifier.width(contentWidth).height(StripRingOuter).offset(y = TrackCenter - StripRingOuter / 2)) {
+                Canvas(
+                    Modifier.width(contentWidth).height(StripRingOuter)
+                        .offset(y = stackRoom + TrackCenter - StripRingOuter / 2)
+                ) {
                     val cy = size.height / 2f
                     val track = StripTrack.toPx()
                     drawRect(tint, topLeft = Offset(0f, cy - track / 2f), size = androidx.compose.ui.geometry.Size(size.width, track))
@@ -130,7 +151,7 @@ internal fun MetroTrainStrip(
                     }
                     val arrowColor = cutout
                     cells.forEachIndexed { index, _ ->
-                        val x = StripCell.toPx() * (index + .5f)
+                        val x = cell.toPx() * (index + .5f)
                         // 箭杆 21×7px（7×2.33dp），箭头实心三角 12×21px，尖朝行驶方向。
                         val rodHalf = 1.17.dp.toPx()
                         val rodStart = x - StripArrowRodStart.toPx()
@@ -145,7 +166,7 @@ internal fun MetroTrainStrip(
                         drawPath(head, arrowColor)
                     }
                     if (selectedIndex >= 0) {
-                        val cx = StripCell.toPx() * (selectedIndex + .5f)
+                        val cx = cell.toPx() * (selectedIndex + .5f)
                         if (edge) {
                             val w = StripLineEdge.toPx()
                             drawCircle(
@@ -168,8 +189,8 @@ internal fun MetroTrainStrip(
                     val active = index == selectedIndex
                     val enabled = code.isNotBlank() && code in selectable
                     Box(
-                        Modifier.offset(x = StripCell * index, y = hitTop)
-                            .width(StripCell).height(hitHeight)
+                        Modifier.offset(x = cell * index, y = hitTop)
+                            .width(cell).height(hitHeight)
                             .clip(StationHitShape)
                             .clickable(enabled = enabled, role = Role.Button) { onSelectStation(code) }
                             .clearAndSetSemantics {
@@ -179,42 +200,45 @@ internal fun MetroTrainStrip(
                     ) {
                         Text(
                             name.chunked(1).joinToString("\n"),
-                            Modifier.offset(y = namesTop - hitTop).width(StripCell),
+                            Modifier.offset(y = stackRoom + namesTop - hitTop).width(cell),
                             style = if (active) type.StripeNameSelected else type.StripeName,
                             textAlign = TextAlign.Center,
                             maxLines = 8
                         )
                     }
                 }
-                // 车标：方块图标 + 下方「第N班」；没有本站班序的（补位置的区间车）不写班号。
-                // 用下标做 key：车没有稳定 ID，位置条的序列本身就是「第几班」，
-                // 序列真的重排时位移跨度会超过 1.5 格，[rememberMarkerCenter] 会直接吸附。
-                direction.positions.forEachIndexed { index, train ->
-                    val position = direction.positionOf(train)
-                    if (position < 0) return@forEachIndexed
-                    key(index) {
-                        val order = direction.arrivalOrderOf(train)
-                        val fraction = (position - kotlin.math.floor(position)).toFloat()
+                // 车标：方块图标 + 下方「第N班」，编号用**全方向** ordinal（第 4、5、6… 班有就画）。
+                // 垂直方向按 stackIndex 分 lane：lane 0 贴主线，往上依次是 lane 1、2…，
+                // 同一 cluster 的车不会叠在一起；只错层，不改 p、不横向挪站。
+                // 用 ordinal 做 key：它就是这个车道里的「第几班」，序列重排时位移跨度会超过
+                // 1.5 格，[rememberMarkerCenter] 会直接吸附。
+                presentations.forEach { presentation ->
+                    if (presentation.stationPosition < 0) return@forEach
+                    key(presentation.ordinal) {
+                        val fraction = (presentation.stationPosition - floor(presentation.stationPosition)).toFloat()
                         val phase = if (fraction > 0.05f && fraction < 0.95f) StripTrainPhase else 0f
-                        val centerX = rememberMarkerCenter(StripCell * (position.toFloat() + .5f - phase))
-                        val label = if (order == null) "" else stringResource(R.string.metro_realtime_train_no, order)
+                        val centerX = rememberMarkerCenter(
+                            cell * (presentation.stationPosition.toFloat() + .5f - phase), cell
+                        )
+                        val label = stringResource(R.string.metro_realtime_train_no, presentation.ordinal)
                         Box(
-                            Modifier.offset(x = centerX - MarkerBox / 2).width(MarkerBox)
+                            Modifier.offset(
+                                x = centerX - StripMarkerBox / 2,
+                                y = stackRoom - laneHeight * presentation.stackIndex
+                            ).width(StripMarkerBox)
                                 .semantics { contentDescription = label },
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            TrainIcon(lead = order == 1, palette = palette)
-                            if (label.isNotBlank()) {
-                                Text(
-                                    label,
-                                    Modifier.align(Alignment.TopCenter)
-                                        .offset(x = 2.dp, y = TrainLabelTop).width(40.dp),
-                                    style = type.TrainLabel,
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
+                            TrainIcon(lead = presentation.ordinal == 1, palette = palette)
+                            Text(
+                                label,
+                                Modifier.align(Alignment.TopCenter)
+                                    .offset(x = 2.dp, y = TrainLabelTop).width(StripMarkerBox),
+                                style = type.TrainLabel,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
                 }
@@ -223,14 +247,30 @@ internal fun MetroTrainStrip(
     }
 }
 
-/** 车标上沿到 block 顶＝0；主线中心 47.5dp，站名 ink 顶 63.5dp（全部来自规格 3.5/3.6）。 */
+/**
+ * 错层 lane 的高度：`L = max(44dp, ceil(max(图标高, 标签顶+实测标签高) + 4dp))`。
+ *
+ * 标签高度必须实测（字号随 fontScale 放大后要重算），不能用「行高×1」估。
+ * 一层 lane 的可见内容始终是「图标 20.7dp + 下方标签」，44dp 保证 lane 之间不挤。
+ */
+@Composable
+private fun rememberStripLaneHeight(labelStyle: TextStyle, sample: String): Dp {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    return remember(measurer, labelStyle, sample, density) {
+        val labelPx = measurer.measure(AnnotatedString(sample), style = labelStyle, maxLines = 1).size.height
+        with(density) {
+            val band = maxOf(StripTrainSize.roundToPx(), TrainLabelTop.roundToPx() + labelPx)
+            maxOf(StripLaneMin, ceil((band + StripLaneGap.roundToPx()).toFloat()).toDp())
+        }
+    }
+}
+
+/** 车标上沿到 lane 顶＝0；主线中心 47.5dp，站名 ink 顶 63.5dp（全部来自规格 3.5/3.6）。 */
 private val TrackCenter = 47.5.dp
 
-/** 「第N班」ink 顶在 block 顶下 22.3dp，行盒留 1.4dp 上内边距。 */
+/** 「第N班」ink 顶在 lane 顶下 22.3dp，行盒留 1.4dp 上内边距。 */
 private val TrainLabelTop = 18.9.dp
-
-/** 车标列宽：车标 20.7dp、「第N班」约 34.5dp，取 40dp 让标签不被父级宽度裁掉。 */
-private val MarkerBox = 40.dp
 
 /** 站点命中区的圆角（只裁水波纹，克制一点，不做花哨按压动效）。 */
 private val StationHitShape = RoundedCornerShape(6.dp)
@@ -244,14 +284,14 @@ private const val MarkerGlideMaxCells = 1.5f
 /**
  * 车标横坐标：数据更新时用 [MarkerGlideMillis] 滑到新位置；跨度超过 [MarkerGlideMaxCells] 格直接吸附。
  *
- * 车标本身没有稳定 ID（`MetroTrain` 只有观测值），所以位移过渡按「同一层里同一个车标」处理：
+ * 车标本身没有稳定 ID（`MetroTrain` 只有观测值），所以位移过渡按「同一条 presentation」处理：
  * 位置变了就滑过去，序列重排导致的大跨度由「吸附」兜住，不会出现横穿整条线的假位移。
  */
 @Composable
-private fun rememberMarkerCenter(target: Dp): Dp {
+private fun rememberMarkerCenter(target: Dp, cell: Dp): Dp {
     val anim = remember { Animatable(target.value) }
     LaunchedEffect(target) {
-        if (abs(target.value - anim.value) > StripCell.value * MarkerGlideMaxCells) {
+        if (abs(target.value - anim.value) > cell.value * MarkerGlideMaxCells) {
             anim.snapTo(target.value)
         } else {
             anim.animateTo(target.value, tween(MarkerGlideMillis, easing = FastOutSlowInEasing))

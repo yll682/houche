@@ -22,7 +22,15 @@ import java.io.InputStream
     val first: String = "",
     val last: String = "",
     val lng: String = "",
-    val lat: String = ""
+    val lat: String = "",
+    /** 官方跨线路共站标识；不能用它代替各线路实时接口所需的 code。 */
+    val stationUniqueCode: String = "",
+    /** null 表示旧资料未提供，不能将缺失字段当作官方可换乘标记。 */
+    val changeFlag: Boolean? = null,
+    /** 官方 allStation 坐标为 BD09；未确认来源的旧资料保留 unconfirmed。 */
+    val coordinateSystem: String = "unconfirmed",
+    /** 每次由当前整份站表重算，避免序列化快照中的旧目标污染在线替换。 */
+    @kotlinx.serialization.Transient val transferTargets: List<MetroTransferTarget> = emptyList()
 )
 
 @Serializable data class MetroLine(
@@ -67,18 +75,6 @@ fun MetroLine.realtimeCode(): String = apiCode.takeIf { it.isNotEmpty() }
 
 /** 某个地铁站经过的线路，用于在站点页标注换乘。 */
 data class MetroCalling(val line: MetroLine, val station: MetroStation)
-
-/** 依据同份官方站表的同名站补齐地铁换乘，不补造国铁或 BRT 信息。 */
-internal fun metroTransfers(lines: List<MetroLine>): List<MetroLine> {
-    val calling = lines.flatMap { line -> line.stations.map { it.name to line } }.groupBy({ it.first }, { it.second })
-    return lines.map { line ->
-        line.copy(stations = line.stations.map { station ->
-            val transfers = calling[station.name].orEmpty().filter { it.id != line.id }
-                .map { it.name.removePrefix("地铁") }
-            station.copy(transfer = (station.transfer + transfers).distinct())
-        })
-    }
-}
 
 /** 城市索引与站表分开存放，判断覆盖范围时无需读取完整站序。 */
 @Serializable internal data class MetroCity(val city: String, val cityKey: String) {

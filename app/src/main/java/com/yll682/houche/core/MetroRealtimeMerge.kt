@@ -177,8 +177,7 @@ private fun mergePositions(observations: List<DirectionObservation>): List<Metro
             }))
         }
     }
-    return result.sortedWith(compareByDescending<MetroTrain> { direction.positionOf(it) }
-        .thenBy { it.nextStationCode }.thenBy { it.source?.referenceStationCode }.thenBy { it.arriveSeconds })
+    return result.sortedWith(direction.positionOrder())
 }
 
 private fun compatiblePosition(left: TrainObservation, right: TrainObservation, direction: MetroDirection): Boolean =

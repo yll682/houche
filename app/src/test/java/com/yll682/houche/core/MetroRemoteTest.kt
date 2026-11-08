@@ -155,8 +155,15 @@ class MetroRemoteTest {
 
     @Test fun `同一份在线站表推导换乘且保留次日时间原文`() {
         val root = MetroFixtures.plaintext as JsonObject
-        val station = root.list("data").first() as JsonObject
-        val extra = JsonObject(station + mapOf("lineCode" to JsonPrimitive("02000000"), "lineName" to JsonPrimitive("二号线"), "lastBusTime" to JsonPrimitive("次日00:00")))
+        // 早期精简样本不含官方换乘字段；本分支明确构造有共同共站码的两线记录。
+        val station = JsonObject((root.list("data").first() as JsonObject) + mapOf(
+            "changeFlag" to JsonPrimitive(true), "stationUniqueCode" to JsonPrimitive("01010000"),
+            "longitude" to JsonPrimitive("118.089852"), "latitude" to JsonPrimitive("24.457147")
+        ))
+        val extra = JsonObject(station + mapOf(
+            "lineCode" to JsonPrimitive("02000000"), "lineName" to JsonPrimitive("二号线"),
+            "stationCode" to JsonPrimitive("02010000"), "lastBusTime" to JsonPrimitive("次日00:00")
+        ))
         val body = JsonObject(root + ("data" to JsonArray(listOf(station, extra))))
         val probe = remote.parse(MetroFixtures.envelope(body.toString()))
         assertEquals(listOf("二号线"), probe.lines.first().stations.single().transfer)

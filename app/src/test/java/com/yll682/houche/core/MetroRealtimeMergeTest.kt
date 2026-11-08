@@ -110,14 +110,19 @@ class MetroRealtimeMergeTest {
         assertEquals(2, opposite.arrivingFlag)
     }
 
-    @Test fun `补充区间车没有本站班序而选中马青路时是原始第一班`() {
+    // 旧 arrivalOrderOf 断言混淆了全方向班序与本站 ETA 行序；保留断言，改用独立的本站关联 API。
+    @Test fun `补充区间车没有本站行序而选中马青路时是原始第一行`() {
         val snapshots = listOf(parse("095729"), parse("095729", true))
         val admin = mergeMetroRealtime(snapshots, "02100000").directions.single { it.stationCodes.first() == "02320000" }
         val mq = mergeMetroRealtime(snapshots, "02090000").directions.single { it.stationCodes.first() == "02320000" }
-        assertNull(admin.arrivalOrderOf(admin.positions.single { it.nextStationCode == "02090000" }))
+        assertNull(admin.arrivalRowOrderOf(admin.positions.single { it.nextStationCode == "02090000" }))
+        assertEquals(1, mq.arrivalRowOrderOf(mq.positions.single { it.nextStationCode == "02090000" }))
+        assertEquals(1, admin.arrivalRowOrderOf(admin.positions.single { it.nextStationCode == "02120000" }))
+        assertEquals(2, mq.arrivalRowOrderOf(mq.positions.single { it.nextStationCode == "02120000" }))
+        assertEquals(1, admin.arrivalOrderOf(admin.positions.single { it.nextStationCode == "02090000" }))
         assertEquals(1, mq.arrivalOrderOf(mq.positions.single { it.nextStationCode == "02090000" }))
-        assertEquals(1, admin.arrivalOrderOf(admin.positions.single { it.nextStationCode == "02120000" }))
-        assertEquals(2, mq.arrivalOrderOf(mq.positions.single { it.nextStationCode == "02120000" }))
+        assertEquals(admin.positions.map { it.nextStationCode to admin.arrivalOrderOf(it) },
+            mq.positions.map { it.nextStationCode to mq.arrivalOrderOf(it) })
     }
 
     @Test fun `位置代表来自另一参考站仍用原始观测关联本站行而非位置下标`() {
@@ -127,16 +132,17 @@ class MetroRealtimeMergeTest {
         assertEquals("02090000", firstPosition.source?.referenceStationCode)
         assertEquals(20, firstPosition.arriveSeconds)
         assertEquals(137, direction.trains.first().arriveSeconds)
-        assertEquals(1, direction.arrivalOrderOf(firstPosition))
-        assertEquals(2, direction.arrivalOrderOf(direction.positions.single { it.nextStationCode == "02080000" }))
+        assertEquals(1, direction.arrivalRowOrderOf(firstPosition))
+        assertEquals(2, direction.arrivalRowOrderOf(direction.positions.single { it.nextStationCode == "02080000" }))
     }
 
     @Test fun `重复到站行或不匹配的来源不随意返回班序`() {
         val direction = mergeMetroRealtime(listOf(snapshot("E", listOf(train("B", 500)))), "E").directions.single()
         val position = direction.positions.single()
-        assertEquals(1, direction.arrivalOrderOf(position))
-        assertNull(direction.copy(trains = direction.trains + direction.trains).arrivalOrderOf(position))
-        assertNull(direction.arrivalOrderOf(position.copy(source = MetroObservationSource("F", serverEpochMillis = 1000L))))
+        assertEquals(1, direction.arrivalRowOrderOf(position))
+        assertNull(direction.copy(trains = direction.trains + direction.trains).arrivalRowOrderOf(position))
+        assertEquals(1, direction.copy(trains = direction.trains + direction.trains).arrivalOrderOf(position))
+        assertNull(direction.arrivalRowOrderOf(position.copy(source = MetroObservationSource("F", serverEpochMillis = 1000L))))
     }
 
     @Test fun `最近位置按当前方向距本站距离选择并在同距时选上游`() {

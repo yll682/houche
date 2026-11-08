@@ -24,7 +24,10 @@
           "last": "23:00",
           "lng": "118.089852",
           "lat": "24.457147",
-          "english": "Zhenhai Rd"
+          "english": "Zhenhai Rd",
+          "stationUniqueCode": "01010000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 2,
@@ -36,7 +39,10 @@
           "last": "23:01",
           "lng": "118.096517",
           "lat": "24.462541",
-          "english": "Zhongshan Park"
+          "english": "Zhongshan Park",
+          "stationUniqueCode": "01020000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 3,
@@ -48,7 +54,10 @@
           "last": "23:04",
           "lng": "118.106506",
           "lat": "24.467113",
-          "english": "Jiangjunci"
+          "english": "Jiangjunci",
+          "stationUniqueCode": "01030000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 4,
@@ -60,7 +69,10 @@
           "last": "23:06",
           "lng": "118.110495",
           "lat": "24.472211",
-          "english": "Wenzao"
+          "english": "Wenzao",
+          "stationUniqueCode": "01040000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 5,
@@ -72,7 +84,10 @@
           "last": "23:08",
           "lng": "118.118005",
           "lat": "24.480301",
-          "english": "Hubin East Rd"
+          "english": "Hubin East Rd",
+          "stationUniqueCode": "01050000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 6,
@@ -84,7 +99,10 @@
           "last": "23:10",
           "lng": "118.124706",
           "lat": "24.482011",
-          "english": "Lianban"
+          "english": "Lianban",
+          "stationUniqueCode": "01060000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 7,
@@ -96,7 +114,10 @@
           "last": "23:12",
           "lng": "118.127006",
           "lat": "24.48257",
-          "english": "Lianhua Intersection"
+          "english": "Lianhua Intersection",
+          "stationUniqueCode": "01070000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 8,
@@ -108,7 +129,10 @@
           "last": "23:14",
           "lng": "118.134372",
           "lat": "24.495066",
-          "english": "Lücuo"
+          "english": "Lücuo",
+          "stationUniqueCode": "01080000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 9,
@@ -120,7 +144,10 @@
           "last": "23:16",
           "lng": "118.133024",
           "lat": "24.504289",
-          "english": "Wushipu"
+          "english": "Wushipu",
+          "stationUniqueCode": "01090000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 10,
@@ -132,7 +159,10 @@
           "last": "23:18",
           "lng": "118.129359",
           "lat": "24.512131",
-          "english": "Tangbian"
+          "english": "Tangbian",
+          "stationUniqueCode": "01100000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 11,
@@ -144,7 +174,10 @@
           "last": "23:20",
           "lng": "118.125225",
           "lat": "24.517852",
-          "english": "Torch Hi-tech Park"
+          "english": "Torch Hi-tech Park",
+          "stationUniqueCode": "01110000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 12,
@@ -156,7 +189,10 @@
           "last": "23:22",
           "lng": "118.121131",
           "lat": "24.528208",
-          "english": "Dianqian"
+          "english": "Dianqian",
+          "stationUniqueCode": "01120000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 13,
@@ -168,7 +204,10 @@
           "last": "23:24",
           "lng": "118.121436",
           "lat": "24.54346",
-          "english": "Gaoqi"
+          "english": "Gaoqi",
+          "stationUniqueCode": "01130000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 14,
@@ -180,7 +219,10 @@
           "last": "23:29",
           "lng": "118.098386",
           "lat": "24.570854",
-          "english": "Jimei School Village"
+          "english": "Jimei School Village",
+          "stationUniqueCode": "01140000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 15,
@@ -192,7 +234,10 @@
           "last": "23:32",
           "lng": "118.073107",
           "lat": "24.576112",
-          "english": "Horticulture Expo Garden"
+          "english": "Horticulture Expo Garden",
+          "stationUniqueCode": "01150000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 16,
@@ -204,7 +249,10 @@
           "last": "23:34",
           "lng": "118.064843",
           "lat": "24.587958",
-          "english": "Xinglin Village"
+          "english": "Xinglin Village",
+          "stationUniqueCode": "01160000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 17,
@@ -216,7 +264,10 @@
           "last": "23:36",
           "lng": "118.059489",
           "lat": "24.592312",
-          "english": "Xingjin Rd"
+          "english": "Xingjin Rd",
+          "stationUniqueCode": "01170000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 18,
@@ -228,7 +279,10 @@
           "last": "23:38",
           "lng": "118.065552",
           "lat": "24.599029",
-          "english": "Guanren"
+          "english": "Guanren",
+          "stationUniqueCode": "01180000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 19,
@@ -240,7 +294,10 @@
           "last": "23:40",
           "lng": "118.060953",
           "lat": "24.611809",
-          "english": "Chengyi Plaza"
+          "english": "Chengyi Plaza",
+          "stationUniqueCode": "01190000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 20,
@@ -252,7 +309,10 @@
           "last": "23:42",
           "lng": "118.056785",
           "lat": "24.619102",
-          "english": "Jimei Software Park"
+          "english": "Jimei Software Park",
+          "stationUniqueCode": "01200000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 21,
@@ -264,7 +324,10 @@
           "last": "23:44",
           "lng": "118.06469",
           "lat": "24.62288",
-          "english": "Jimei Blvd"
+          "english": "Jimei Blvd",
+          "stationUniqueCode": "01210000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 22,
@@ -276,7 +339,10 @@
           "last": "23:47",
           "lng": "118.073062",
           "lat": "24.632011",
-          "english": "Tianshui Rd"
+          "english": "Tianshui Rd",
+          "stationUniqueCode": "01220000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 23,
@@ -288,7 +354,10 @@
           "last": "23:49",
           "lng": "118.078596",
           "lat": "24.638548",
-          "english": "Xiamen North Railway Station"
+          "english": "Xiamen North Railway Station",
+          "stationUniqueCode": "01230000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 24,
@@ -300,7 +369,10 @@
           "last": "",
           "lng": "118.076368",
           "lat": "24.647383",
-          "english": "Yannei"
+          "english": "Yannei",
+          "stationUniqueCode": "01240000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         }
       ]
     },
@@ -324,7 +396,10 @@
           "last": "23:00",
           "lng": "117.943239",
           "lat": "24.584835",
-          "english": "Tianzhushan"
+          "english": "Tianzhushan",
+          "stationUniqueCode": "02010000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 2,
@@ -336,7 +411,10 @@
           "last": "23:02",
           "lng": "117.954019",
           "lat": "24.573005",
-          "english": "Dongfu"
+          "english": "Dongfu",
+          "stationUniqueCode": "02020000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 3,
@@ -348,7 +426,10 @@
           "last": "23:05",
           "lng": "117.96832",
           "lat": "24.555784",
-          "english": "Dongyao"
+          "english": "Dongyao",
+          "stationUniqueCode": "02030000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 4,
@@ -360,7 +441,10 @@
           "last": "23:08",
           "lng": "117.980997",
           "lat": "24.553244",
-          "english": "Dingmei"
+          "english": "Dingmei",
+          "stationUniqueCode": "02040000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 5,
@@ -372,7 +456,10 @@
           "last": "23:10",
           "lng": "117.994008",
           "lat": "24.552047",
-          "english": "Maluan Center"
+          "english": "Maluan Center",
+          "stationUniqueCode": "02050000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 6,
@@ -384,7 +471,10 @@
           "last": "23:13",
           "lng": "118.00188",
           "lat": "24.543097",
-          "english": "Xinyang Ave"
+          "english": "Xinyang Ave",
+          "stationUniqueCode": "02060000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 7,
@@ -396,7 +486,10 @@
           "last": "23:15",
           "lng": "118.012085",
           "lat": "24.536654",
-          "english": "XinAn"
+          "english": "XinAn",
+          "stationUniqueCode": "02070000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 8,
@@ -408,7 +501,10 @@
           "last": "23:17",
           "lng": "118.020637",
           "lat": "24.532381",
-          "english": "Wengjiao Rd"
+          "english": "Wengjiao Rd",
+          "stationUniqueCode": "02080000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 9,
@@ -420,7 +516,10 @@
           "last": "23:22",
           "lng": "118.036591",
           "lat": "24.499833",
-          "english": "Maqing Rd"
+          "english": "Maqing Rd",
+          "stationUniqueCode": "02090000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 10,
@@ -432,7 +531,10 @@
           "last": "23:24",
           "lng": "118.040041",
           "lat": "24.49273",
-          "english": "Haicang Administrative Center"
+          "english": "Haicang Administrative Center",
+          "stationUniqueCode": "02100000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 11,
@@ -444,7 +546,10 @@
           "last": "23:26",
           "lng": "118.046149",
           "lat": "24.486745",
-          "english": "Haicang Business Center"
+          "english": "Haicang Business Center",
+          "stationUniqueCode": "02110000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 12,
@@ -456,7 +561,10 @@
           "last": "23:28",
           "lng": "118.056354",
           "lat": "24.490165",
-          "english": "Haicang Bay Park"
+          "english": "Haicang Bay Park",
+          "stationUniqueCode": "02120000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 13,
@@ -468,7 +576,10 @@
           "last": "23:32",
           "lng": "118.083518",
           "lat": "24.491612",
-          "english": "Cruise Center"
+          "english": "Cruise Center",
+          "stationUniqueCode": "02130000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 14,
@@ -480,7 +591,10 @@
           "last": "23:34",
           "lng": "118.090438",
           "lat": "24.484433",
-          "english": "Jianye Rd"
+          "english": "Jianye Rd",
+          "stationUniqueCode": "02140000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 15,
@@ -492,7 +606,10 @@
           "last": "23:36",
           "lng": "118.101413",
           "lat": "24.486877",
-          "english": "Hubin Middle Rd"
+          "english": "Hubin Middle Rd",
+          "stationUniqueCode": "02150000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 16,
@@ -504,7 +621,10 @@
           "last": "23:38",
           "lng": "118.112134",
           "lat": "24.489802",
-          "english": "Sports Center"
+          "english": "Sports Center",
+          "stationUniqueCode": "02160000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 17,
@@ -516,7 +636,10 @@
           "last": "23:40",
           "lng": "118.124645",
           "lat": "24.492786",
-          "english": "Yuxiu East Rd"
+          "english": "Yuxiu East Rd",
+          "stationUniqueCode": "02170000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 18,
@@ -528,7 +651,10 @@
           "last": "23:42",
           "lng": "118.134372",
           "lat": "24.495066",
-          "english": "Lücuo"
+          "english": "Lücuo",
+          "stationUniqueCode": "01080000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 19,
@@ -540,7 +666,10 @@
           "last": "23:44",
           "lng": "118.144336",
           "lat": "24.497948",
-          "english": "Jiangtou"
+          "english": "Jiangtou",
+          "stationUniqueCode": "02190000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 20,
@@ -552,7 +681,10 @@
           "last": "23:46",
           "lng": "118.152457",
           "lat": "24.495581",
-          "english": "Houpu"
+          "english": "Houpu",
+          "stationUniqueCode": "02200000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 21,
@@ -564,7 +696,10 @@
           "last": "23:48",
           "lng": "118.159967",
           "lat": "24.492983",
-          "english": "Caitang"
+          "english": "Caitang",
+          "stationUniqueCode": "02210000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 22,
@@ -576,7 +711,10 @@
           "last": "23:50",
           "lng": "118.169489",
           "lat": "24.491733",
-          "english": "Gudishi"
+          "english": "Gudishi",
+          "stationUniqueCode": "02220000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 23,
@@ -588,7 +726,10 @@
           "last": "23:52",
           "lng": "118.180125",
           "lat": "24.490385",
-          "english": "Lingdou"
+          "english": "Lingdou",
+          "stationUniqueCode": "02230000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 24,
@@ -600,7 +741,10 @@
           "last": "23:54",
           "lng": "118.190473",
           "lat": "24.48713",
-          "english": "Software Park Phase Ⅱ"
+          "english": "Software Park Phase Ⅱ",
+          "stationUniqueCode": "02240000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 25,
@@ -612,7 +756,10 @@
           "last": "23:56",
           "lng": "118.198881",
           "lat": "24.491174",
-          "english": "Hecuo"
+          "english": "Hecuo",
+          "stationUniqueCode": "02250000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 26,
@@ -624,7 +771,10 @@
           "last": "23:58",
           "lng": "118.199348",
           "lat": "24.499329",
-          "english": "Guanyinshan"
+          "english": "Guanyinshan",
+          "stationUniqueCode": "02260000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 27,
@@ -636,7 +786,10 @@
           "last": "次日00:00",
           "lng": "118.199241",
           "lat": "24.505281",
-          "english": "Dongzhai"
+          "english": "Dongzhai",
+          "stationUniqueCode": "02270000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 28,
@@ -648,7 +801,10 @@
           "last": "次日00:01",
           "lng": "118.200426",
           "lat": "24.512514",
-          "english": "Cross-Strait Financial Center"
+          "english": "Cross-Strait Financial Center",
+          "stationUniqueCode": "02280000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 29,
@@ -660,7 +816,10 @@
           "last": "次日00:03",
           "lng": "118.196725",
           "lat": "24.517216",
-          "english": "Wutong"
+          "english": "Wutong",
+          "stationUniqueCode": "02290000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 30,
@@ -672,7 +831,10 @@
           "last": "次日00:05",
           "lng": "118.189323",
           "lat": "24.523199",
-          "english": "Wetland Park"
+          "english": "Wetland Park",
+          "stationUniqueCode": "02300000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 31,
@@ -684,7 +846,10 @@
           "last": "次日00:07",
           "lng": "118.177322",
           "lat": "24.532535",
-          "english": "Zhongzhai"
+          "english": "Zhongzhai",
+          "stationUniqueCode": "02310000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 32,
@@ -696,7 +861,10 @@
           "last": "",
           "lng": "118.17342",
           "lat": "24.538694",
-          "english": "Wuyuanwan"
+          "english": "Wuyuanwan",
+          "stationUniqueCode": "02320000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         }
       ]
     },
@@ -720,7 +888,10 @@
           "last": "23:00",
           "lng": "118.121275",
           "lat": "24.475054",
-          "english": "Xiamen Railway Station"
+          "english": "Xiamen Railway Station",
+          "stationUniqueCode": "03010000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 2,
@@ -732,7 +903,10 @@
           "last": "23:01",
           "lng": "118.117676",
           "lat": "24.480195",
-          "english": "Hubin East Rd"
+          "english": "Hubin East Rd",
+          "stationUniqueCode": "01050000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 3,
@@ -744,7 +918,10 @@
           "last": "23:04",
           "lng": "118.112134",
           "lat": "24.489802",
-          "english": "Sports Center"
+          "english": "Sports Center",
+          "stationUniqueCode": "02160000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 4,
@@ -756,7 +933,10 @@
           "last": "23:05",
           "lng": "118.109495",
           "lat": "24.495844",
-          "english": "HR Service Center"
+          "english": "HR Service Center",
+          "stationUniqueCode": "03040000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 5,
@@ -768,7 +948,10 @@
           "last": "23:08",
           "lng": "118.112135",
           "lat": "24.512547",
-          "english": "Huli Park"
+          "english": "Huli Park",
+          "stationUniqueCode": "03050000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 6,
@@ -780,7 +963,10 @@
           "last": "23:10",
           "lng": "118.115031",
           "lat": "24.517631",
-          "english": "Huarong Rd"
+          "english": "Huarong Rd",
+          "stationUniqueCode": "03060000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 7,
@@ -792,7 +978,10 @@
           "last": "23:12",
           "lng": "118.125225",
           "lat": "24.517852",
-          "english": "Torch Hi-tech Park"
+          "english": "Torch Hi-tech Park",
+          "stationUniqueCode": "01110000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 8,
@@ -804,7 +993,10 @@
           "last": "23:14",
           "lng": "118.131882",
           "lat": "24.519797",
-          "english": "Xiaodongshan"
+          "english": "Xiaodongshan",
+          "stationUniqueCode": "03080000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 9,
@@ -816,7 +1008,10 @@
           "last": "23:16",
           "lng": "118.144838",
           "lat": "24.523474",
-          "english": "Andou"
+          "english": "Andou",
+          "stationUniqueCode": "03090000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 10,
@@ -828,7 +1023,10 @@
           "last": "23:19",
           "lng": "118.1535",
           "lat": "24.52488",
-          "english": "Banshang"
+          "english": "Banshang",
+          "stationUniqueCode": "03100000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 11,
@@ -840,7 +1038,10 @@
           "last": "23:21",
           "lng": "118.162748",
           "lat": "24.528773",
-          "english": "Huli Innovation Park"
+          "english": "Huli Innovation Park",
+          "stationUniqueCode": "03110000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 12,
@@ -852,7 +1053,10 @@
           "last": "23:24",
           "lng": "118.17342",
           "lat": "24.538694",
-          "english": "Wuyuanwan"
+          "english": "Wuyuanwan",
+          "stationUniqueCode": "02320000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 13,
@@ -864,7 +1068,10 @@
           "last": "23:29",
           "lng": "118.214706",
           "lat": "24.562719",
-          "english": "International Expo Center"
+          "english": "International Expo Center",
+          "stationUniqueCode": "03130000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 14,
@@ -876,7 +1083,10 @@
           "last": "23:31",
           "lng": "118.225773",
           "lat": "24.570935",
-          "english": "Dongjie"
+          "english": "Dongjie",
+          "stationUniqueCode": "03140000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 15,
@@ -888,7 +1098,10 @@
           "last": "23:33",
           "lng": "118.23253",
           "lat": "24.577064",
-          "english": "Hongkeng"
+          "english": "Hongkeng",
+          "stationUniqueCode": "03150000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 16,
@@ -900,7 +1113,10 @@
           "last": "23:35",
           "lng": "118.237453",
           "lat": "24.582156",
-          "english": "Linqian"
+          "english": "Linqian",
+          "stationUniqueCode": "03160000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 17,
@@ -912,7 +1128,10 @@
           "last": "23:37",
           "lng": "118.250011",
           "lat": "24.585039",
-          "english": "Guluo"
+          "english": "Guluo",
+          "stationUniqueCode": "03170000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 18,
@@ -924,7 +1143,10 @@
           "last": "23:39",
           "lng": "118.260295",
           "lat": "24.584375",
-          "english": "XiangAn Public Park"
+          "english": "XiangAn Public Park",
+          "stationUniqueCode": "03180000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 19,
@@ -936,7 +1158,10 @@
           "last": "23:41",
           "lng": "118.269964",
           "lat": "24.585905",
-          "english": "Pubian"
+          "english": "Pubian",
+          "stationUniqueCode": "03190000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 20,
@@ -948,7 +1173,10 @@
           "last": "23:43",
           "lng": "118.277919",
           "lat": "24.586014",
-          "english": "Houcun"
+          "english": "Houcun",
+          "stationUniqueCode": "03200000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 21,
@@ -960,7 +1188,10 @@
           "last": "",
           "lng": "118.287264",
           "lat": "24.577753",
-          "english": "Caicuo"
+          "english": "Caicuo",
+          "stationUniqueCode": "03210000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         }
       ]
     },
@@ -978,99 +1209,124 @@
           "order": 1,
           "name": "集美软件园北",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04010000",
           "first": "08:00",
           "last": "20:00",
           "lng": "118.043093",
           "lat": "24.623114",
-          "english": "Jimei Software Park North"
+          "english": "Jimei Software Park North",
+          "stationUniqueCode": "04010000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 2,
           "name": "后溪",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04020000",
           "first": "08:02",
           "last": "20:02",
           "lng": "118.055573",
           "lat": "24.630442",
-          "english": "Houxi"
+          "english": "Houxi",
+          "stationUniqueCode": "04020000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 3,
           "name": "厦门北站",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04030000",
           "first": "08:05",
           "last": "20:05",
           "lng": "118.080001",
           "lat": "24.643390",
-          "english": "Xiamen North Railway Station"
+          "english": "Xiamen North Railway Station",
+          "stationUniqueCode": "01230000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 4,
           "name": "官浔",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04040000",
           "first": "08:11",
           "last": "20:11",
           "lng": "118.155301",
           "lat": "24.658169",
-          "english": "Guanxun"
+          "english": "Guanxun",
+          "stationUniqueCode": "04040000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 5,
           "name": "丙洲",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04050000",
           "first": "08:14",
           "last": "20:14",
           "lng": "118.155301",
           "lat": "24.658169",
-          "english": "Bingzhou"
+          "english": "Bingzhou",
+          "stationUniqueCode": "04050000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 6,
           "name": "城场",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04060000",
           "first": "08:00",
           "last": "20:18",
           "lng": "118.216633",
           "lat": "24.637581",
-          "english": "Chengchang"
+          "english": "Chengchang",
+          "stationUniqueCode": "04060000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 7,
           "name": "洪坑",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04080000",
           "first": "08:05",
           "last": "20:24",
           "lng": "118.232614",
           "lat": "24.577668",
-          "english": "Hongkeng"
+          "english": "Hongkeng",
+          "stationUniqueCode": "03150000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 8,
           "name": "前浯",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "04090000",
           "first": "",
           "last": "",
           "lng": "118.261317",
           "lat": "24.567529",
-          "english": "Qianwu"
+          "english": "Qianwu",
+          "stationUniqueCode": "04090000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         }
-      ]
+      ],
+      "apiCode": "04000000"
     },
     {
       "id": "6",
@@ -1086,207 +1342,259 @@
           "order": 1,
           "name": "角江路",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06030000",
           "first": "06:00",
           "last": "23:00",
           "lng": "117.901852",
           "lat": "24.505936",
-          "english": "Jiaojiang Rd"
+          "english": "Jiaojiang Rd",
+          "stationUniqueCode": "06030000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 2,
           "name": "角美中心",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06040000",
           "first": "06:02",
           "last": "23:01",
           "lng": "117.898897",
           "lat": "24.514833",
-          "english": "Jiaomei Center"
+          "english": "Jiaomei Center",
+          "stationUniqueCode": "06040000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 3,
           "name": "文圃路",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06050000",
           "first": "06:00",
           "last": "23:04",
           "lng": "117.905944",
           "lat": "24.522268",
-          "english": "Wenpu Rd"
+          "english": "Wenpu Rd",
+          "stationUniqueCode": "06050000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 4,
           "name": "角海路",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06060000",
           "first": "06:01",
           "last": "23:06",
           "lng": "117.915382",
           "lat": "24.526382",
-          "english": "Jiaohai Rd"
+          "english": "Jiaohai Rd",
+          "stationUniqueCode": "06060000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 5,
           "name": "角美东",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06070000",
           "first": "06:04",
           "last": "23:08",
           "lng": "117.927523",
           "lat": "24.532977",
-          "english": "Jiaomei East"
+          "english": "Jiaomei East",
+          "stationUniqueCode": "06070000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 6,
           "name": "一农",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06080000",
           "first": "06:08",
           "last": "23:11",
           "lng": "117.954444",
           "lat": "24.542565",
-          "english": "Yinong"
+          "english": "Yinong",
+          "stationUniqueCode": "06080000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 7,
           "name": "林埭",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06090000",
           "first": "06:10",
           "last": "23:13",
           "lng": "117.966715",
           "lat": "24.550229",
-          "english": "Lindai"
+          "english": "Lindai",
+          "stationUniqueCode": "06090000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 8,
           "name": "鼎美",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06100000",
           "first": "06:00",
           "last": "23:16",
           "lng": "117.980997",
           "lat": "24.553244",
-          "english": "Dingmei"
+          "english": "Dingmei",
+          "stationUniqueCode": "06100000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 9,
           "name": "马銮中心",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06110000",
           "first": "06:02",
           "last": "23:18",
           "lng": "117.994008",
           "lat": "24.552047",
-          "english": "Maluan Center"
+          "english": "Maluan Center",
+          "stationUniqueCode": "02050000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 10,
           "name": "西滨",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06130000",
           "first": "06:00",
           "last": "23:24",
           "lng": "118.026659",
           "lat": "24.571100",
-          "english": "Xibin"
+          "english": "Xibin",
+          "stationUniqueCode": "06130000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 11,
           "name": "碑头",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06140000",
           "first": "06:01",
           "last": "23:26",
           "lng": "118.035457",
           "lat": "24.570899",
-          "english": "Beitou"
+          "english": "Beitou",
+          "stationUniqueCode": "06140000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 12,
           "name": "杏滨",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06150000",
           "first": "06:04",
           "last": "23:28",
           "lng": "118.046702",
           "lat": "24.571910",
-          "english": "Xingbin"
+          "english": "Xingbin",
+          "stationUniqueCode": "06150000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 13,
           "name": "内茂",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06160000",
           "first": "06:00",
           "last": "23:30",
           "lng": "118.050217",
           "lat": "24.577802",
-          "english": "Neimao"
+          "english": "Neimao",
+          "stationUniqueCode": "06160000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 14,
           "name": "董任",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06170000",
           "first": "06:01",
           "last": "23:31",
           "lng": "118.054296",
           "lat": "24.585513",
-          "english": "Dongren"
+          "english": "Dongren",
+          "stationUniqueCode": "06170000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 15,
           "name": "官任",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06180000",
           "first": "06:04",
           "last": "23:34",
           "lng": "118.065828",
           "lat": "24.599452",
-          "english": "Guanren"
+          "english": "Guanren",
+          "stationUniqueCode": "01180000",
+          "changeFlag": true,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 16,
           "name": "杏林湾",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06190000",
           "first": "06:07",
           "last": "23:37",
           "lng": "118.083798",
           "lat": "24.609531",
-          "english": "Xinglinwan"
+          "english": "Xinglinwan",
+          "stationUniqueCode": "06190000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         },
         {
           "order": 17,
           "name": "华侨大学",
           "transfer": [],
-          "opened": false,
+          "opened": true,
           "code": "06200000",
           "first": "",
           "last": "",
           "lng": "118.095257",
           "lat": "24.602929",
-          "english": "Huaqiao University"
+          "english": "Huaqiao University",
+          "stationUniqueCode": "06200000",
+          "changeFlag": false,
+          "coordinateSystem": "BD09"
         }
-      ]
+      ],
+      "apiCode": "06000000"
     }
   ]
 }

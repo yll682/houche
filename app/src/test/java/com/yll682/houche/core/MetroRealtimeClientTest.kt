@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong
 class MetroRealtimeClientTest {
     private val stations = (1..32).map { "02%02d0000".format(it) }
     private val selected = stations[9]
+    // 第三轮此参考站因锚点重合只发 7 次；第四轮用剩余槽补下标 4，现在每批精确 8 次。
 
     @Test fun `每批最多八次物理请求且两条线路合计并发也不超过二`() = runBlocking {
         withTimeout(5_000) {
@@ -76,7 +77,7 @@ class MetroRealtimeClientTest {
             val remote = MetroRealtimeRemote(http, now::get, wall::get)
             val first = remote.latestLine("02000000", stations, selected)
             assertTrue(first.online)
-            assertEquals(7, requests.get())
+            assertEquals(8, requests.get())
             assertTrue(first.directions.all { it.trains.size == 3 && it.arrivalsAvailable })
             assertTrue(first.directions.flatMap { it.trains }.all { it.source?.referenceStationCode == selected })
             assertEquals(1_000L, first.source!!.receivedAtElapsedMillis)
@@ -96,7 +97,7 @@ class MetroRealtimeClientTest {
             assertTrue(unsampled.directions.all { !it.arrivalsAvailable && it.trains.isEmpty() && it.positions.isNotEmpty() })
             assertEquals(first.directions.map { it.positions }, unsampled.directions.map { it.positions })
             assertEquals(first.source!!.receivedAtEpochMillis, unsampled.source!!.receivedAtEpochMillis)
-            assertEquals(7, requests.get())
+            assertEquals(8, requests.get())
         }
     }
 
@@ -113,24 +114,24 @@ class MetroRealtimeClientTest {
             val remote = MetroRealtimeRemote(http, now::get, wall::get)
             val first = remote.latestLine("02000000", stations, selected)
             assertTrue(first.directions.all { it.positions.isNotEmpty() })
-            assertEquals(7, requests.get())
+            assertEquals(8, requests.get())
             // 本机墙钟任意跳变不影响 TTL，也不能改写缓存中的真实接收时间。
             wall.set(0)
             now.addAndGet(19_999)
             assertEquals(first.source, remote.latestLine("02000000", stations, selected).source)
-            assertEquals(7, requests.get())
+            assertEquals(8, requests.get())
             available = false
             now.incrementAndGet()
             val failed = remote.latestLine("02000000", stations, selected)
             assertFalse(failed.online)
             assertTrue(failed.directions.isEmpty())
-            assertEquals(14, requests.get())
+            assertEquals(16, requests.get())
             assertFalse(remote.latestLine("02000000", stations, stations[12]).online)
-            assertEquals(14, requests.get())
+            assertEquals(16, requests.get())
             available = true
             now.addAndGet(20_000)
             assertTrue(remote.latestLine("02000000", stations, selected).online)
-            assertEquals(21, requests.get())
+            assertEquals(24, requests.get())
         }
     }
 
@@ -149,9 +150,9 @@ class MetroRealtimeClientTest {
             val remote = MetroRealtimeRemote(http, elapsedRealtimeMillis = { 0L })
             val result = remote.latestLine("02000000", stations, selected)
             assertTrue(result.online)
-            assertEquals(7, requests.size)
+            assertEquals(8, requests.size)
             assertTrue(requests.values.all { it.get() == 1 })
-            assertEquals(setOf(stations[0], stations[16], stations[23], stations[31]), result.sources.map { it.referenceStationCode }.toSet())
+            assertEquals(setOf(stations[0], stations[4], stations[16], stations[23], stations[31]), result.sources.map { it.referenceStationCode }.toSet())
             assertTrue(result.directions.all { !it.arrivalsAvailable && it.trains.isEmpty() && it.positions.isNotEmpty() })
             remote.latestLine("02000000", stations, selected)
             assertTrue(requests.values.all { it.get() == 1 })
@@ -213,7 +214,7 @@ class MetroRealtimeClientTest {
                 assertTrue(result.online)
                 assertEquals(stations[8], result.stationCode)
                 assertTrue(result.directions.all { it.arrivalsAvailable })
-                assertEquals(7, requests.get())
+                assertEquals(8, requests.get())
                 assertEquals(0, cancelled.get())
             }
         }
@@ -248,7 +249,7 @@ class MetroRealtimeClientTest {
                 now.addAndGet(20_000)
                 release.complete(Unit)
                 assertTrue(remote.latestLine("02000000", stations, selected).online)
-                assertEquals(9, requests.get())
+                assertEquals(10, requests.get())
             }
         }
     }

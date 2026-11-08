@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroStation
+import com.yll682.houche.core.MetroTransferTarget
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.EmptyState
 import com.yll682.houche.ui.components.LoadingSkeleton
@@ -40,7 +41,7 @@ import com.yll682.houche.ui.theme.Capsule
 /**
  * 地铁「列车位置」页：照官方厦门地铁 App 的版式做（见 `notes/spec-official-train-position.md`）。
  *
- * 骨架：白顶栏（居中标题 + 细 chevron）→ 线路 tab 条（色块徽标 + 方形下划线）→
+ * 骨架：品牌蓝顶栏（白返回箭头 + 居中标题，候车 1.7.2 的样式）→ 线路 tab 条（色块徽标 + 方形下划线）→
  * 白卡片（方向行 / 站名+刷新 / ETA 蓝块 / 位置条）→ 卡片外居中免责说明 → 站序列表。
  *
  * 站序列表官方这页没有，但候车用它在换参考站（`selectStation` 的唯一入口），
@@ -51,6 +52,7 @@ fun MetroContent(
     state: UiState<MetroData>, select: (String) -> Unit, back: () -> Unit,
     selectStation: (String) -> Unit = {}, selectDirection: (Int) -> Unit = {},
     refresh: () -> Unit = {},
+    selectTransfer: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val data = state.data ?: MetroData()
@@ -72,7 +74,11 @@ fun MetroContent(
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
             item {
                 MetroRealtimeCard(
-                    realtime = data.realtime,
+                    direction = data.direction,
+                    directionCount = data.realtime?.directions?.size ?: 0,
+                    stationCode = data.realtimeStation.ifBlank { data.realtime?.stationCode.orEmpty() }
+                        .ifBlank { line.stations.firstOrNull()?.code.orEmpty() },
+                    etaState = data.etaState,
                     loading = data.realtimeLoading,
                     note = data.realtimeNote,
                     stationName = data.realtimeStationName.ifBlank { line.stations.firstOrNull()?.name.orEmpty() },
@@ -81,6 +87,7 @@ fun MetroContent(
                     onDirection = selectDirection,
                     onRefresh = refresh,
                     onSelectStation = selectStation,
+                    onTransfer = selectTransfer,
                     modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
                 )
             }
@@ -109,7 +116,9 @@ fun MetroContent(
             itemsIndexed(line.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
                 MetroStopRow(
                     stop, index, line.stations.size, officialLineColor(heading), !stop.opened,
-                    selected = stop.code.isNotBlank() && stop.code == data.realtimeStation
+                    selected = stop.code.isNotBlank() && stop.code == data.realtimeStation,
+                    // 换乘徽标把完整目标（目标线 id + 目标线自己的站码）交给数据层，一次提交、一次刷新。
+                    onTransfer = { target: MetroTransferTarget -> selectTransfer(target.lineId, target.stationCode) }
                 ) { selectStation(stop.code) }
             }
             if (data.updated.isNotBlank()) {
@@ -125,7 +134,12 @@ fun MetroContent(
     }
 }
 
-/** 站序行里的小胶囊（换乘线路 / 参考站）：填充 alpha 与线路色一起跟着明暗模式走。 */
+/**
+ * 站序行里的小胶囊（旧资料里的换乘文案 / 参考站）：填充 alpha 与线路色一起跟着明暗模式走。
+ *
+ * 纯装饰：这段话已经在整行的 `contentDescription` 里，或由旁边的可点换乘徽标另讲一遍，
+ * 所以自身不参与无障碍树，免得同一行被读两遍。
+ */
 @Composable private fun StopPill(text: String, tint: Color? = null) {
     val palette = officialPalette()
     val type = officialTypography()
@@ -133,21 +147,36 @@ fun MetroContent(
     val fill = if (tint == null) palette.PillFillAlpha else palette.PillTintAlpha
     Box(
         Modifier.background(color.copy(alpha = fill), Capsule)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clearAndSetSemantics {},
         contentAlignment = Alignment.Center
     ) {
         Text(text, style = type.MetaLabel.copy(color = color), maxLines = 1)
     }
 }
 
-/** 竖向站序：左侧连续轨道，站名下方显示首末班与换乘（本次照抄范围之外，保持原样）。 */
-@Composable private fun MetroStopRow(
+/**
+ * 站序行下方那一排小元素（首末班 / 换乘徽标 / 「参考站」）统一撑到 32dp 高并垂直居中：
+ * 换乘徽标的命中区就是 32dp，时间文字和旧胶囊跟着对齐，不会被顶到行首。
+ */
+@Composable private fun StopFlowItem(content: @Composable () -> Unit) {
+    Box(Modifier.heightIn(min = TransferBadgeTapHeight), contentAlignment = Alignment.Center) { content() }
+}
+
+/**
+ * 竖向站序：左侧连续轨道，站名下方显示首末班、换乘徽标与「参考站」。
+ *
+ * 有可导航换乘目标（`transferTargets`）的站画彩色徽标，点徽标直接跳目标线目标站；
+ * 只有旧资料那串文案、推不出目标时才退回原来的中性胶囊。
+ */
+@Composable internal fun MetroStopRow(
     stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean,
-    selected: Boolean = false, onClick: () -> Unit = {}
+    selected: Boolean = false, onTransfer: (MetroTransferTarget) -> Unit = {}, onClick: () -> Unit = {}
 ) {
     val palette = officialPalette()
     val type = officialTypography()
     val transferText = stop.transfer.joinToString(" / ")
+    val targets = stop.transferTargets
     val stationLabel = if (stop.transfer.isEmpty()) stop.name else
         stringResource(R.string.metro_stop_transfer, stop.name, transferText)
     val firstTime = if (stop.first.isNotBlank()) stringResource(R.string.first_time, stop.first) else ""
@@ -162,8 +191,7 @@ fun MetroContent(
     val railTint = listLineColor(tint, palette)
     val track = railTint.copy(alpha = if (pending) palette.ListTrackAlphaPending else palette.ListTrackAlpha)
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 52.dp)
-        .clickable(enabled = stop.code.isNotBlank()) { onClick() }
-        .clearAndSetSemantics { contentDescription = label }) {
+        .clickable(enabled = stop.code.isNotBlank()) { onClick() }) {
         Column(Modifier.width(34.dp).fillMaxHeight().clearAndSetSemantics {}) {
             // 上段只画到圆点中心，下段由 weight 撑到底，圆点带底色盖住接缝 → 轨道是连的。
             if (!first) Box(Modifier.align(Alignment.CenterHorizontally).width(2.dp).height(13.dp).background(track))
@@ -176,20 +204,36 @@ fun MetroContent(
             if (!last) Box(Modifier.align(Alignment.CenterHorizontally).weight(1f).width(2.dp).background(track))
         }
         Column(Modifier.weight(1f).padding(end = 4.dp, bottom = 12.dp)) {
+            // 整行的一句话说明挂在站名上（原先挂在外层 Row）：外层还留着「选站」的点击语义，
+            // 而换乘徽标要保留自己的点击节点，不能再被一个 clearAndSetSemantics 整片抹掉。
             Text(
                 stop.name,
+                Modifier.clearAndSetSemantics { contentDescription = label },
                 style = type.StopName,
                 color = if (pending) palette.SubInk else palette.Ink,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
-            if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty() || selected) {
+            if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty() || targets.isNotEmpty() || selected) {
                 Spacer(Modifier.height(4.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
-                    if (firstTime.isNotEmpty()) Text(firstTime, style = type.MetaLabel)
-                    if (lastTime.isNotEmpty()) Text(lastTime, style = type.MetaLabel)
-                    stop.transfer.forEach { tag -> StopPill(tag) }
-                    if (selected) StopPill(stringResource(R.string.metro_realtime_station), tint)
+                    if (firstTime.isNotEmpty()) StopFlowItem {
+                        Text(firstTime, Modifier.clearAndSetSemantics {}, style = type.MetaLabel)
+                    }
+                    if (lastTime.isNotEmpty()) StopFlowItem {
+                        Text(lastTime, Modifier.clearAndSetSemantics {}, style = type.MetaLabel)
+                    }
+                    if (targets.isNotEmpty()) {
+                        // 每个目标一枚小胶囊，底色＝目标线路官方色，点了直接跳那条线的那个站。
+                        TransferBadges(targets, onSelect = onTransfer)
+                    } else {
+                        // 旧资料没有坐标/共站码，推不出可导航目标：保留原来那枚中性文案胶囊。
+                        stop.transfer.forEach { tag -> StopFlowItem { StopPill(tag) } }
+                    }
+                    if (selected) StopFlowItem { StopPill(stringResource(R.string.metro_realtime_station), tint) }
                 }
             }
         }

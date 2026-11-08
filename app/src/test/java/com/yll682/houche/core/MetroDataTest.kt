@@ -1,6 +1,9 @@
 package com.yll682.houche.core
 
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
@@ -130,10 +133,28 @@ class MetroDataTest {
         assertFalse(opened)
     }
 
-    @Test fun `内置兜底与官方完整抓取基准逐字段一致`() {
-        val bundled = BusNetwork.json.parseToJsonElement(asset("metro.json").readText())
+    @Test fun `内置兜底除逐站核实的开通状态线路码和官方换乘字段外与原始抓取逐字段一致`() {
+        val bundled = BusNetwork.json.parseToJsonElement(asset("metro.json").readText()) as JsonObject
         val official = BusNetwork.json.parseToJsonElement(MetroFixtures.file("metro-from-api.json").readText())
-        assertEquals(official, bundled)
+        // 原始抓取仍保留 showFlag=false 的历史状态；只允许已核实站码的开通修正，
+        // 不能为了让资产通过测试而覆盖历史证据，或顺手改掉时刻、坐标和站序。
+        val originalLines = bundled.list("lines").map { line ->
+            val approved = MetroOpenedLineEvidence.stationCodes[line.s("id")].orEmpty()
+            val value = line as JsonObject
+            if (approved.isNotEmpty()) assertEquals(MetroOpenedLineEvidence.apiCodes[line.s("id")], value.s("apiCode"))
+            val stations = value.list("stations").map { station ->
+                val legacy = JsonObject((station as JsonObject).filterKeys {
+                    it !in setOf("stationUniqueCode", "changeFlag", "coordinateSystem")
+                })
+                if (station.s("code") !in approved) legacy else {
+                    assertEquals("true", station.s("opened"))
+                    JsonObject(legacy + ("opened" to JsonPrimitive(false)))
+                }
+            }
+            val original = if (approved.isEmpty()) value else JsonObject(value.filterKeys { it != "apiCode" })
+            JsonObject(original + ("stations" to JsonArray(stations)))
+        }
+        assertEquals(official, JsonObject(bundled + ("lines" to JsonArray(originalLines))))
     }
 
     @Test fun `五条线共一百零二站且保留官方线路色`() = runBlocking {
@@ -143,10 +164,9 @@ class MetroDataTest {
         assertEquals(mapOf("1" to "#DA7028", "2" to "#52A441", "3" to "#52B5C8", "4" to "#E50012", "6" to "#92308D"), lines.associate { it.id to it.color })
     }
 
-    @Test fun `未运营站点照常展示而非过滤掉`() = runBlocking {
+    @Test fun `已开通线路完整展示且混合站表不会过滤未运营站点`() = runBlocking {
         val lines = metro.networkFor(xiamen)!!.openedLines
-        assertEquals(mapOf("1" to 0, "2" to 0, "3" to 0, "4" to 8, "6" to 17), lines.associate { it.id to it.pendingCount })
-        assertTrue(lines.filter { it.id in setOf("4", "6") }.all { line -> line.liveStations.all { !it.opened } })
+        assertEquals(mapOf("1" to 0, "2" to 0, "3" to 0, "4" to 0, "6" to 0), lines.associate { it.id to it.pendingCount })
         val mixed = MetroLine("测试", "测试线路", stations = listOf(MetroStation(2, "未运营站", opened = false), MetroStation(1, "运营站")))
         assertEquals(listOf("运营站", "未运营站"), mixed.liveStations.map { it.name })
         assertEquals(1, mixed.pendingCount)
@@ -195,7 +215,7 @@ class MetroDataTest {
         assertNull(metro.networkFor(City(key = "1", name = "北京市", pinyin = "beijing")))
     }
 
-    @Test fun `关键词能搜到五条线并保留未运营线路`() = runBlocking {
+    @Test fun `关键词能搜到五条线及四号线六号线站点`() = runBlocking {
         assertEquals(5, metro.lines(xiamen, "地铁").size)
         assertTrue(metro.lines(xiamen, "吕厝").isNotEmpty())
         assertTrue(metro.lines(xiamen, "岩内").any { it.id == "1" })

@@ -121,11 +121,18 @@ class ScreenshotTest {
      * 地铁演示数据直接读 assets/metro.json，不再手抄：
      * 手抄版本曾漏掉 2/3 号线的站，搜索结果里就显示成「3 站」「2 站」。
      */
+    /**
+     * 走生产同一条路径：解析内置站表后再用核心的 `metroTransfers` 补上换乘目标
+     * （`transferTargets` 是 transient，直接解码出来是空的），这样截图里的换乘徽标
+     * 和真机上看到的是同一份数据。
+     */
     private val metroLines: List<MetroLine> by lazy {
         val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
         val text = context.assets.open("metro.json").bufferedReader().use { it.readText() }
-        kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-            .decodeFromString<MetroNetwork>(text).openedLines
+        metroTransfers(
+            kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                .decodeFromString<MetroNetwork>(text).openedLines
+        )
     }
     private val metroLine1: MetroLine get() = metroLines.first { it.id == "1" }
     private val metroLine2: MetroLine get() = metroLines.first { it.id == "2" }
@@ -215,7 +222,10 @@ class ScreenshotTest {
         assertEquals(1, between.arrivingFlag)
         assertEquals(0.30, between.scale, 0.0)
         assertEquals(adminIndex + 0.5, direction.positionOf(between), 0.0)
-        assertNull("补位置的区间车没有本站班序", direction.arrivalOrderOf(between))
+        // 首轮合同仅关联本站三行；现在全方向班序独立保留，本站 ETA 仍只来自原始行。
+        assertNull("补位置的区间车没有本站 ETA 行序", direction.arrivalRowOrderOf(between))
+        assertEquals("补充区间车仍显示全方向第一班", 1, direction.arrivalOrderOf(between))
+        assertEquals((1..direction.positions.size).toList(), direction.positionPresentations().map { it.ordinal })
     }
 
     @Test fun metroRealtimeMerge_light() {
@@ -322,6 +332,97 @@ class ScreenshotTest {
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine6_dark() = capture("metro-line6", true, 1080, 2340) {
         MetroContent(UiState.Success(line6Data), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 换乘徽标验图：3 号线、参考站「体育中心」（03030000，官方共站码可换 2 号线 02160000）。
+     *
+     * 卡片站名行里那枚绿胶囊＝2 号线主题色（点它跳 2 号线体育中心）；站序列表前两行正好是
+     * 湖滨东路（换 1 号线橙）和体育中心（换 2 号线绿），所以一张图里能同时看到「非本线颜色」
+     * 的换乘徽标和本线的线路号徽标。浅深各一张。
+     */
+    private val transferData: MetroData by lazy {
+        val line = metroLine3
+        val codes = line.liveStations.map { it.code }
+        val names = line.liveStations.associate { it.code to it.name }
+        val reference = "03030000"
+        val index = codes.indexOf(reference)
+        val source = MetroObservationSource(reference)
+        val trains = (1..3).map { step ->
+            val next = codes[(index + step).coerceAtMost(codes.lastIndex)]
+            MetroTrain(
+                arriveSeconds = step * 180, nextStationCode = next, nextStationName = names.getValue(next),
+                scale = 0.0, arrivingFlag = 1, specialPosition = 0, specialPositionDesc = "", source = source
+            )
+        }
+        MetroData(
+            lines = metroLines, selected = "3", updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "03000000",
+                stationCode = reference, stationName = names.getValue(reference),
+                directions = listOf(
+                    MetroDirection(
+                        origin = names.getValue(codes.first()), destination = names.getValue(codes.last()),
+                        startTime = "06:00", endTime = "23:00", delayMinutes = 0, trains = trains,
+                        stationCodes = codes, source = source, positionTrains = trains.take(2),
+                        arrivalsAvailable = true
+                    )
+                )
+            ),
+            realtimeStation = reference, realtimeStationName = names.getValue(reference),
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    @Test fun metroTransfer_light() = capture("metro-transfer", false) {
+        MetroContent(UiState.Success(transferData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroTransfer_dark() = capture("metro-transfer", true) {
+        MetroContent(UiState.Success(transferData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 三条同位车：同一条 `nextStationCode`、同 `arrivingFlag` 的三条记录在数据层是同一
+     * 「潜在碰撞群」（`stackIndex` 0/1/2），画面必须错层——同一个 x，往上依次一层，
+     * 而不是叠成一坨。浅色/深色各一张，用来核 lane 高度与标签有没有压到轨道/站名。
+     */
+    private val stackData: MetroData by lazy {
+        val codes = metroLine2.liveStations.map { it.code }
+        val names = metroLine2.liveStations.associate { it.code to it.name }
+        val reference = codes[8]
+        val source = MetroObservationSource(reference)
+        fun at(seconds: Int) = MetroTrain(
+            arriveSeconds = seconds, nextStationCode = codes[6], nextStationName = names.getValue(codes[6]),
+            scale = 0.0, arrivingFlag = 2, specialPosition = 0, specialPositionDesc = "", source = source
+        )
+        val trains = listOf(at(300), at(600), at(900))
+        MetroData(
+            lines = metroLines, selected = "2", updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "02000000",
+                stationCode = reference, stationName = names.getValue(reference),
+                directions = listOf(
+                    MetroDirection(
+                        origin = names.getValue(codes.first()), destination = names.getValue(codes.last()),
+                        startTime = "06:00", endTime = "23:00", delayMinutes = 0, trains = trains,
+                        stationCodes = codes, source = source, positionTrains = trains, arrivalsAvailable = true
+                    )
+                ),
+                source = source, sources = listOf(source)
+            ),
+            realtimeStation = reference, realtimeStationName = names.getValue(reference),
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroRealtimeStack_light() = capture("metro-realtime-stack", false, 1080, 2340) {
+        MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroRealtimeStack_dark() = capture("metro-realtime-stack", true, 1080, 2340) {
+        MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
     }
 
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(

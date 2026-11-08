@@ -210,11 +210,13 @@ class MetroRealtimeTest {
         assertEquals("", line.copy(stations = listOf(MetroStation(1, "缺码站"))).realtimeCode())
     }
 
-    @Test fun `真实内置快照缺省线路码仍可解码并推导五条线路`() {
+    @Test fun `真实内置快照兼容显式线路码且缺省时可从站码推导`() {
         val asset = sequenceOf(File("src/main/assets/metro.json"), File("app/src/main/assets/metro.json")).first { it.isFile }
         val network = BusNetwork.json.decodeFromString<MetroNetwork>(asset.readText())
-        assertTrue(network.lines.all { it.apiCode.isEmpty() })
-        assertEquals(listOf("01000000", "02000000", "03000000", "04000000", "06000000"), network.lines.map { it.realtimeCode() })
+        assertEquals(mapOf("1" to "", "2" to "", "3" to "", "4" to "04000000", "6" to "06000000"), network.lines.associate { it.id to it.apiCode })
+        val expected = listOf("01000000", "02000000", "03000000", "04000000", "06000000")
+        assertEquals(expected, network.lines.map { it.realtimeCode() })
+        assertEquals("旧快照即使没有显式线路码仍能推导", expected, network.lines.map { it.copy(apiCode = "").realtimeCode() })
     }
 
     @Test fun `内层报错非 JSON 与空方向一律不可用且带原因`() {

@@ -7,14 +7,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yll682.houche.core.MetroLine
+import kotlin.math.ceil
 
 /**
  * 官方「列车位置」页的配色。浅色那一列数值全部来自 `notes/spec-official-train-position.md`
@@ -50,8 +56,20 @@ internal data class OfficialPalette(
     val EtaLabel: Color,
     /** tab 选中下划线（官方 `#304097`）。 */
     val TabIndicator: Color,
-    /** 返回 chevron（官方 `#6157EB`）。 */
+    /**
+     * 官方返回 chevron（`#6157EB`）。1.7.3 的白顶栏用过；现在顶栏换回候车自己的设计
+     * （[BrandTop]/[BrandBottom] + 白色 `ArrowBack`），这里只作为官方色表留档。
+     */
     val Chevron: Color,
+    /**
+     * 顶栏品牌蓝渐变的上下两端。官方这页是白顶栏（1.7.3 抄的），但候车 1.7.2 及之前一直用
+     * 「品牌蓝渐变 + 白色返回箭头 + 白色标题」，深色档与全局 `HeaderTopDark`/`HeaderBottomDark`
+     * 同值（`ui/theme/Color.kt`），所以深浅两套都协调，不会出现白底白字。
+     */
+    val BrandTop: Color,
+    val BrandBottom: Color,
+    /** 品牌蓝底上的文字/图标（两套模式都是白）。 */
+    val OnBrand: Color,
     /** 选中站的竖排站名（官方 `#314093`，Bold）。 */
     val StationSelected: Color,
     /** 车标下方「第N班」（官方 `#3E2686`）。 */
@@ -92,6 +110,9 @@ internal val OfficialLight = OfficialPalette(
     EtaLabel = Color(0xFF3B2A78),
     TabIndicator = Color(0xFF304097),
     Chevron = Color(0xFF6157EB),
+    BrandTop = Color(0xFF2A7BF7),
+    BrandBottom = Color(0xFF1B62DF),
+    OnBrand = Color.White,
     StationSelected = Color(0xFF314093),
     TrainLabel = Color(0xFF3E2686),
     Disclaimer = Color(0xFFC88C8C),
@@ -125,6 +146,9 @@ internal val OfficialDark = OfficialPalette(
     EtaLabel = Color(0xFFB2B9DE),
     TabIndicator = Color(0xFF7C85F2),
     Chevron = Color(0xFF918AFF),
+    BrandTop = Color(0xFF2A4C82),
+    BrandBottom = Color(0xFF172F55),
+    OnBrand = Color.White,
     StationSelected = Color(0xFFA0A9FF),
     TrainLabel = Color(0xFFAEA7F6),
     Disclaimer = Color(0xFFC79C9C),
@@ -245,6 +269,12 @@ internal class OfficialTypography(palette: OfficialPalette) {
     /** 顶栏标题 19sp。 */
     val Title = official(19.sp, palette.Ink, 23.sp)
 
+    /**
+     * 品牌蓝顶栏上的标题：候车 1.7.2 用的是全局 `titleLarge`（19sp SemiBold），
+     * 这里同字号同字重、颜色换成 [OfficialPalette.OnBrand]。
+     */
+    val BrandTitle = official(19.sp, palette.OnBrand, 26.sp, FontWeight.SemiBold)
+
     /** 方向行起终点 15.8sp。 */
     val Direction = official(15.8.sp, palette.Ink, 22.sp)
 
@@ -303,8 +333,78 @@ internal fun officialTypography(): OfficialTypography {
 
 // ---- 位置条几何常量（px ÷ 3 得 dp，全部来自规格第三节；与明暗无关） ----
 
-/** 格宽 P：站心间距 204.5px。 */
-internal val StripCell = 68.2.dp
+/**
+ * 固定最小格宽：官方实测站心间距 204.5px＝68.2dp。
+ *
+ * 它只是一条**下限**，实际格宽由 [rememberStripCell] 按整条线测一次。
+ */
+internal val StripMinCell = 68.2.dp
+
+/** 站名两侧各留的空白：官方格宽减一个汉字宽再对半（≈26.95dp）取下整，留 0.95dp 余量。 */
+internal val StripNameInset = 26.dp
+
+/** 站点命中列的最小宽度（44dp 触摸目标下限）。 */
+internal val StripMinTapWidth = 44.dp
+
+/** 车标列宽：车标 20.7dp、「第N班」约 34.5dp，取 40dp 让标签不被父级宽度裁掉。 */
+internal val StripMarkerBox = 40.dp
+
+/** 错层 lane 的高度下限：图标 20.7dp ＋ 标签行盒，单层至少 44dp 才好按。 */
+internal val StripLaneMin = 44.dp
+
+/** lane 与 lane 之间留的视觉间隙（规格：+4dp）。 */
+internal val StripLaneGap = 4.dp
+
+/** 竖排站名最多 8 行（一字一行），与位置条里 `Text(maxLines = 8)` 保持一致。 */
+private const val StripNameMaxLines = 8
+
+/**
+ * 整条线的格宽 W：**按物理线路的完整站表量一次**，不是可见窗口、不是当前参考站、不是某个方向。
+ *
+ * 规格（Codex 第四轮「整条线格宽规格」）：
+ * 1. 测量集＝`line.stations` 按站码去重后的全部站名，正反序是同一集合的排列；
+ * 2. 每个站名按实际竖排「一字一行」分别测普通与选中 Bold 两种样式，取整线最大宽度 M；
+ * 3. `W = max(固定最小格宽, M + 两侧内边距, 最小点击宽, 固定图标宽)`，测量项向上取整到整像素；
+ * 4. 缓存 key 只含线路码、完整 (code,name) 集合、两种竖排样式与 density/fontScale
+ *    —— **不含方向、参考站、viewport、位置批次**，所以换站/反向/滚动前后 W 逐像素不变。
+ *
+ * 测的是宽度不是字数：竖排名字的字数只决定高度（高度仍按本方向最长站名算）。
+ */
+@Composable
+internal fun rememberStripCell(line: MetroLine): Dp {
+    val type = officialTypography()
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val table = remember(line.id, line.stations) {
+        line.stations.map { station -> station.code.ifBlank { station.name } to station.name }
+            .distinct()
+            .sortedBy { station -> station.first }
+    }
+    return remember(measurer, table, type.StripeName, type.StripeNameSelected, density) {
+        val widest = table.maxOfOrNull { (_, name) -> measuredVerticalWidth(measurer, name, type) } ?: 0
+        with(density) {
+            val measured = widest + (StripNameInset * 2).roundToPx()
+            val floor = maxOf(measured, StripMinTapWidth.roundToPx(), StripMarkerBox.roundToPx())
+            maxOf(StripMinCell, ceil(floor.toFloat()).toDp())
+        }
+    }
+}
+
+/** 一个站名竖排后（普通 + 选中 Bold）的墨迹宽度上限，单位 px。 */
+private fun measuredVerticalWidth(
+    measurer: TextMeasurer,
+    name: String,
+    type: OfficialTypography
+): Int {
+    val vertical = name.chunked(1).joinToString("\n")
+    if (vertical.isEmpty()) return 0
+    return maxOf(
+        measurer.measure(AnnotatedString(vertical), style = type.StripeName, maxLines = StripNameMaxLines).size.width,
+        measurer.measure(
+            AnnotatedString(vertical), style = type.StripeNameSelected, maxLines = StripNameMaxLines
+        ).size.width
+    )
+}
 
 /** 主线粗 21px，实色、方角。 */
 internal val StripTrack = 7.dp

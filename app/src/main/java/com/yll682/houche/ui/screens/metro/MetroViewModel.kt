@@ -3,10 +3,17 @@ package com.yll682.houche.ui.screens.metro
 import com.yll682.houche.AppGraph
 import com.yll682.houche.core.City
 import com.yll682.houche.core.MetroDirection
+import com.yll682.houche.core.MetroDirectionKey
+import com.yll682.houche.core.MetroEtaState
+import com.yll682.houche.core.MetroInitialLocation
+import com.yll682.houche.core.MetroInitialSelection
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroLoader
 import com.yll682.houche.core.MetroProbe
 import com.yll682.houche.core.MetroRealtime
+import com.yll682.houche.core.MetroRealtimeState
+import com.yll682.houche.core.MetroSnapshot
+import com.yll682.houche.core.normalizeMetroOpenings
 import com.yll682.houche.core.realtimeCode
 import com.yll682.houche.ui.StateViewModel
 import com.yll682.houche.ui.UiState
@@ -35,14 +42,31 @@ data class MetroData(
     /** 当前实时请求的序号；换线或换参考站后置零，迟到的响应不能回写。 */
     val realtimeRequestId: Long = 0,
     /** 当前展开的方向，两边站序相反，切换方向才能看清车往哪开。 */
-    val directionIndex: Int = 0
+    val directionIndex: Int = 0,
+    /** 完整站码链稳定标识方向；响应数组调序不能改变用户所选方向。 */
+    val selectedDirectionKey: MetroDirectionKey? = null,
+    /** 原始成功批次；realtime 是按当前参考站摘除无效 ETA 后的展示投影。 */
+    val realtimeLastSuccessfulFrame: MetroRealtime? = null,
+    /** 请求失败与成功空车分开；成功位置批次仍可保留并标注陈旧时长。 */
+    val realtimeUnavailable: Boolean = false
 ) {
     val line: MetroLine? get() = lines.firstOrNull { it.id == selected } ?: lines.firstOrNull()
 
-    /** 当前展开的方向；没有实时数据时为 null，界面退回线路自身的起终点。 */
-    val direction: MetroDirection? get() = realtime?.directions?.let {
-        it.getOrNull(directionIndex.coerceIn(0, it.lastIndex.coerceAtLeast(0)))
-    }
+    val realtimeState: MetroRealtimeState get() = MetroRealtimeState(
+        frame = realtimeLastSuccessfulFrame ?: realtime,
+        stationCode = realtimeStation.ifBlank { realtime?.stationCode.orEmpty() }.ifBlank { line?.liveStations?.firstOrNull()?.code.orEmpty() },
+        stationName = realtimeStationName.ifBlank { realtime?.stationName.orEmpty() },
+        loading = realtimeLoading,
+        unavailableNote = realtimeNote.takeIf { realtimeUnavailable },
+        selectedDirectionKey = selectedDirectionKey,
+        directionIndex = directionIndex
+    )
+
+    /** 当前展开的方向；切站等待保留方向和位置，不借用旧站 ETA。 */
+    val direction: MetroDirection? get() = realtimeState.direction
+
+    /** UI 可分别绑定等待、成功空车、本站到站行和不可用，ETA 区域无需随空列表消失。 */
+    val etaState: MetroEtaState get() = realtimeState.etaState
 
     /**
      * 展示站序跟随所选方向的行驶顺序（始发在前），三处「方向」讲同一件事；
@@ -73,13 +97,89 @@ internal data class MetroRealtimeRequest(
     val stationCodes: List<String>
 )
 
+private fun MetroData.withRealtimeState(value: MetroRealtimeState): MetroData = copy(
+    realtime = value.displayFrame,
+    realtimeLastSuccessfulFrame = value.frame,
+    realtimeStation = value.stationCode,
+    realtimeStationName = value.stationName,
+    realtimeLoading = value.loading,
+    realtimeUnavailable = value.unavailableNote != null,
+    selectedDirectionKey = value.selectedDirectionKey,
+    directionIndex = value.selectedDirectionIndex
+)
+
+/** 切站只改变参考站和 ETA 状态；位置批次、采样时间及方向都保留。 */
+internal fun MetroData.selectRealtimeStation(code: String): MetroData {
+    val station = line?.liveStations?.firstOrNull { it.code == code } ?: return this
+    return withRealtimeState(realtimeState.selectStation(station.code, station.name)).copy(
+        realtimeRequestId = 0
+    )
+}
+
+/** 选线会清掉另一条线的请求上下文、方向和位置，保留现有 select(id) 行为。 */
+internal fun MetroData.selectRealtimeLine(id: String): MetroData {
+    if (lines.none { it.id == id }) return this
+    return copy(
+        selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null,
+        realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0,
+        selectedDirectionKey = null, realtimeLastSuccessfulFrame = null, realtimeUnavailable = false
+    )
+}
+
+/** 换乘和首次定位直接提交完整目标，中间不曾选中目标线首站。 */
+internal fun MetroData.selectRealtimeTarget(lineId: String, stationCode: String): MetroData {
+    // 先按完整身份核验唯一，再检查运营状态；关闭的重复记录仍代表身份有歧义。
+    val targetLine = lines.singleOrNull { it.id == lineId }
+        ?.takeIf { it.opened && it.id.isNotBlank() } ?: return this
+    val targetStation = targetLine.stations.singleOrNull { it.code == stationCode }
+        ?.takeIf { it.opened && it.code.isNotBlank() } ?: return this
+    val selectedLine = if (selected == lineId) this else selectRealtimeLine(lineId)
+    return selectedLine.selectRealtimeStation(targetStation.code)
+}
+
+/** 站表替换只保留有效的既有选择；不会因站序重排而回到首站。 */
+internal fun MetroData.withMetroSnapshot(snapshot: MetroSnapshot, preferred: String?): MetroData {
+    val network = snapshot.network
+    val lines = normalizeMetroOpenings(network?.openedLines.orEmpty())
+    val selected = preferred?.takeIf { id -> lines.any { it.id == id } }
+        ?: this.selected.takeIf { id -> lines.any { it.id == id } }
+        ?: lines.firstOrNull()?.id.orEmpty()
+    val currentLine = lines.firstOrNull { it.id == selected }
+    val keep = line?.id != null && line?.id == currentLine?.id
+    val keepStation = keep && (realtimeStation.isBlank() || currentLine?.liveStations?.any { it.code == realtimeStation } == true)
+    val keepRealtime = keep && keepStation
+    return MetroData(
+        lines = lines,
+        selected = selected,
+        updated = network?.updated.orEmpty(),
+        source = network?.source.orEmpty(),
+        online = snapshot.online,
+        note = snapshot.note,
+        realtime = realtime.takeIf { keepRealtime },
+        realtimeStation = realtimeStation.takeIf { keepStation }.orEmpty(),
+        realtimeStationName = currentLine?.liveStations?.firstOrNull { keepStation && it.code == realtimeStation }?.name
+            ?: realtimeStationName.takeIf { keepStation }.orEmpty(),
+        realtimeUpdated = realtimeUpdated.takeIf { keepRealtime }.orEmpty(),
+        realtimeNote = realtimeNote.takeIf { keepRealtime }.orEmpty(),
+        realtimeLoading = realtimeLoading && keepRealtime,
+        realtimeRequestId = realtimeRequestId.takeIf { keepRealtime } ?: 0,
+        directionIndex = directionIndex.takeIf { keepRealtime } ?: 0,
+        selectedDirectionKey = selectedDirectionKey.takeIf { keepRealtime },
+        realtimeLastSuccessfulFrame = realtimeLastSuccessfulFrame.takeIf { keepRealtime },
+        realtimeUnavailable = realtimeUnavailable && keepRealtime
+    )
+}
+
+internal fun MetroData.selectRealtimeDirection(index: Int): MetroData =
+    withRealtimeState(realtimeState.selectDirection(index))
+
 internal fun MetroData.beginRealtimeRequest(id: Long): Pair<MetroData, MetroRealtimeRequest>? {
     val current = line ?: return null
     val code = current.realtimeCode()
     if (code.isBlank()) return null
     val station = realtimeStation.takeIf { it.isNotBlank() } ?: current.liveStations.firstOrNull()?.code.orEmpty()
     val request = MetroRealtimeRequest(id, current.id, code, station, current.liveStations.map { it.code })
-    return copy(realtimeLoading = true, realtimeRequestId = id) to request
+    return withRealtimeState(realtimeState.beginRequest()).copy(realtimeRequestId = id) to request
 }
 
 /** 失败与成功空车分别处理；时间只记录成功响应，参考站码和名称始终一起归并。 */
@@ -87,17 +187,15 @@ internal fun MetroData.completeRealtimeRequest(request: MetroRealtimeRequest, re
     if (realtimeRequestId != request.id || line?.id != request.lineId) return this
     val currentStation = realtimeStation.ifBlank { line?.liveStations?.firstOrNull()?.code.orEmpty() }
     if (currentStation != request.stationCode || line?.realtimeCode() != request.lineCode) return this
-    if (!result.online) return copy(realtime = null, realtimeNote = result.note, realtimeLoading = false)
+    if (!result.online) {
+        val failed = realtimeState.complete(result)
+        return withRealtimeState(failed).copy(realtimeNote = failed.unavailableNote.orEmpty())
+    }
     val station = result.stationCode.ifBlank { request.stationCode }
     val name = result.stationName.ifBlank { line?.liveStations?.firstOrNull { it.code == station }?.name.orEmpty() }
-    return copy(
-        realtime = result.copy(stationCode = station, stationName = name),
-        realtimeStation = station,
-        realtimeStationName = name,
+    return withRealtimeState(realtimeState.complete(result.copy(stationCode = station, stationName = name))).copy(
         realtimeUpdated = updatedAt.ifBlank { realtimeUpdated },
-        realtimeNote = result.note,
-        realtimeLoading = false,
-        directionIndex = directionIndex.coerceIn(0, result.directions.lastIndex.coerceAtLeast(0))
+        realtimeNote = result.note
     )
 }
 
@@ -108,7 +206,8 @@ class MetroViewModel(
 ) : StateViewModel<MetroData>(MetroData()) {
     private val loader = MetroLoader(graph.metro::networkFor, graph.metroRemote::latest, graph.metro::supports)
     private var loading: Job? = null
-    private var preferred = initial
+    private var preferred = initial?.takeIf { it.isNotBlank() }
+    private var initialSelection = MetroInitialSelection.start(initial)
     private var realtimeRequestSequence = 0L
 
     init {
@@ -124,49 +223,33 @@ class MetroViewModel(
      */
     fun load(initial: String? = null): Job {
         loading?.cancel()
-        if (initial != null) preferred = initial
+        if (!initial.isNullOrBlank()) {
+            preferred = initial
+            initialSelection = initialSelection.manualSelection()
+        }
         return action {
             loader.load(city).collect { snapshot ->
-                val network = snapshot.network
-                val lines = network?.openedLines.orEmpty()
-                // 换的还是同一条线时保留已有实时；整份资料换线则作废，避免站码错位。
-                val previous = data
-                val selected = pick(preferred ?: previous.selected, lines)
-                val keep = previous.line?.id != null && previous.line?.id == lines.firstOrNull { it.id == selected }?.id
-                update(
-                    MetroData(
-                        lines = lines,
-                        selected = selected,
-                        updated = network?.updated.orEmpty(),
-                        source = network?.source.orEmpty(),
-                        online = snapshot.online,
-                        note = snapshot.note,
-                        realtime = previous.realtime.takeIf { keep },
-                        realtimeStation = previous.realtimeStation.takeIf { keep }.orEmpty(),
-                        realtimeStationName = previous.realtimeStationName.takeIf { keep }.orEmpty(),
-                        realtimeUpdated = previous.realtimeUpdated.takeIf { keep }.orEmpty(),
-                        realtimeNote = previous.realtimeNote.takeIf { keep }.orEmpty(),
-                        realtimeLoading = previous.realtimeLoading && keep,
-                        realtimeRequestId = previous.realtimeRequestId.takeIf { keep } ?: 0,
-                        directionIndex = previous.directionIndex.takeIf { keep } ?: 0
-                    ),
-                    empty = lines.isEmpty()
-                )
+                var next = data.withMetroSnapshot(snapshot, preferred)
+                val initialResult = initialSelection.stationsLoaded(next.lines)
+                initialSelection = initialResult.state
+                val target = initialResult.station
+                val located = target?.let { next.selectRealtimeTarget(it.lineId, it.stationCode) }
+                val applied = located != null && located !== next
+                if (applied) {
+                    next = checkNotNull(located)
+                    preferred = target?.lineId
+                }
+                update(next, empty = next.lines.isEmpty())
+                if (applied) refreshRealtime()
             }
         }.also { loading = it }
     }
 
-    private fun pick(candidate: String?, lines: List<MetroLine>): String =
-        candidate?.takeIf { id -> lines.any { it.id == id } } ?: lines.firstOrNull()?.id.orEmpty()
-
     fun select(id: String) {
-        if (data.lines.none { it.id == id }) return
+        val value = data.selectRealtimeLine(id)
+        if (value === data) return
+        initialSelection = initialSelection.manualSelection()
         preferred = id
-        // 换线后原来那条线的参考站码不再有效，清掉让实时到站回到新线的首站。
-        val value = data.copy(
-            selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null,
-            realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0
-        )
         mutable.value = when (val old = mutable.value) {
             is UiState.Error -> old.copy(data = value)
             is UiState.Loading -> old.copy(data = value)
@@ -181,20 +264,51 @@ class MetroViewModel(
     /** 读取最近一次请求的诊断；失败原因不进入地铁页状态。 */
     fun lastProbe(): MetroProbe = graph.metroRemote.last ?: MetroProbe(online = false, note = "")
 
-    /** 换参考站；换站后旧数据立刻作废，避免旧站的到站信息留在屏上。 */
+    /** 换参考站时保留成功位置批次，仅将新站 ETA 置为等待。 */
     fun selectStation(code: String) {
-        val station = data.line?.liveStations?.firstOrNull { it.code == code } ?: return
-        update(data.copy(
-            realtimeStation = station.code, realtimeStationName = station.name, realtime = null,
-            realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0
-        ))
+        val selected = data.selectRealtimeStation(code)
+        if (selected === data) return
+        initialSelection = initialSelection.manualSelection()
+        preferred = selected.line?.id
+        update(selected)
         refreshRealtime()
     }
 
     fun selectDirection(index: Int) {
-        val last = data.realtime?.directions?.lastIndex?.coerceAtLeast(0) ?: 0
-        update(data.copy(directionIndex = index.coerceIn(0, last)))
+        initialSelection = initialSelection.manualSelection()
+        update(data.selectRealtimeDirection(index))
     }
+
+    /** 只验证并提交一次目标，实时请求直接查询目标站，不会先请求目标线首站。 */
+    fun selectTransfer(lineId: String, stationCode: String): Boolean {
+        val selected = data.selectRealtimeTarget(lineId, stationCode)
+        if (selected === data) return false
+        initialSelection = initialSelection.manualSelection()
+        preferred = lineId
+        update(selected)
+        refreshRealtime()
+        return true
+    }
+
+    /**
+     * 页面把已经取得的位置传进来；VM 不申请权限、不调用定位。null 同样消费首次机会。
+     * 返回 true 仅表示本次立即应用了选站；站表未到时返回 false 并在加载后应用一次。
+     * 同一 VM 重组、回前台或位置再次回调均不会再次自动选站。
+     */
+    fun applyInitialLocation(location: MetroInitialLocation?): Boolean {
+        val result = initialSelection.receive(location, data.lines)
+        initialSelection = result.state
+        val target = result.station ?: return false
+        val selected = data.selectRealtimeTarget(target.lineId, target.stationCode)
+        if (selected === data) return false
+        preferred = target.lineId
+        update(selected)
+        refreshRealtime()
+        return true
+    }
+
+    fun applyInitialLocation(lat: Double?, lng: Double?, accuracyMeters: Double?, coordinateSystem: String): Boolean =
+        applyInitialLocation(MetroInitialLocation(lat, lng, accuracyMeters, coordinateSystem))
 
     /**
      * 拉一次整批实时快照；客户端在二十秒内复用同线路批次，换站也不会额外逐站请求。

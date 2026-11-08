@@ -102,7 +102,14 @@ class MetroRemote(private val http: HttpClient = BusNetwork.client) {
                     first = item.s("firstBusTime"),
                     last = item.s("lastBusTime"),
                     lng = item.s("longitude"),
-                    lat = item.s("latitude")
+                    lat = item.s("latitude"),
+                    stationUniqueCode = item.s("stationUniqueCode"),
+                    changeFlag = when (item.field("changeFlag").text()?.lowercase()) {
+                        "true", "1" -> true
+                        "false", "0" -> false
+                        else -> null
+                    },
+                    coordinateSystem = "BD09"
                 )
             }
             val name = members.first().s("lineName").removePrefix("地铁").ifBlank { METRO_LINE_NAMES[id] ?: "${id}号线" }
