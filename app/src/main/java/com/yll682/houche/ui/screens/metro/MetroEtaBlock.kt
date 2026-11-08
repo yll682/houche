@@ -31,9 +31,11 @@ internal fun MetroEtaBlock(trains: List<MetroTrain>, modifier: Modifier = Modifi
     val rows = trains.take(3)
     if (rows.isEmpty()) return
     val columns = rows.reversed()
+    val palette = officialPalette()
+    val type = officialTypography()
     Row(
         modifier.padding(horizontal = 20.dp).fillMaxWidth().height(73.7.dp)
-            .clip(OfficialEtaShape).background(Official.EtaBackground),
+            .clip(OfficialEtaShape).background(palette.EtaBackground),
         verticalAlignment = Alignment.Top
     ) {
         columns.forEachIndexed { index, train ->
@@ -47,10 +49,10 @@ internal fun MetroEtaBlock(trains: List<MetroTrain>, modifier: Modifier = Modifi
                     .clearAndSetSemantics { contentDescription = "$minutes 分钟$detail" }
             ) {
                 Row(Modifier.align(Alignment.TopCenter).padding(top = EtaNumberBoxTop)) {
-                    Text("$minutes", style = OfficialType.EtaNumber, maxLines = 1, modifier = Modifier.alignByBaseline())
+                    Text("$minutes", style = type.EtaNumber, maxLines = 1, modifier = Modifier.alignByBaseline())
                     Text(
                         stringResource(R.string.metro_position_minutes),
-                        style = OfficialType.EtaUnit,
+                        style = type.EtaUnit,
                         maxLines = 1,
                         modifier = Modifier.alignByBaseline()
                     )
@@ -58,7 +60,7 @@ internal fun MetroEtaBlock(trains: List<MetroTrain>, modifier: Modifier = Modifi
                 Text(
                     detail,
                     Modifier.align(Alignment.BottomCenter).padding(bottom = EtaLabelBoxBottom),
-                    style = OfficialType.EtaLabel,
+                    style = type.EtaLabel,
                     maxLines = 1
                 )
             }

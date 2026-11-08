@@ -1,10 +1,7 @@
 package com.yll682.houche.ui.screens.metro
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,7 +9,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +27,8 @@ import com.yll682.houche.R
 import com.yll682.houche.core.MetroDirection
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroRealtime
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * 「列车位置」主卡片（官方白卡：10dp 圆角、无描边无阴影）。
@@ -42,11 +47,14 @@ fun MetroRealtimeCard(
     directionIndex: Int,
     onDirection: (Int) -> Unit,
     onRefresh: () -> Unit,
+    onSelectStation: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val directions = realtime?.directions.orEmpty()
     val direction = directions.getOrNull(directionIndex.coerceIn(0, directions.lastIndex.coerceAtLeast(0)))
-    Column(modifier.fillMaxWidth().clip(OfficialCardShape).background(Official.Card)) {
+    // 深色卡比页底亮一档（1.12:1，与官方浅色白卡 vs #F1F1F1 同强度），仍然无描边无阴影。
+    val palette = officialPalette()
+    Column(modifier.fillMaxWidth().clip(OfficialCardShape).background(palette.Card)) {
         Spacer(Modifier.height(14.dp))
         MetroDirectionRow(
             origin = direction?.origin ?: line.from,
@@ -61,7 +69,11 @@ fun MetroRealtimeCard(
             direction != null -> {
                 MetroEtaBlock(direction.trains)
                 Spacer(Modifier.height(19.dp))
-                MetroTrainStrip(realtime!!, direction, line, Modifier.padding(horizontal = 10.dp))
+                MetroTrainStrip(
+                    realtime!!, direction, line,
+                    onSelectStation = onSelectStation,
+                    modifier = Modifier.padding(horizontal = 10.dp)
+                )
             }
             else -> MetroStatusLine(loading, note)
         }
@@ -72,13 +84,14 @@ fun MetroRealtimeCard(
 /** 站名行：站名 + 线路号圆徽标 + 右侧「刷新」；三个元素同一条水平中线。 */
 @Composable
 private fun StationRow(stationName: String, line: MetroLine, loading: Boolean, onRefresh: () -> Unit) {
+    val type = officialTypography()
     Row(
         Modifier.fillMaxWidth().padding(start = 25.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             stationName.ifBlank { line.from },
-            style = OfficialType.StationName,
+            style = type.StationName,
             maxLines = 1
         )
         Spacer(Modifier.width(8.dp))
@@ -88,24 +101,80 @@ private fun StationRow(stationName: String, line: MetroLine, loading: Boolean, o
     }
 }
 
-/** 「刷新」：图标 40×40px + 14px 间距 + 文字，点击时图标转起来作为反馈。 */
+/**
+ * 一次完整旋转 700ms（任务书下限「不少于 600ms」）。
+ * 用固定的角速度 360°/700ms 匀速转，收尾那一小段也按同一角速度补完，
+ * 所以「停」只是转速到零，不是急停——不会看出减速痕迹。
+ */
+private const val RefreshTurnMillis = 700
+
+/** 点下后至少转这么久：接口命中缓存几十毫秒就回来了，没有最短时长会「点了跟没点一样」。 */
+private const val RefreshMinVisibleMillis = 600L
+
+/** 兜底：请求卡住（例如迟到的响应被丢弃，`realtimeLoading` 一直为 true）最多转 8 秒。 */
+private const val RefreshMaxMillis = 8_000L
+
+/**
+ * 「刷新」：图标 40×40px + 14px 间距 + 文字，点下图标就转，刷新结束平滑停在整圈。
+ *
+ * 进行中状态全部由 UI 层局部推导，**没有动 ViewModel**：
+ * 点下立刻置 `refreshing = true`（不等数据层回写，点即有反馈），
+ * 结束条件＝「`loading`（＝`data.realtimeLoading`）已归位」且已转满 [RefreshMinVisibleMillis]，
+ * 或到 [RefreshMaxMillis] 兜底。`loading` 用 `rememberUpdatedState` 取最新值，
+ * 免得长驻的 effect 读到点击那一刻的旧值。
+ */
 @Composable
 private fun RefreshButton(loading: Boolean, onRefresh: () -> Unit) {
     val label = stringResource(R.string.refresh)
-    val transition = rememberInfiniteTransition(label = "刷新")
-    val angle by transition.animateFloat(
-        0f, 360f,
-        infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart),
-        label = "角度"
-    )
+    val type = officialTypography()
+    var refreshing by remember { mutableStateOf(false) }
+    val angle = remember { Animatable(0f) }
+    val isLoading by rememberUpdatedState(loading)
+
+    // 旋转：转起来就一直整圈整圈地转；刷新结束后先把这一圈补完，再归零（整圈与 0 是同一张图，归零不可见）。
+    LaunchedEffect(refreshing) {
+        if (refreshing) {
+            while (true) {
+                val turn = ceil(angle.value / 360f) * 360f
+                angle.animateTo(turn + 360f, tween(RefreshTurnMillis, easing = LinearEasing))
+            }
+        } else {
+            val turn = ceil(angle.value / 360f) * 360f
+            val remain = turn - angle.value
+            if (remain > .5f) {
+                // 收尾时长按剩余角度等比例给，角速度与旋转中完全一致。
+                val millis = (RefreshTurnMillis * remain / 360f).roundToInt().coerceAtLeast(120)
+                angle.animateTo(turn, tween(millis, easing = LinearEasing))
+            }
+            if (angle.value != 0f) angle.snapTo(0f)
+        }
+    }
+
+    // 进行中状态的收尾：用帧时钟计时（与动画同一个时钟，Robolectric 里 advanceTimeBy 也能推进）。
+    LaunchedEffect(refreshing) {
+        if (!refreshing) return@LaunchedEffect
+        var startNanos = 0L
+        while (true) {
+            val now = withFrameNanos { it }
+            if (startNanos == 0L) startNanos = now
+            val elapsed = (now - startNanos) / 1_000_000
+            if (elapsed >= RefreshMaxMillis) break
+            if (elapsed >= RefreshMinVisibleMillis && !isLoading) break
+        }
+        refreshing = false
+    }
+
     Row(
-        Modifier.clickable { onRefresh() }.semantics { contentDescription = label }
+        Modifier.clickable {
+            if (!refreshing) refreshing = true
+            onRefresh()
+        }.semantics { contentDescription = label }
             .heightIn(min = 24.dp).padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MetroRefreshGlyph(angle = if (loading) angle else 0f)
+        MetroRefreshGlyph(angle = angle.value)
         Spacer(Modifier.width(4.7.dp))
-        Text(label, style = OfficialType.RefreshLabel, maxLines = 1)
+        Text(label, style = type.RefreshLabel, maxLines = 1)
     }
 }
 
@@ -117,11 +186,12 @@ private fun MetroStatusLine(loading: Boolean, note: String) {
         note.isNotBlank() -> stringResource(R.string.metro_realtime_failed, note)
         else -> stringResource(R.string.metro_realtime_waiting)
     }
+    val palette = officialPalette()
     Text(
         text,
         Modifier.fillMaxWidth().padding(start = 25.dp, end = 20.dp, bottom = 8.dp),
         style = MaterialTheme.typography.bodySmall,
-        color = Official.SubInk
+        color = palette.SubInk
     )
 }
 

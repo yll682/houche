@@ -33,31 +33,33 @@ internal fun MetroDirectionRow(
     onSwap: () -> Unit
 ) {
     val swapLabel = stringResource(R.string.metro_position_swap)
+    val palette = officialPalette()
+    val type = officialTypography()
     Row(
         Modifier.fillMaxWidth().padding(start = 15.3.dp, end = 21.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             origin,
-            style = OfficialType.Direction,
+            style = type.Direction,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Spacer(Modifier.width(6.dp))
-        Connector()
+        Connector(palette.SubInk)
         // 「开往」胶囊：116×49px＝38.7×16.3dp，边框 4px≈1.33dp，全圆角，填充透明。
         Box(
             Modifier.size(38.7.dp, 16.3.dp)
-                .border(1.33.dp, Official.SubInk, RoundedCornerShape(50)),
+                .border(1.33.dp, palette.SubInk, RoundedCornerShape(50)),
             contentAlignment = Alignment.Center
         ) {
-            Text(stringResource(R.string.metro_position_open_to), style = OfficialType.Capsule, maxLines = 1)
+            Text(stringResource(R.string.metro_position_open_to), style = type.Capsule, maxLines = 1)
         }
-        ArrowHead()
+        ArrowHead(palette.SubInk)
         Spacer(Modifier.width(3.5.dp))
         Text(
             destination,
-            style = OfficialType.Direction,
+            style = type.Direction,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -71,36 +73,36 @@ internal fun MetroDirectionRow(
                 .padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MetroSwapGlyph()
+            MetroSwapGlyph(palette.IconInk)
             Spacer(Modifier.width(4.dp))
-            Text(swapLabel, style = OfficialType.SwapLabel, maxLines = 1)
+            Text(swapLabel, style = type.SwapLabel, maxLines = 1)
         }
     }
 }
 
 /** 起点与胶囊之间的连接线：9dp 长、1.7dp 粗。 */
 @Composable
-private fun Connector() {
+private fun Connector(color: Color) {
     Canvas(Modifier.width(9.dp).height(16.3.dp)) {
         val stroke = 1.7.dp.toPx()
-        drawLine(Official.SubInk, Offset(0f, size.height / 2f), Offset(size.width, size.height / 2f), stroke)
+        drawLine(color, Offset(0f, size.height / 2f), Offset(size.width, size.height / 2f), stroke)
     }
 }
 
 /** 胶囊右侧：3dp 连接线 + 7×4dp 实心三角，尖朝终点。 */
 @Composable
-private fun ArrowHead() {
+private fun ArrowHead(color: Color) {
     Canvas(Modifier.width(10.dp).height(7.dp)) {
         val stroke = 1.7.dp.toPx()
         val lineEnd = 3.dp.toPx()
         val cy = size.height / 2f
-        drawLine(Official.SubInk, Offset(0f, cy), Offset(lineEnd, cy), stroke)
+        drawLine(color, Offset(0f, cy), Offset(lineEnd, cy), stroke)
         val head = Path().apply {
             moveTo(lineEnd, 0f)
             lineTo(size.width, cy)
             lineTo(lineEnd, size.height)
             close()
         }
-        drawPath(head, Color(0xFF666666))
+        drawPath(head, color)
     }
 }

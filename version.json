@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.3",
-  "versionCode": 14,
+  "versionName": "1.7.4",
+  "versionCode": 15,
   "released": "2026-11-08",
-  "notes": "地铁列车位置页按官方 App 版式重做：线路 tab、开往方向头、三班 ETA 块、带方向箭头的位置条、官方式列车图标。",
+  "notes": "地铁列车位置页：新增深色模式、站点可点切换所在站、刷新旋转动画、车标平滑位移；线路色沿用官方线网图色值。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.3/houche-v1.7.3.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.3/houche-v1.7.3.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.4/houche-v1.7.4.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.4/houche-v1.7.4.apk"
   }
 }

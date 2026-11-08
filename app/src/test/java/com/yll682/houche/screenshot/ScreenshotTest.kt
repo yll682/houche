@@ -276,6 +276,54 @@ class ScreenshotTest {
         MetroContent(UiState.Success(xinanData), {}, {}, {}, {}, refresh = {})
     }
 
+    /** 同一场景的深色版：官方没有深色参考图，这张是我们自己那套配色的验图。 */
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine2Xinan_dark() = capture("metro-line2-xinan", true, 1080, 2340) {
+        MetroContent(UiState.Success(xinanData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 6 号线：官方色 `#92308D` 压在深卡上只有 2.45:1，比 3:1 还低——这张专门验深色下
+     * 补的那根 0.6dp 描边（线路色一个字节都没改，只把轮廓提出来）。
+     */
+    private val line6Data: MetroData by lazy {
+        val line = metroLines.first { it.id == "6" }
+        val codes = line.liveStations.map { it.code }
+        val names = line.liveStations.associate { it.code to it.name }
+        val index = codes.size / 2
+        val reference = codes[index]
+        val source = MetroObservationSource(reference)
+        val trains = (1..3).map { step ->
+            val next = codes[(index + step).coerceAtMost(codes.lastIndex)]
+            MetroTrain(
+                arriveSeconds = step * 200, nextStationCode = next, nextStationName = names[next].orEmpty(),
+                scale = 0.0, arrivingFlag = 1, specialPosition = 0, specialPositionDesc = "", source = source
+            )
+        }
+        MetroData(
+            lines = metroLines, selected = "6", updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "",
+                stationCode = reference, stationName = names[reference].orEmpty(),
+                directions = listOf(
+                    MetroDirection(
+                        origin = names[codes.first()].orEmpty(), destination = names[codes.last()].orEmpty(),
+                        startTime = "06:00", endTime = "23:00", delayMinutes = 0, trains = trains,
+                        stationCodes = codes, source = source, positionTrains = trains.take(2),
+                        arrivalsAvailable = true
+                    )
+                )
+            ),
+            realtimeStation = reference, realtimeStationName = names[reference].orEmpty(),
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine6_dark() = capture("metro-line6", true, 1080, 2340) {
+        MetroContent(UiState.Success(line6Data), {}, {}, {}, {}, refresh = {})
+    }
+
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
         UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },

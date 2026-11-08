@@ -34,7 +34,7 @@ import com.yll682.houche.ui.theme.Capsule
 @Composable fun metroColor(hex: String): Color =
     remember(hex) {
         runCatching { Color(android.graphics.Color.parseColor(hex)) }
-            .getOrElse { Color(0xFF1E6FF3) }
+            .getOrElse { OfficialLineFallback }
     }
 
 /**
@@ -57,7 +57,9 @@ fun MetroContent(
     // 站序跟随所选方向（始发在前），与实时卡片的「开往 XX」讲同一个方向。
     val line = data.orderedLine
     val heading = data.line
-    Column(modifier.fillMaxSize().background(Official.Page)) {
+    val palette = officialPalette()
+    val type = officialTypography()
+    Column(modifier.fillMaxSize().background(palette.Page)) {
         MetroTopBar(stringResource(R.string.metro_realtime_position), back)
         MetroLineTabs(data.lines, data.selected, select)
         if (line == null || heading == null) {
@@ -78,6 +80,7 @@ fun MetroContent(
                     directionIndex = data.directionIndex,
                     onDirection = selectDirection,
                     onRefresh = refresh,
+                    onSelectStation = selectStation,
                     modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
                 )
             }
@@ -86,13 +89,13 @@ fun MetroContent(
                 Text(
                     stringResource(R.string.metro_realtime_tip),
                     Modifier.fillMaxWidth().padding(start = 30.dp, end = 30.dp, top = 15.3.dp),
-                    style = OfficialType.Disclaimer,
+                    style = type.Disclaimer,
                     textAlign = TextAlign.Center
                 )
             }
             item {
                 // 官方这页没有站序列表，这段是候车切换参考站的唯一入口，沿用原信息层级；
-                // 颜色写死本页浅色，避免深色模式下浅底配浅字（官方没有深色版）。
+                // 颜色全走本页调色板，深色下跟着翻（官方没有这一块，深色取值是我们自己定的）。
                 val pending = line.pendingCount == line.stations.size && line.pendingCount > 0
                 Text(
                     listOfNotNull(
@@ -100,7 +103,7 @@ fun MetroContent(
                         stringResource(R.string.metro_not_open).takeIf { pending }
                     ).joinToString("  "),
                     Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 18.dp),
-                    style = OfficialType.SectionLabel
+                    style = type.SectionLabel
                 )
             }
             itemsIndexed(line.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
@@ -114,7 +117,7 @@ fun MetroContent(
                     Text(
                         stringResource(R.string.metro_updated, data.updated),
                         Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp),
-                        style = OfficialType.MetaLabel
+                        style = type.MetaLabel
                     )
                 }
             }
@@ -122,15 +125,18 @@ fun MetroContent(
     }
 }
 
-/** 站序行里的小胶囊（换乘线路 / 参考站）：本页固定浅色，不跟深色主题走。 */
+/** 站序行里的小胶囊（换乘线路 / 参考站）：填充 alpha 与线路色一起跟着明暗模式走。 */
 @Composable private fun StopPill(text: String, tint: Color? = null) {
-    val color = tint ?: Official.SubInk
+    val palette = officialPalette()
+    val type = officialTypography()
+    val color = tint?.let { listLineColor(it, palette) } ?: palette.SubInk
+    val fill = if (tint == null) palette.PillFillAlpha else palette.PillTintAlpha
     Box(
-        Modifier.background(color.copy(alpha = if (tint == null) .07f else .12f), Capsule)
+        Modifier.background(color.copy(alpha = fill), Capsule)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, style = OfficialType.MetaLabel.copy(color = color), maxLines = 1)
+        Text(text, style = type.MetaLabel.copy(color = color), maxLines = 1)
     }
 }
 
@@ -139,6 +145,8 @@ fun MetroContent(
     stop: MetroStation, index: Int, total: Int, tint: Color, pending: Boolean,
     selected: Boolean = false, onClick: () -> Unit = {}
 ) {
+    val palette = officialPalette()
+    val type = officialTypography()
     val transferText = stop.transfer.joinToString(" / ")
     val stationLabel = if (stop.transfer.isEmpty()) stop.name else
         stringResource(R.string.metro_stop_transfer, stop.name, transferText)
@@ -149,8 +157,10 @@ fun MetroContent(
     val label = listOf(stationLabel, firstTime, lastTime, pendingText, selectedText).filter { it.isNotBlank() }.joinToString("，")
     val first = index == 0
     val last = index == total - 1
-    // 未开通的站点用淡色，视觉上能和已运营的分开
-    val track = tint.copy(alpha = if (pending) .16f else .38f)
+    // 未开通的站点用淡色，视觉上能和已运营的分开；深色下线路色先提亮再降透明，
+    // 否则 4/6 号线在近黑页底上只剩一团黑（位置条等官方版式元素不受影响）。
+    val railTint = listLineColor(tint, palette)
+    val track = railTint.copy(alpha = if (pending) palette.ListTrackAlphaPending else palette.ListTrackAlpha)
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 52.dp)
         .clickable(enabled = stop.code.isNotBlank()) { onClick() }
         .clearAndSetSemantics { contentDescription = label }) {
@@ -160,24 +170,24 @@ fun MetroContent(
             Box(
                 Modifier.align(Alignment.CenterHorizontally).padding(top = if (first) 8.dp else 0.dp)
                     .size(if (stop.transfer.isEmpty()) 10.dp else 13.dp).clip(Capsule)
-                    .background(Official.Page)
-                    .border(2.dp, if (pending) tint.copy(alpha = .45f) else tint, Capsule)
+                    .background(palette.Page)
+                    .border(2.dp, if (pending) railTint.copy(alpha = .45f) else railTint, Capsule)
             )
             if (!last) Box(Modifier.align(Alignment.CenterHorizontally).weight(1f).width(2.dp).background(track))
         }
         Column(Modifier.weight(1f).padding(end = 4.dp, bottom = 12.dp)) {
             Text(
                 stop.name,
-                style = OfficialType.StopName,
-                color = if (pending) Official.SubInk else Official.Ink,
+                style = type.StopName,
+                color = if (pending) palette.SubInk else palette.Ink,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
             if (firstTime.isNotEmpty() || lastTime.isNotEmpty() || stop.transfer.isNotEmpty() || selected) {
                 Spacer(Modifier.height(4.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
-                    if (firstTime.isNotEmpty()) Text(firstTime, style = OfficialType.MetaLabel)
-                    if (lastTime.isNotEmpty()) Text(lastTime, style = OfficialType.MetaLabel)
+                    if (firstTime.isNotEmpty()) Text(firstTime, style = type.MetaLabel)
+                    if (lastTime.isNotEmpty()) Text(lastTime, style = type.MetaLabel)
                     stop.transfer.forEach { tag -> StopPill(tag) }
                     if (selected) StopPill(stringResource(R.string.metro_realtime_station), tint)
                 }
