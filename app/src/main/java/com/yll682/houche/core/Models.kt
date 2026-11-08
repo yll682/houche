@@ -26,7 +26,8 @@ import kotlinx.serialization.json.JsonNull
     val remainingStations: Int? = null, val distance: Double? = null, val waiting: Boolean = false,
     val nextDeparture: String? = null, val to: String = "", val plate: String? = null,
     val statusText: String = "", val timeText: String = "", val distanceText: String = "",
-    val name: String = "", val direction: String = "", val stationOrder: Int? = null
+    val name: String = "", val direction: String = "", val stationOrder: Int? = null,
+    val platformNumber: String? = null, val platformLat: Double? = null, val platformLng: Double? = null
 )
 typealias StationBus = Arrival
 @Serializable data class Vehicle(

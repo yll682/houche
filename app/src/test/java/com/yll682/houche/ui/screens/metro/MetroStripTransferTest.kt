@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.click
@@ -167,13 +168,12 @@ class MetroStripTransferTest {
         mount(dark = false, names = viewport1)
         val shot = capture(line1, luocuo)
 
-        // 吕厝在 1 号线上换 2 号线：字色必须是 2 号线自己的绿（#52A441 压白 3.13:1，够 3:1，不改色）。
-        val green = stripTransferInk(hex(line2Color), OfficialLight)
-        assertEquals("2 号线绿压白 3.13:1，应保留线路色", hex(line2Color), green)
+        // 吕厝在 1 号线上换 2 号线：换乘徽标的**底色**必须是 2 号线自己的绿（#52A441）。
+        val green = hex(line2Color)
 
         val luocuoCol = shot.cols.getValue("吕厝")
         val bands = shot.bandsOf(luocuoCol, green, from = shot.trackBottom)
-        assertEquals("吕厝站名下方应恰好有 1 行 2 号线绿色标注，实际 $bands", 1, bands.size)
+        assertEquals("吕厝站名下方应恰好有 1 枚 2 号线绿色徽标，实际 $bands", 1, bands.size)
         val band = bands.single()
         assertTrue(
             "标注必须落在本格水平范围内：$band vs $luocuoCol",
@@ -190,7 +190,7 @@ class MetroStripTransferTest {
         // 所以只扫站名最后一字以下，不然量到的是轨道）。
         val wenzaoCol = shot.cols.getValue("文灶")
         for (line in lines) {
-            val ink = stripTransferInk(hex(line.color), OfficialLight)
+            val ink = hex(line.color)
             val stray = shot.bandsOf(wenzaoCol, ink, from = shot.trackBottom)
             assertTrue("文灶不该有 ${line.id} 号线的标注，实际 $stray", stray.isEmpty())
         }
@@ -200,7 +200,8 @@ class MetroStripTransferTest {
 
     @Test
     fun stripStacksOneRowPerTransferTarget() {
-        // 内置站表里每个换乘站只有 1 个目标，这里给吕厝加第二条（4 号线红，压白 4.84:1）。
+        // 内置站表里每个换乘站只有 1 个目标，这里给吕厝加第二条（4 号线红）。
+        // 三枚徽标自上而下＝本线 1 号线橙、2 号线绿、4 号线红。
         val red = lines.first { it.id == "4" }.color
         val targets = listOf(
             MetroTransferTarget("2", "02180000", "二号线", line2Color, MetroTransferEvidence.OFFICIAL_STATION_UNIQUE_CODE),
@@ -212,11 +213,17 @@ class MetroStripTransferTest {
         mount(dark = false, names = viewport1)
         val shot = capture(line, luocuo)
         val col = shot.cols.getValue("吕厝")
-        val green = shot.bandsOf(col, stripTransferInk(hex(line2Color), OfficialLight), from = shot.trackBottom)
-        val redBands = shot.bandsOf(col, stripTransferInk(hex(red), OfficialLight), from = shot.trackBottom)
+        val green = shot.bandsOf(col, hex(line2Color), from = shot.trackBottom)
+        val redBands = shot.bandsOf(col, hex(red), from = shot.trackBottom)
 
         assertEquals("两个目标必须各占一行（绿只该有一行）", 1, green.size)
         assertEquals("两个目标必须各占一行（红只该有一行）", 1, redBands.size)
+        // 本站线徽标（1 号线橙）排在最上面，且只有一枚。
+        // 从选中环下沿往下扫：环也是 1 号线同一色，从主线底扫会把它量成一枚「徽标」。
+        val ownBands = shot.bandsOf(
+            col, hex(line1.color), from = (47.5f + StripRingOuter.value / 2f + 1f) * 3f
+        )
+        assertEquals("本站线徽标只该有一枚，实际 $ownBands", 1, ownBands.size)
         val first = green.single()
         val second = redBands.single()
         assertTrue("第 2 行必须排在第 1 行下面：$first / $second", second.top > first.top)
@@ -225,11 +232,11 @@ class MetroStripTransferTest {
             "第 2 行不能低于条底（会被裁）：${second.bottom} vs ${col.bottom}",
             second.bottom <= col.bottom - 1
         )
-        // 行距＝实测行盒（10sp / 13sp 行高在 xxhdpi 下量得 46px ≈ 15.3dp），不是字高：
-        // 所以两行不会因为「2号线」「4号线」字形不同而挤到一起。
+        // 行距＝一枚徽标 58px ＋ 官方那 12px 间隙＝70px（基准图实测 1384→1454 正好 70px）：
+        // 不管线路号是几位数，两行都不会挤到一起。
         assertTrue(
-            "两行行距应正好一个实测行盒（39–52px）：$first / $second",
-            second.top - first.top in 39f..52f
+            "两行行距应正好「58px 色块 + 12px 间隙」＝70px：$first / $second",
+            second.top - first.top in 69f..71f
         )
         val nameBottom = shot.nameInkBottom(col)
         assertTrue("第 1 行必须与站名最后一字分开（≥2dp）：$nameBottom / $first", first.top - nameBottom >= 6f)
@@ -243,17 +250,22 @@ class MetroStripTransferTest {
         val before = capture(line1.withoutTransfers(), luocuo)
         val withTransfer = capture(line1, luocuo)
 
-        // ① 每一列的左沿/顶/宽/高逐像素相同 → 格宽 W、选中环位置、滚动锚点、命中区都没动。
+        // ① 每一列的上沿/左沿/宽度逐像素相同 → 格宽 W、站心 x=(i+0.5)·W、选中环位置、
+        //    滚动锚点、命中区上沿都没动（徽标只往下长，所以只比 top/left/width，不比 bottom）。
         for (name in viewport1) {
             assertEquals(
-                "$name 列的位置与宽度不能变（格宽 W 由站名竖排宽度决定，与换乘无关）",
-                before.cols.getValue(name), withTransfer.cols.getValue(name)
+                "$name 列的上沿不能变（车标 lane / 主线 / 站名起点都由它定）",
+                before.cols.getValue(name).top, withTransfer.cols.getValue(name).top
+            )
+            assertEquals(
+                "$name 列的左沿不能变（站心 x=(i+0.5)·W）",
+                before.cols.getValue(name).left, withTransfer.cols.getValue(name).left
+            )
+            assertEquals(
+                "$name 列的宽度不能变（格宽 W 由站名竖排宽度决定，与换乘徽标无关）",
+                before.cols.getValue(name).width, withTransfer.cols.getValue(name).width
             )
         }
-        assertEquals(
-            "1 号线最长站名（5 字）本来就给换乘标注留出了空间，这条线的条高不该变",
-            before.cols.getValue("吕厝").bottom, withTransfer.cols.getValue("吕厝").bottom
-        )
 
         // ② 主线 + 选中环 + 箭头 + 站名上半段所在的整条横带上逐像素一致。
         //    右端点取「本屏最先出现的换乘标注上沿」：吕厝（选中，2 字）在 315px，
@@ -271,14 +283,15 @@ class MetroStripTransferTest {
         val before = capture(line6.withoutTransfers(), malian)
         val withTransfer = capture(line6, malian)
 
-        // 6 号线最长站名就是 4 个字，马銮中心的换乘标注只能靠加高整条位置条放下。
+        // 6 号线最长站名就是 4 个字，马銮中心的换乘徽标只能靠加高整条位置条放下。
         // 站列底边就是位置条底边（height = hitTop + hitHeight），整帧高是屏幕高，不能拿来做差。
+        // 加高量＝「4dp 间距 + 2 枚徽标（本线 + 换乘）」＝ 4 + 2×19.33 + 4 = 46.66dp ≈ 140px。
         val growth = (withTransfer.cols.getValue("马銮中心").bottom - before.cols.getValue("马銮中心").bottom)
-        assertTrue("换乘标注应把位置条加高，实际 $growth", growth > 0)
-        assertTrue("加高只该是一个「2dp 间距 + 一行标注」，实际 ${growth}px", growth >= 45f && growth <= 52f)
+        assertTrue("换乘徽标应把位置条加高，实际 $growth", growth > 0)
+        assertTrue("加高只该是「4dp + 两枚 19.33dp 徽标 + 4dp 间隙」≈ 140px，实际 ${growth}px", growth in 138f..142f)
 
         // 站名以上的所有东西（车标、主线、选中环、站名）一个像素都不许动。
-        // 右端点取本屏最先出现的换乘标注（鼎美 2 字，在 307px）上沿再让 2px。
+        // 右端点取本屏最先出现的换乘徽标上沿再让 2px。
         val labelTop = firstTransferTopPx("鼎美" to false, "马銮中心" to true)
         assertEquals("加高只能往下长，不能往上长", 0, withTransfer.diffBand(before, 0, labelTop - 2))
 
@@ -294,42 +307,41 @@ class MetroStripTransferTest {
         mount(dark = true, names = viewport6)
         val dark = capture(line6, malian, dark = true)
         val col = dark.cols.getValue("马銮中心")
-        // 深色卡上 2 号线绿先按 listLineColor 提亮 35%，仍能看出是绿色（不退白）。
-        val ink = stripTransferInk(hex(line2Color), OfficialDark)
-        assertEquals(listLineColor(hex(line2Color), OfficialDark), ink)
-        val bands = dark.bandsOf(col, ink, from = dark.trackBottom)
-        assertEquals("马銮中心深色下应有 1 行换乘标注，实际 $bands", 1, bands.size)
+        // 深色下徽标底色仍是 mL 官方线路色原值（不改色），只是外圈补 0.6dp 描边提轮廓；
+        // 所以按 2 号线绿的**原色**找得到那一枚。
+        val bands = dark.bandsOf(col, hex(line2Color), from = dark.trackBottom)
+        assertEquals("马銮中心深色下应有 1 枚 2 号线徽标，实际 $bands", 1, bands.size)
         val band = bands.single()
         assertTrue("深色下标注也不能被裁：${band.bottom} vs ${col.bottom}", band.bottom <= col.bottom - 1)
         assertTrue("深色下标注也要与站名分开：$band", band.top - dark.nameInkBottom(col) >= 6f)
     }
 
-    // ---- 测试 5：字色规则（线路色优先，对比不足退深墨/白） ----------------------------
+    // ---- 测试 5：徽标字色规则（浅色底自动切深墨，深色底留白） -------------------------
 
+    /**
+     * 官方基准图里 1/2/3 号线徽标是白字压浅底（`#ED7101` / `#92D085` / `#95D9E4` + 白），
+     * 2/3 号线白字只有 1.8–2.4:1——照抄过来读不清。这一版沿用**与 tab 徽标同一条**规则
+     * （[onLineColor]：亮度 ≥ 0.20 走 #1A1A1A，否则白字），逐线实测都 ≥ 4.5:1。
+     */
     @Test
-    fun transferInkKeepsLineColorUnlessContrastTooLow() {
+    fun badgeInkAlwaysClearsWcagAAOnItsOwnFill() {
         for (line in lines) {
-            for (palette in listOf(OfficialLight, OfficialDark)) {
-                val ratio = contrastRatio(stripTransferInk(hex(line.color), palette), palette.Card)
-                assertTrue(
-                    "${line.id} 号线 ${if (palette.IsDark) "深色" else "浅色"}下字色对卡片对比度应 ≥ 3:1，实际 $ratio",
-                    ratio >= 3f
-                )
-            }
+            val fill = hex(line.color)
+            val ink = onLineColor(fill)
+            val ratio = contrastRatio(ink, fill)
+            assertTrue("${line.id} 号线徽标字色对比度应 ≥ 4.5:1，实际 $ratio", ratio >= 4.5f)
         }
-        // 浅色：1/2 号线橙绿 ≥3:1 保留线路色；3 号线青 2.39:1 退深墨（onLineColor 的同一档）。
-        assertEquals(hex(line1.color), stripTransferInk(hex(line1.color), OfficialLight))
-        assertEquals(hex(line2Color), stripTransferInk(hex(line2Color), OfficialLight))
-        val cyan = hex(lines.first { it.id == "3" }.color)
-        assertEquals(
-            "3 号线青压白只有 2.39:1，应退深墨",
-            onLineColor(OfficialLight.Card), stripTransferInk(cyan, OfficialLight)
-        )
-        // 深色：先按 listLineColor 提亮 35%，4/6 号线（原色压深卡只有 2.78/2.45）也能留住颜色，不退白。
-        for (line in lines) {
+        // 1/2/3 号线（#DA7028 / #52A441 / #52B5C8）亮度 ≥ 0.20 → 深墨 #1A1A1A；
+        // 4/6 号线（#E50012 / #92308D）→ 白字。
+        for (id in listOf("1", "2", "3")) {
+            val ink = onLineColor(hex(lines.first { it.id == id }.color))
+            assertTrue("$id 号线底上应走深墨，实际 $ink", ink.luminance() < 0.05f)
+        }
+        for (id in listOf("4", "6")) {
             assertEquals(
-                "${line.id} 号线深色下应保留（提亮后的）线路色",
-                listLineColor(hex(line.color), OfficialDark), stripTransferInk(hex(line.color), OfficialDark)
+                "$id 号线底上应是白字",
+                androidx.compose.ui.graphics.Color.White,
+                onLineColor(hex(lines.first { it.id == id }.color))
             )
         }
     }
@@ -350,7 +362,7 @@ class MetroStripTransferTest {
 
         // 点在**标注所在的位置**（列底部）：语义仍然是「切这一列」，不是点标注本身。
         val col = shot.cols.getValue("吕厝")
-        val band = shot.bandsOf(col, stripTransferInk(hex(line2Color), OfficialLight), from = shot.trackBottom).single()
+        val band = shot.bandsOf(col, hex(line2Color), from = shot.trackBottom).single()
         compose.onNodeWithContentDescription("吕厝，可换乘 2号线").performTouchInput {
             click(Offset(width / 2f, (band.top + band.bottom) / 2f - col.top))
         }

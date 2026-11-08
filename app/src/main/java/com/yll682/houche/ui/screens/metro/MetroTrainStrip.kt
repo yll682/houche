@@ -37,7 +37,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
@@ -68,8 +67,9 @@ import kotlin.math.roundToInt
  * 与旧版的差别（全部是「照抄」要求）：主线 7dp 实色方角、普通站点没有圆点只有白色箭头、
  * 选中站是三同心圆环 Ø20.7/Ø16.7/Ø8.7、车标 20.7dp 方块且「第N班」在图标下方。
  *
- * 换乘标注：有 `transferTargets` 的站，在**站名下面**一行写一条可换乘线路（官方就是把线号写在站名下方），
- * 字色用目标线路自己的颜色（`stripTransferInk` 按卡片底色做对比度兜底）。标注只占站名下方的
+ * 换乘标注：有 `transferTargets` 的站，在**站名下面**竖排一组小徽标（官方基准图：湖滨东路下方
+ * 橙「1号线」＋ 青「3号线」两枚），徽标＝[MetroLineBadge] 的缩小档（19.33dp＝官方 58px），
+ * 底色用各线路官方色、块内「数字 ＋ 竖排线字」与 tab 徽标同一套画法。标注只占站名下方的
  * **垂直**空间：格宽 W、站心 `x=(i+0.5)·W`、车标的 lane 一律不动，条高不够时整条往下加高。
  */
 @Composable
@@ -132,13 +132,15 @@ internal fun MetroTrainStrip(
         return lineHeight * chars
     }
     val namesHeight = cells.maxOfOrNull { nameHeightOf(it) } ?: StripNameLine
-    // 换乘标注单行高度实测（字号随 fontScale 放大后要重算）；行距按它整除排布，
-    // 所以第 k 行顶 = 第 0 行顶 + k·transferLine，任两行都不会重叠。
-    val transferLine = rememberStripTransferLineHeight(type.StripeTransfer)
-    /** 站名块下面要给换乘标注留的垂直空间：0 个目标 = 0，否则「间距 + 每目标一行」。 */
+    // 换乘徽标一行的高度＝色块边长，行距＝色块 + 4dp 间隙（基准图 58px + 12px）。
+    // 有换乘目标的站，第一枚徽标是**本线自己的**（官方基准图：湖滨东路下方是橙「1号线」+
+    // 青「3号线」两枚，本站线在前、换乘目标在后），所以行数＝1 + 目标数。
+    fun badgeRowsOf(code: String): Int = (transfers[code]?.size ?: 0).let { if (it == 0) 0 else it + 1 }
+    /** 站名块下面要给换乘徽标留的垂直空间：0 行 = 0，否则「间距 + 每行色块 + 行间空隙」。 */
     fun transferRoomOf(code: String): Dp {
-        val count = transfers[code]?.size ?: 0
-        return if (count == 0) 0.dp else StripTransferGap + transferLine * count
+        val rows = badgeRowsOf(code)
+        if (rows == 0) return 0.dp
+        return StripTransferGap + StripTransferBadge * rows + StripTransferBadgeGap * (rows - 1)
     }
     val namesBottom = cells.maxOfOrNull { nameHeightOf(it) + transferRoomOf(it) } ?: namesHeight
     // 格宽 W 与站心完全不参与这里：换乘标注只往下长，条高不够就整体加高（下面的命中列跟着变高）。
@@ -187,15 +189,16 @@ internal fun MetroTrainStrip(
                     val arrowColor = cutout
                     cells.forEachIndexed { index, _ ->
                         val x = cell.toPx() * (index + .5f)
-                        // 箭杆 21×7px（7×2.33dp），箭头实心三角 12×21px，尖朝行驶方向。
-                        val rodHalf = 1.17.dp.toPx()
+                        // 箭杆 21×5px，箭头实心三角 9×18px（基准图实测），尖朝行驶方向。
+                        val rodHalf = StripArrowRod.toPx() / 2f
+                        val headHalf = StripArrowHead.toPx() / 2f
                         val rodStart = x - StripArrowRodStart.toPx()
                         val rodEnd = x + StripArrowRodEnd.toPx()
                         drawRect(arrowColor, topLeft = Offset(rodStart, cy - rodHalf), size = androidx.compose.ui.geometry.Size(rodEnd - rodStart, rodHalf * 2))
                         val head = Path().apply {
-                            moveTo(rodEnd, cy - track / 2f)
+                            moveTo(rodEnd, cy - headHalf)
                             lineTo(x + StripArrowTip.toPx(), cy)
-                            lineTo(rodEnd, cy + track / 2f)
+                            lineTo(rodEnd, cy + headHalf)
                             close()
                         }
                         drawPath(head, arrowColor)
@@ -225,6 +228,10 @@ internal fun MetroTrainStrip(
                     val enabled = code.isNotBlank() && code in selectable
                     val targets = transfers[code].orEmpty()
                     val labels = targets.map { stripTransferLabel(it) }
+                    // 徽标序列：本线自己在前，可换乘线路依次在后（官方基准图的两枚：
+                    // 橙「1号线」＝本站线，青「3号线」＝换乘目标）。没有换乘目标的站一枚都不画。
+                    val badges = if (targets.isEmpty()) emptyList()
+                    else listOf(line.id to tint) + targets.map { it.lineId to metroColor(it.color) }
                     // 整列一句话读出来：站名 + 可换乘哪几条线（换乘标注自己不参与无障碍树，
                     // 否则同一列会被读两遍）。换乘标注**不可点**，点它们等于点这一列 → 切参考站。
                     val spoken = if (labels.isEmpty()) name else
@@ -248,21 +255,19 @@ internal fun MetroTrainStrip(
                             textAlign = TextAlign.Center,
                             maxLines = 8
                         )
-                        // 换乘线路：一行一条，竖排逐行写（用户要求「直接写在站名下面」）。
-                        // 字色＝目标线路自己的颜色；底色对比不足时退深墨/白字（[stripTransferInk]）。
-                        targets.forEachIndexed { row, target ->
-                            Text(
-                                labels[row],
-                                Modifier.offset(y = transferTop + transferLine * row - hitTop).width(cell),
-                                style = type.StripeTransfer.copy(
-                                    color = stripTransferInk(metroColor(target.color), palette)
-                                ),
-                                textAlign = TextAlign.Center,
-                                maxLines = 1,
-                                softWrap = false,
-                                // 一格只有 W 宽：更长的线路名宁可省略号，也不许溢出到隔壁站。
-                                overflow = TextOverflow.Ellipsis
-                            )
+                        // 换乘徽标：一行一枚，竖排逐行排在站名下方（官方基准图就是这个位置）。
+                        // 色块底色＝该线路的官方色；块内「数字 ＋ 竖排线字」与 tab 徽标同一套
+                        // 画法（[MetroLineBadge]），浅色底自动切深墨（[onLineColor]）。
+                        badges.forEachIndexed { row, (digit, fill) ->
+                            Box(
+                                Modifier.offset(
+                                    // 本列 Box 已经按 x = cell·index 摆好，这里只补居中偏移。
+                                    x = (cell - StripTransferBadge) / 2,
+                                    y = transferTop + (StripTransferBadge + StripTransferBadgeGap) * row - hitTop
+                                ).size(StripTransferBadge).clearAndSetSemantics {}
+                            ) {
+                                MetroLineBadge(StripTransferBadge, digit, fill, onLineColor(fill))
+                            }
                         }
                     }
                 }
@@ -333,28 +338,11 @@ private fun rememberStripLaneHeight(labelStyle: TextStyle, sample: String): Dp {
 }
 
 /**
- * 换乘标注单行的高度：实测「1号线」这一行的行盒高度（px 直接折 dp，不四舍五入）。
- *
- * 实测而不是直接用 13sp：fontScale 调大后行盒会比 fontSize 高，写死会让第 2 行压住第 1 行。
- * 行距＝这个值，所以第 k 行顶 = 第 0 行顶 + k·它，**任意两行永不重叠**；单行内容
- * （`maxLines = 1` + `softWrap = false`）保证每行高度都不超过一个行盒。
- */
-@Composable
-private fun rememberStripTransferLineHeight(style: TextStyle): Dp {
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    return remember(measurer, style, density) {
-        val linePx = measurer.measure(AnnotatedString("1号线"), style = style, maxLines = 1).size.height
-        with(density) { linePx.toDp() }
-    }
-}
-
-/**
  * 位置条站名下方那条换乘标注的字：内置站表的线路号都是 1/2/3/4/6，
  * 数字线路号写成「2号线」（官方也是把线号写在站名下面）；不是数字的线路标识退回线路名。
  *
- * 与站序列表徽标里的 [transferBadgeLabel] 不同：那里是胶囊里只放数字，这里没有底色、
- * 只有一行小字，光写「2」看不出是线路，所以补一个「号线」。
+ * 只用于无障碍那一句话（「吕厝，可换乘 2号线」）：徽标自身不参与无障碍树，
+ * 读屏需要文字版的线路名。
  */
 @Composable
 private fun stripTransferLabel(target: MetroTransferTarget): String {

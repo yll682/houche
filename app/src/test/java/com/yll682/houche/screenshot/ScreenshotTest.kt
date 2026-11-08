@@ -447,6 +447,40 @@ class ScreenshotTest {
      */
     private val malaunData: MetroData by lazy { stripTransferScene(metroLines.first { it.id == "6" }, "06110000") }
 
+    /**
+     * 1 号线、与官方基准图 `notes/refs/official-line1-train-position.jpg` **同场景**：
+     * 选中「镇海路」、方向 镇海路 → 岩内，360dp×780dp＝1080×2340（和基准图同尺寸），
+     * 换乘徽标出现在「湖滨东路」下方（橙 1号线 ＝ 本站线，青 3号线 ＝ 换乘目标）。
+     * 浅深各一张，逐块比 px 用。
+     */
+    private val zhenhaiData: MetroData by lazy { stripTransferScene(metroLine1, "01010000") }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine1Zhenhailu_light() = capture("metro-line1-zhenhailu", false, 1080, 2340) {
+        MetroContent(UiState.Success(zhenhaiData), {}, {}, {}, {}, refresh = {})
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine1Zhenhailu_dark() = capture("metro-line1-zhenhailu", true, 1080, 2340) {
+        MetroContent(UiState.Success(zhenhaiData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
+     * 同一条线、选中换乘站「湖滨东路」：两枚徽标就排在被选中环那一列的正下方，
+     * 验「徽标 / 站名 / 选中环 / 车标」四者互不遮挡，浅深各一张。
+     */
+    private val hubindongluData: MetroData by lazy { stripTransferScene(metroLine1, "01050000") }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine1Hubindonglu_light() = capture("metro-line1-hubindonglu", false, 1080, 2340) {
+        MetroContent(UiState.Success(hubindongluData), {}, {}, {}, {}, refresh = {})
+    }
+
+    @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroLine1Hubindonglu_dark() = capture("metro-line1-hubindonglu", true, 1080, 2340) {
+        MetroContent(UiState.Success(hubindongluData), {}, {}, {}, {}, refresh = {})
+    }
+
     @Test fun metroStripTransfer6_light() = capture("metro-strip-transfer6", false) {
         MetroContent(UiState.Success(malaunData), {}, {}, {}, {}, refresh = {})
     }

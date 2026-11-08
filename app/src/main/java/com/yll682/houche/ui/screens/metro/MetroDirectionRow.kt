@@ -23,7 +23,10 @@ import com.yll682.houche.R
  * 方向行（规格 2.3）：`起点 ——(开往)→ 终点` ＋右侧「换向」图标和文字。
  *
  * 官方的连接线、胶囊边框、实心三角都是 `#666`；「换向」图标 `#888`。
- * 左右缩进按实测：卡片左 15.3dp、卡片右 21dp（官方本来就不对称，照抄）。
+ * 左右缩进按**新基准图**（`official-line1-train-position.jpg`）实测：起终点文字墨迹左沿
+ * 107px、右侧「换向」墨迹右沿 987px ⇒ 卡片左 24.7dp、卡片右 21dp（官方本来就不对称，照抄）。
+ * 旧基准图（`official-train-position.jpg`）同一行是 78px / 986px；两图只差这一处左侧缩进，
+ * 按本轮指定的新基准图取值。
  */
 @Composable
 internal fun MetroDirectionRow(
@@ -36,7 +39,7 @@ internal fun MetroDirectionRow(
     val palette = officialPalette()
     val type = officialTypography()
     Row(
-        Modifier.fillMaxWidth().padding(start = 15.3.dp, end = 21.dp),
+        Modifier.fillMaxWidth().padding(start = 24.7.dp, end = 21.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
