@@ -43,7 +43,8 @@ import org.robolectric.annotation.GraphicsMode
  *    并且 Empty（确实没车）与 Unavailable（失败/本站没采集）不能显示成同一句；
  * 3. 同线换站 W 不变 —— 站点列宽与相邻列间距逐像素相同（整线测一次的格宽）；
  * 4. 三条同位车能错层 —— 同一 cluster 的三条记录同 x、不同 lane，间距＝一个 lane 高；
- * 5. ETA 行的「第N班」用全方向 ordinal —— 补车占掉第 1 班时，本站第 1 行不许冒充第 1 班。
+ * 5. ETA 行的「第N班」改成**到本站先后** —— 已过本站的补车不占班号（标「已过」、车标照画），
+ *    本站第 k 行与位置条第 k 班是同一辆车（旧规则里它会把本站第 1 行顶成「第 2 班」）。
  *
  * 站码、站名全部来自 `assets/metro.json`（2 号线），不手抄；车辆与分钟是构造数据。
  * 车辆位置放在参考站**上游**（画在锚点左侧），保证断言用的节点在视口内。
@@ -307,29 +308,34 @@ class MetroEtaStripWireTest {
         assertTrue("最上层不能贴到 0 以外，实际 ${marks[2].top}", marks[2].top >= 0f)
     }
 
-    // ---- ⑤ ETA 行的「第N班」＝全方向 ordinal ----
+    // ---- ⑤ 已过本站的补车不占班号，ETA 行与位置条同向 ----
 
     @Test
-    fun etaRowLabelsUseGlobalOrdinalNotLocalRowIndex() {
+    fun passedTrainKeepsMarkerWithoutStealingAClass() {
         val rowFirst = train(300, referenceIndex - 1, flag = 2)
         val rowSecond = train(600, referenceIndex - 3, flag = 1)
-        // 补车（另一参考站的区间车）排在全方向第 1 班，它没有本站 ETA 行。
-        val between = train(82, referenceIndex + 2, flag = 2, from = codes[referenceIndex + 1])
-        val seeded = seed(rows = listOf(rowFirst, rowSecond), positions = listOf(between, rowFirst, rowSecond))
+        // 另一参考站观测到的区间车：下一站是参考站的**下一站**（flag=1），也就是刚开走、已过本站。
+        val passed = train(82, referenceIndex + 1, flag = 1, from = codes[referenceIndex + 1])
+        val seeded = seed(rows = listOf(rowFirst, rowSecond), positions = listOf(passed, rowFirst, rowSecond))
 
+        // core 的全线进度序把刚开走那班排第 1 —— 这正是用户报的错位来源；投影后它没有班号。
         val presentations = seeded.realtime!!.directions[0].positionPresentations()
         assertEquals(listOf(1, 2, 3), presentations.map { it.ordinal })
         assertEquals(listOf(null, 1, 2), presentations.map { it.arrivalRowOrder })
-        assertTrue("本站三条原始行仍是 Ready", seeded.etaState is MetroEtaState.Ready)
+        val ordinals = seeded.realtime!!.directions[0].stationOrdinals(reference)
+        assertTrue("已过本站的车不许占班号", ordinals.trains.first().passed)
+        assertEquals("到本站先后编号不许被它顶掉", listOf(1, 2), ordinals.trains.drop(1).map { it.ordinal })
+        assertTrue("本站两条原始行仍是 Ready", seeded.etaState is MetroEtaState.Ready)
 
         Metro { MetroContent(UiState.Success(seeded), {}, {}) }
         compose.waitForIdle()
 
-        // 本站第 1 行的分钟数只读该行（300s＝5 分钟），班号是**全方向**第 2 班（第 1 班是补车）。
-        compose.onNodeWithContentDescription("5 分钟第2班预计到达").assertIsDisplayed()
-        // 第 2 行同理：600s＝10 分钟，全方向第 3 班。
-        compose.onNodeWithContentDescription("10 分钟第3班预计到达").assertIsDisplayed()
+        // 本站第 1 行（300s＝5 分钟）就是位置条第 1 班；第 2 行（10 分钟）是第 2 班。
+        compose.onNodeWithContentDescription("5 分钟第1班预计到达").assertIsDisplayed()
+        compose.onNodeWithContentDescription("10 分钟第2班预计到达").assertIsDisplayed()
+        // 已过站的车标还在：标签换成「已过」，不是丢标签。
+        compose.onNodeWithContentDescription("已过").assertIsDisplayed()
         // 补车的源站 ETA 不许进本站框。
-        assertTrue(seeded.direction!!.trains.none { it.nextStationCode == between.nextStationCode })
+        assertTrue(seeded.direction!!.trains.none { it.nextStationCode == passed.nextStationCode })
     }
 }

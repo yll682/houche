@@ -457,6 +457,72 @@ class ScreenshotTest {
         MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
     }
 
+    /**
+     * 「到本站先后」班号：**5 班未到站 + 1 班刚开走**，一张图看全三件事——
+     * ① 第 1 班是最先到本站那班（不是全线最靠终点那班）；
+     * ② 班号不截断到 3，第 4、5 班照写；
+     * ③ 已开过本站的那班车标**照画**，标签写「已过」（次要文字色，不是错误红）。
+     *
+     * 站码站名取自 `assets/metro.json`（2 号线），参考站「海沧行政中心」；
+     * 真实响应每个参考站只回 3 行，所以「有几班」是构造的（见 `MetroStationOrdinalsTest`）。
+     */
+    private val manyData: MetroData by lazy {
+        val codes = metroLine2.liveStations.map { it.code }
+        val names = metroLine2.liveStations.associate { it.code to it.name }
+        val reference = "02100000"
+        val index = codes.indexOf(reference)
+        val source = MetroObservationSource(reference)
+        fun train(seconds: Int, at: Int, flag: Int) = MetroTrain(
+            arriveSeconds = seconds, nextStationCode = codes[index + at],
+            nextStationName = names.getValue(codes[index + at]),
+            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
+        )
+        // 未到站 5 班：本站站台 → 本站前一段 → 上一站站台 → 再往前两段，坐标与到站先后同向。
+        val upcoming = listOf(
+            train(120, 0, 2),
+            train(240, 0, 1),
+            train(360, -1, 2),
+            train(480, -1, 1),
+            train(600, -2, 2)
+        )
+        // 刚开走那班：下一站是本站的下一站（flag=1）⇒ 已过本站，车标照画。
+        val passed = train(60, 1, 1)
+        MetroData(
+            lines = metroLines, selected = "2", updated = "2026-11-08",
+            realtime = MetroRealtime(
+                online = true, note = "", lineCode = "02000000",
+                stationCode = reference, stationName = names.getValue(reference),
+                directions = listOf(
+                    MetroDirection(
+                        origin = names.getValue(codes.first()), destination = names.getValue(codes.last()),
+                        startTime = "06:00", endTime = "23:00", delayMinutes = 0,
+                        trains = upcoming.take(3), stationCodes = codes, source = source,
+                        positionTrains = listOf(passed) + upcoming, arrivalsAvailable = true
+                    )
+                )
+            ),
+            realtimeStation = reference, realtimeStationName = names.getValue(reference),
+            realtimeUpdated = "12:40", directionIndex = 0
+        )
+    }
+
+    /** 截图数据自洽：5 班都编号、已过站那班没有班号但仍在车标列表里、行序 1..3 与班号同向。 */
+    @Test
+    fun metroManyFixtureNumbersFiveClassesAndKeepsThePassedMarker() {
+        val direction = requireNotNull(manyData.direction)
+        val ordinals = direction.stationOrdinals(manyData.realtimeStation)
+        assertEquals(listOf(1, 2, 3, 4, 5), ordinals.trains.mapNotNull { it.ordinal })
+        assertEquals(1, ordinals.passedCount)
+        assertEquals(listOf(1, 2, 3), (1..3).map { ordinals.ordinalOfRow(it) })
+    }
+
+    @Test fun metroRealtimeMany_light() = capture("metro-realtime-many", false) {
+        MetroContent(UiState.Success(manyData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroRealtimeMany_dark() = capture("metro-realtime-many", true) {
+        MetroContent(UiState.Success(manyData), {}, {}, {}, {}, refresh = {})
+    }
+
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
         UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },

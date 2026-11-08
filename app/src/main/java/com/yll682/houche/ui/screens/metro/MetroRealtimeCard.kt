@@ -59,12 +59,10 @@ fun MetroRealtimeCard(
     onTransfer: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    // 本站第 k 行 → 全方向第 N 班：只认唯一一条 arrivalRowOrder == k 的呈现记录。
-    // 补车（arrivalRowOrder 为 null）不参与这里，所以不会把别站的 ETA 塞进本站框。
-    val presentations = remember(direction) { direction?.positionPresentations().orEmpty() }
-    val ordinalOfRow: (Int) -> Int? = remember(presentations) {
-        { row -> presentations.filter { it.arrivalRowOrder == row }.map { it.ordinal }.singleOrNull() }
-    }
+    // 本站第 k 行 → 第几班：与位置条**同一套**「到本站先后」编号（[stationOrdinals]）。
+    // 补车（arrivalRowOrder 为 null，或已过本站）不参与本站 ETA 行；行序与位置条因此同向。
+    val ordinals = remember(direction, stationCode) { direction?.stationOrdinals(stationCode) }
+    val ordinalOfRow: (Int) -> Int? = remember(ordinals) { { row -> ordinals?.ordinalOfRow(row) } }
     // 一次成功批次都还没有时，位置条也要画得出来：只用线路自己的完整站表，不编造任何车。
     val stripDirection = direction ?: remember(line) { line.fallbackStripDirection() }
     // 深色卡比页底亮一档（1.12:1，与官方浅色白卡 vs #F1F1F1 同强度），仍然无描边无阴影。

@@ -57,8 +57,9 @@ import kotlin.math.roundToInt
  * 车 `x = (p + 0.5)·W`（p 来自 core 的 `positionOf`，整数表示站点、i−0.5 表示前一段），
  * 视口锚点＝选中站落在视口 78%（官方实测 78.4%）。
  *
- * 车标按 `positionPresentations()` 逐条画：`ordinal` 就是**全方向**第 1..N 班
- * （不再按 `arrivalOrder == null` 丢标签），`stackIndex` 决定垂直 lane。
+ * 车标按 `positionPresentations()` 逐条画，班号由 [stationOrdinals] 投影成**到本站先后**：
+ * 第 1 班 = 最先到本站那班，已过本站的车不给班号但**照画车标**、标签写「已过」
+ * （标签绝对不能消失）。`stackIndex`（core 给的，仍按全线进度序）决定垂直 lane；
  * 消除碰撞只靠错层，**不改 p、不横向挪站**；lane 高度见 [rememberStripLaneHeight]。
  *
  * 与旧版的差别（全部是「照抄」要求）：主线 7dp 实色方角、普通站点没有圆点只有白色箭头、
@@ -91,10 +92,17 @@ internal fun MetroTrainStrip(
 
     // 整线测一次的格宽：切站/换向/滚动都不重测（key 里没有它们）。
     val cell = rememberStripCell(line)
-    // 全方向编号 + 错层元数据；阈值用默认 1.0 站（保守覆盖同格与半格），只影响 lane，不删记录。
+    // 位置批次里的全部记录（含已过本站的、位置未知的），错层 lane 仍按 core 的 stackIndex 算；
+    // 阈值用默认 1.0 站（保守覆盖同格与半格），只影响 lane，不删记录。
     val presentations = remember(direction) { direction.positionPresentations() }
+    // 「到本站先后」投影：第 1 班 = 最先到本站那班；已过本站的车标保留、标签写「已过」。
+    val ordinals = remember(direction, stationCode) { direction.stationOrdinals(stationCode) }
     val lanes = presentations.maxOfOrNull { maxOf(it.stackSize, it.stackIndex + 1) }?.coerceAtLeast(1) ?: 1
-    val laneHeight = rememberStripLaneHeight(type.TrainLabel, stringResource(R.string.metro_realtime_train_no, presentations.maxOfOrNull { it.ordinal } ?: 1))
+    // 标签样张取「最大班号」：字号与「已过」相同，行高只跟字号走，不因班号位数变化。
+    val laneHeight = rememberStripLaneHeight(
+        type.TrainLabel,
+        stringResource(R.string.metro_realtime_train_no, ordinals.maxOrdinal.coerceAtLeast(1))
+    )
     // 上层 lane 预留的空间：轨道、站名、命中列整体同步下移，最上层不会被裁。
     val stackRoom = laneHeight * (lanes - 1)
 
@@ -207,20 +215,27 @@ internal fun MetroTrainStrip(
                         )
                     }
                 }
-                // 车标：方块图标 + 下方「第N班」，编号用**全方向** ordinal（第 4、5、6… 班有就画）。
+                // 车标：方块图标 + 下方标签。未到站写「第N班」（编号按**到本站先后**，第 4、5 班有就画）；
+                // 已过本站的车**照样画车标**，标签用同样字号写「已过」、颜色用次要文字色（不用错误红）——
+                // 用户最烦「车标/标签莫名其妙消失」，所以这里绝不因为没班号跳过。
                 // 垂直方向按 stackIndex 分 lane：lane 0 贴主线，往上依次是 lane 1、2…，
                 // 同一 cluster 的车不会叠在一起；只错层，不改 p、不横向挪站。
-                // 用 ordinal 做 key：它就是这个车道里的「第几班」，序列重排时位移跨度会超过
-                // 1.5 格，[rememberMarkerCenter] 会直接吸附。
-                presentations.forEach { presentation ->
-                    if (presentation.stationPosition < 0) return@forEach
-                    key(presentation.ordinal) {
-                        val fraction = (presentation.stationPosition - floor(presentation.stationPosition)).toFloat()
+                // key 用 core 的全线进度序（同一批观测内唯一，只做动画身份、不显示）：序列重排时位移
+                // 跨度会超过 1.5 格，[rememberMarkerCenter] 会直接吸附。
+                ordinals.trains.forEach { train ->
+                    val presentation = train.presentation
+                    key(train.markerKey) {
+                        val fraction = (train.stationPosition - floor(train.stationPosition)).toFloat()
                         val phase = if (fraction > 0.05f && fraction < 0.95f) StripTrainPhase else 0f
                         val centerX = rememberMarkerCenter(
-                            cell * (presentation.stationPosition.toFloat() + .5f - phase), cell
+                            cell * (train.stationPosition.toFloat() + .5f - phase), cell
                         )
-                        val label = stringResource(R.string.metro_realtime_train_no, presentation.ordinal)
+                        val ordinal = train.ordinal
+                        val label = if (ordinal != null) {
+                            stringResource(R.string.metro_realtime_train_no, ordinal)
+                        } else {
+                            stringResource(R.string.metro_realtime_train_passed)
+                        }
                         Box(
                             Modifier.offset(
                                 x = centerX - StripMarkerBox / 2,
@@ -229,12 +244,12 @@ internal fun MetroTrainStrip(
                                 .semantics { contentDescription = label },
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            TrainIcon(lead = presentation.ordinal == 1, palette = palette)
+                            TrainIcon(lead = ordinal == 1, palette = palette)
                             Text(
                                 label,
                                 Modifier.align(Alignment.TopCenter)
                                     .offset(x = 2.dp, y = TrainLabelTop).width(StripMarkerBox),
-                                style = type.TrainLabel,
+                                style = if (ordinal != null) type.TrainLabel else type.TrainLabelPassed,
                                 textAlign = TextAlign.Center,
                                 maxLines = 1,
                                 softWrap = false

@@ -311,6 +311,13 @@ internal class OfficialTypography(palette: OfficialPalette) {
     /** 车标下方「第N班」11.5sp。 */
     val TrainLabel = official(11.5.sp, palette.TrainLabel, 15.sp)
 
+    /**
+     * 车标下方「已过」：与「第N班」**同字号同位置**，只把颜色换成次要文字色 [OfficialPalette.SubInk]
+     * （浅色 `#666` 5.74:1、深色 `#9AA3AE` 6.5:1，都过 4.5:1）。不用错误红——过站是正常运营状态，
+     * 不是故障。
+     */
+    val TrainLabelPassed = official(11.5.sp, palette.SubInk, 15.sp)
+
     /** 免责说明 13.3sp / 行高 20.3dp，珊瑚红居中。 */
     val Disclaimer = official(13.3.sp, palette.Disclaimer, 20.3.sp)
 

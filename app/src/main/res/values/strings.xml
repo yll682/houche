@@ -133,6 +133,8 @@
     <string name="metro_realtime_no_service">该方向暂无班次</string>
     <string name="metro_realtime_position">列车位置</string>
     <string name="metro_realtime_train_no">第%1$d班</string>
+    <!-- 已过本站的车标：照画车标，只把班号换成这两个字（次要文字色，不是错误红） -->
+    <string name="metro_realtime_train_passed">已过</string>
     <string name="metro_realtime_train_row">第%1$d班</string>
     <string name="metro_realtime_tip">当前只显示最近3班列车时间，预计到站时间仅供参考，请以实际运营情况为准</string>
     <string name="metro_realtime_selected">已设为参考站</string>
