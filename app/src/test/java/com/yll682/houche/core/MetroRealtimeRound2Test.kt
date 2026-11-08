@@ -64,11 +64,8 @@ class MetroRealtimeRound2Test {
                     // audit-summary 的全部 288 条记录均未超过查询参考站；不把 abs 当作方向证据。
                     assertTrue("${file.name}: nextIndex=$nextIndex referenceIndex=$referenceIndex", nextIndex <= referenceIndex)
                     assertEquals(referenceIndex - nextIndex, result.remainingStops(direction, train))
-                    val expected = when (train.arrivingFlag) {
-                        1 -> (nextIndex - 0.5).coerceAtLeast(0.0)
-                        2 -> nextIndex.toDouble()
-                        else -> error("真实新样本出现未审计 flag=${train.arrivingFlag}")
-                    }
+                    // 全站连续快照推翻旧 flag 半格公式：两方向都沿自身站序消费真实 scale。
+                    val expected = (nextIndex - 1.0 + train.scale).coerceAtLeast(0.0)
                     val actual = direction.positionOf(train)
                     assertEquals("${file.name}: $directionIndex/$trainIndex", expected, actual, 0.0)
                     assertTrue(actual.isFinite() && actual >= 0.0 && actual <= direction.stationCodes.lastIndex)
@@ -98,13 +95,13 @@ class MetroRealtimeRound2Test {
         assertEquals(82, train.arriveSeconds)
         assertEquals(22, mqDirection.stationCodes.indexOf("02100000"))
         assertEquals(23, mqDirection.stationCodes.indexOf(train.nextStationCode))
-        assertEquals(22.5, mqDirection.positionOf(train), 0.0)
+        assertEquals(22.3, mqDirection.positionOf(train), 0.0)
         // 相反方向同名下一站的另一班车在翁角路—马青路，不能用它填补本方向的区间。
         val otherDirection = admin.directions.single { it.destination == "五缘湾" }
         val otherTrain = otherDirection.trains.single { it.nextStationCode == "02090000" }
         assertEquals(0.94, otherTrain.scale, 0.0)
         assertEquals(137, otherTrain.arriveSeconds)
-        assertEquals(7.5, otherDirection.positionOf(otherTrain), 0.0)
+        assertEquals(7.94, otherDirection.positionOf(otherTrain), 1e-9)
         listOf(admin, maqing).forEach { result ->
             assertEquals(listOf(3, 3), result.directions.map { it.trains.size })
             assertTrue(result.directions.all { direction -> direction.trains.all { direction.positionOf(it) >= 0.0 } })
@@ -117,13 +114,13 @@ class MetroRealtimeRound2Test {
         val train = direction.trains.single { it.nextStationCode == "02090000" }
         listOf(direction.stationCodes.first(), direction.stationCodes.last(), "02100000", "不在站序", "").forEach { reference ->
             val changedReference = result.copy(stationCode = reference)
-            assertEquals(22.5, direction.positionOf(train), 0.0)
+            assertEquals(22.3, direction.positionOf(train), 0.0)
             val stops = changedReference.remainingStops(direction, train)
             if (reference !in direction.stationCodes) assertEquals(-1, stops)
             else assertTrue(stops >= 0)
         }
         val reverse = result.directions.single { it.destination == "五缘湾" }
-        assertEquals(7.5, reverse.positionOf(train), 0.0)
+        assertEquals(7.3, reverse.positionOf(train), 0.0)
     }
 
     private fun fixture(name: String): File = MetroFixtures.file("metro-round2/$name")

@@ -6,18 +6,27 @@ import com.yll682.houche.core.MetroPositionPresentation
 /**
  * 「到本站先后」投影（用户拍板：**第 1 班 = 最先到达当前参考站的那班**）。
  *
- * 为什么要在这里再投影一次：`core` 的 `positionPresentations().ordinal` 是**全线行驶进度序**
- * （越靠该方向终点越靠前）。对本站来说，已经开过本站的车反而排在最前面，于是本站 ETA
- * 可能从「第 2 班」开始——这就是用户报的那条。数据与位置本身不动，只在本层按
- * `stationPosition` 与参考站下标 `r` 的关系重新编号：
+ * 为什么本层要单独投影一次：`core` 也有一个 `MetroDirection.stationOrdinals(...)`，但它是
+ * **全线行驶进度序 / 本地 ETA 行号**口径（越靠该方向终点越靠前），对本站来说已经开过本站的车
+ * 反而排在最前面；它还把「已过本站」的身份编进 4..N，于是「已过」一个都画不出来。数据与位置
+ * 本身不动，只在本层按 `stationPosition` 与参考站下标 `r` 的关系重新编号：
  *
  * 1. `p > r`（含 [MetroPassedTolerance]）→ **已过本站**：仍然画车标，标签写「已过」；
- * 2. 其余按 `p` 从大到小（越大越近本站）依次编号 1..N，**不截断到 3**；
- * 3. 本站原始到站行（ETA 第 k 行）按 [MetroStationOrdinals.ordinalOfRow] 取同一套编号，
+ * 2. 其余按 `p` 从大到小（越大越近本站）依次编号 1..N，**不截断到 3**，连续不跳号；
+ * 3. 本站原始到站行（ETA 第 k 行）按 [MetroArrivalOrdinals.ordinalOfRow] 取同一套编号，
  *    与位置条完全一致；某一行没有位置记录时按上一行顺延（行序本身就是到站先后），
  *    不退化成不带班号的「预计到达」。
+ *
+ * ### 为什么名字叫 `arrivalOrdinals` 而不是 `stationOrdinals`
+ *
+ * 上一版本文件也叫 `MetroDirection.stationOrdinals`，和 `core` 的同名成员**签名完全一致**。
+ * Kotlin 的成员永远优先于扩展函数，所以 UI 侧这份投影被静默遮蔽成了死代码，`已过` 分支不可达
+ * ——位置条把 7 辆已过本站的车编成第 4–10 班，就是这么来的。现在的做法是**改名 + 显式调用**：
+ * 名字刻意与 `core` 的 `stationOrdinals` 不同（也不同于 `MetroStationPositionOrdinals`），
+ * 任何一处 `direction.arrivalOrdinals(...)` 都只能落在本文件这一个实现上，不可能再被遮蔽；
+ * `core` 那份保持原样不动，只在 KDoc 里注明它不属于位置条。
  */
-internal data class MetroStationTrain(
+internal data class MetroArrivalTrain(
     val presentation: MetroPositionPresentation,
     /** 到本站的班号；`null` 表示已过本站（只画车标 + 「已过」，不给班号）。 */
     val ordinal: Int?
@@ -33,11 +42,11 @@ internal data class MetroStationTrain(
 }
 
 /** 一次投影的结果：位置条的车标编号 + 本站到站行的编号。 */
-internal data class MetroStationOrdinals(
+internal data class MetroArrivalOrdinals(
     /** 当前参考站在该方向站序里的下标 `r`；-1 表示站序里没有这个站。 */
     val referenceIndex: Int,
     /** 位置已知的车标，按 `p` 从大到小（已过本站的排在最前面，但它们没有班号）。 */
-    val trains: List<MetroStationTrain>,
+    val trains: List<MetroArrivalTrain>,
     /** 本站原始到站行序（1..n）→ 第几班。 */
     val rowOrdinals: Map<Int, Int>
 ) {
@@ -55,14 +64,9 @@ internal data class MetroStationOrdinals(
  * 判「已过本站」的容差，单位「站」。
  *
  * 取 **0** 的理由（真实样本实测，见 `analysis/fixtures/metro-round2/`）：
- * `positionOf` 的返回值只可能是整数（`flag=2`，车在下一站站台）或半整数
- * （`flag=1`，车在下一站前一段中点），不是浮点近似值，所以判定不需要留浮点余量：
- * - 本站站台上 `flag=2` 的车 `p == r`，**不能**判成已过 → 用严格大于号就正好排除它；
- * - 刚开走的那班在「本站与下一站之间」⇒ `p == r + 0.5`，真实合并样本
- *   （095729 行政中心 + 马青路两份真实响应，合并后那班区间车 `p = 22.5`、`r = 22`）
- *   里就出现过，它是**已经过站**的车。若把容差取到 0.5，这班会被当成「第 1 班」，
- *   而它没有本站到站行，本站 ETA 第 1 行又会变成「第 2 班」——正好把用户报的那条
- *   错位重新引入。0.5 是半整数坐标的最小间隔，容差必须小于它，故取 0。
+ * `positionOf` 的返回值按真实 `scale` 连续变化，本站站台上 `flag=2` 的车 `p == r`，
+ * **不能**判成已过 → 用严格大于号就正好排除它；而刚开走的那班（本站与下一站之间，真实
+ * `scale` 例如 `.30`）必然是 `p > r`。容差必须小于「刚开走时的第一段进度」，故取 0。
  */
 internal const val MetroPassedTolerance = 0.0
 
@@ -73,11 +77,11 @@ internal const val MetroPassedTolerance = 0.0
  * @param rowCount 本站原始到站行数（ETA 蓝块要编号的行数）
  * @param tolerance 判「已过本站」的容差，默认 [MetroPassedTolerance]
  */
-internal fun MetroDirection.stationOrdinals(
+internal fun MetroDirection.arrivalOrdinals(
     stationCode: String,
     rowCount: Int = trains.size,
     tolerance: Double = MetroPassedTolerance
-): MetroStationOrdinals {
+): MetroArrivalOrdinals {
     val reference = stationCodes.indexOf(stationCode)
     // p < 0 是位置未知（缺码/未知站）：画不出来，也不参与编号，保持原有丢弃行为。
     // 顺序：p 从大到小；同一坐标沿用 core 的既定次序（ordinal 升序），不另造平局规则。
@@ -90,7 +94,7 @@ internal fun MetroDirection.stationOrdinals(
     var next = 0
     val trains = ordered.map { presentation ->
         val passed = reference >= 0 && presentation.stationPosition > reference + tolerance
-        MetroStationTrain(presentation, if (passed) null else ++next)
+        MetroArrivalTrain(presentation, if (passed) null else ++next)
     }
     // 行 → 班号：优先按位置记录的唯一关联（arrivalRowOrder），这条路径就是「同一辆车」的证据。
     val linked = trains.mapNotNull { train ->
@@ -107,5 +111,5 @@ internal fun MetroDirection.stationOrdinals(
         rows[row] = value
         running = value
     }
-    return MetroStationOrdinals(reference, trains, rows)
+    return MetroArrivalOrdinals(reference, trains, rows)
 }

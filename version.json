@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.4",
-  "versionCode": 15,
+  "versionName": "1.7.5",
+  "versionCode": 16,
   "released": "2026-11-08",
-  "notes": "地铁列车位置页：深色模式、换乘站跳转、按定位选站、班次编号到第N班；修换站后方向/到站时间框/间距/班号错乱，修正 4、6 号线开通状态。",
+  "notes": "修复列车位置条车辆重复（同一列车被多个参考站重复计入，曾显示 10 辆车挤在一处）；已过本站的列车标「已过」。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.4/houche-v1.7.4.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.4/houche-v1.7.4.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.5/houche-v1.7.5.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.5/houche-v1.7.5.apk"
   }
 }

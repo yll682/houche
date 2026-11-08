@@ -9,7 +9,10 @@ import javax.crypto.spec.SecretKeySpec
 
 /** 始终从仓库真实样本读取，兼容仓库根目录和 app 模块两种测试工作目录。 */
 internal object MetroFixtures {
-    fun file(name: String): File = sequenceOf(File("analysis/fixtures/$name"), File("../analysis/fixtures/$name"))
+    fun file(name: String): File = sequenceOf(
+        File("analysis/fixtures/$name"), File("../analysis/fixtures/$name"),
+        File("app/src/test/resources/$name"), File("src/test/resources/$name")
+    )
         .first { it.isFile }
 
     val sample: JsonElement by lazy { BusNetwork.json.parseToJsonElement(file("metro-response-sample.json").readText()) }

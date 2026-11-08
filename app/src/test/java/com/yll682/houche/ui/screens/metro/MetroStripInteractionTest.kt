@@ -105,12 +105,19 @@ class MetroStripInteractionTest {
         realtimeUpdated = "12:40", directionIndex = 0
     )
 
-    /** 只放一班车（下一站 = 参考站往前 `at` 站），用来量车标的横坐标。 */
-    private fun oneTrain(at: Int, flag: Int): MetroData {
+    /**
+     * 只放一班车（下一站 = 参考站往前 `at` 站、段内进度 `scale`），用来量车标的横坐标。
+     *
+     * 造例必须给**真实比例**：core 的 `positionOf` 现在是 `index(next) − 1 + scale`，
+     * `arrivingFlag` 不参与坐标（flag=2 也可能是 scale=.83 的站前车）。
+     * 旧造例只动 flag 不动 scale（0.0），两批位置的 `stationPosition` 完全相同，
+     * 车标自然一格都不动——那是造例不合法，不是滑动逻辑坏了。
+     */
+    private fun oneTrain(at: Int, scale: Double, flag: Int = 1, seconds: Int = 170): MetroData {
         val next = codes[referenceIndex + at]
         val train = MetroTrain(
-            arriveSeconds = 170, nextStationCode = next, nextStationName = names.getValue(next),
-            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "",
+            arriveSeconds = seconds, nextStationCode = next, nextStationName = names.getValue(next),
+            scale = scale, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "",
             source = MetroObservationSource(reference)
         )
         val direction = direction().copy(trains = listOf(train), positionTrains = listOf(train))
@@ -211,20 +218,23 @@ class MetroStripInteractionTest {
     }
 
     /**
-     * 车标位移：同一班车小幅前进（下一站不变、flag 1→2，位移 0.54 格）应滑过去；
-     * 跨度超过 1.5 格（这里 2.46 格）必须吸附，不能从屏幕一头飞过去。
+     * 车标位移：同一班车小幅前进（下一站不变、scale 0.10→0.64，位移 0.54 格）应滑过去；
+     * 跨度超过 1.5 格（这里 2.6 格）必须吸附，不能从屏幕一头飞过去。
+     *
+     * 造例照抄真实响应语义：位置＝`index(next) − 1 + scale`，flag 只是服务端状态，
+     * 所以「同下一站、scale 变大、ETA 变小」才是真正的同一班车往前走一步。
      */
     @Test
     fun trainMarkerGlidesOnSmallMoveAndSnapsOnBigJump() {
         compose.mainClock.autoAdvance = false
-        var data by mutableStateOf(oneTrain(at = -1, flag = 1))
+        var data by mutableStateOf(oneTrain(at = -1, scale = 0.10, flag = 1, seconds = 170))
         Metro { MetroContent(UiState.Success(data), {}, {}) }
         repeat(4) { compose.mainClock.advanceTimeByFrame() }
 
         val start = markerLeft()
 
-        // 同一班车从「下一站前一段」走到「下一站」（0.54 格）→ 应该插值，不能一帧跳到位。
-        data = oneTrain(at = -1, flag = 2)
+        // 同一班车从「下一站前一段 10%」走到「到站前进站段 64%」（0.54 格），ETA 同步 170→105 秒。
+        data = oneTrain(at = -1, scale = 0.64, flag = 2, seconds = 105)
         compose.waitForIdle()
         compose.mainClock.advanceTimeBy(120)
         val mid = markerLeft()
@@ -233,8 +243,8 @@ class MetroStripInteractionTest {
         assertTrue("过渡中车标应停在起点与终点之间：$start → $mid → $end", mid > start + 8 && mid < end - 8)
         assertEquals("400ms 后应停在新位置（0.54 格 ≈ 110px）", 110f, (end - start).toFloat(), 8f)
 
-        // 跨度 2.46 格（换站/重排）→ 直接吸附：50ms 后就已经在新位置（插值此时只走得出约 15%）。
-        data = oneTrain(at = -4, flag = 2)
+        // 跨度 2.6 格（换站/重排）→ 直接吸附：50ms 后就已经在新位置（插值此时只走得出约 15%）。
+        data = oneTrain(at = -4, scale = 1.0, flag = 2, seconds = 480)
         compose.waitForIdle()
         compose.mainClock.advanceTimeBy(50)
         val snapped = markerLeft()
@@ -244,9 +254,15 @@ class MetroStripInteractionTest {
         assertEquals("吸附后不应再有位移", settled, snapped, .5f)
     }
 
-    /** 「第1班」车标的左边界（px）。 */
+    /**
+     * 「第1班」车标的左边界（px）。
+     *
+     * 用未裁剪的 `positionInRoot` 而不是 `boundsInRoot`：位置条是横向滚动 + `clipToBounds` 的，
+     * 车标滑到视口边缘外时 `boundsInRoot` 会被裁到视口边界（实测吸附后少算 10px，
+     * 而且「吸附后不再移动」会被裁切掩盖），量位移必须用 layout 坐标。
+     */
     private fun markerLeft() =
-        compose.onAllNodesWithContentDescription("第1班").onFirst().fetchSemanticsNode().boundsInRoot.left
+        compose.onAllNodesWithContentDescription("第1班").onFirst().fetchSemanticsNode().positionInRoot.x
 
     // ---- 截图工具：直接画真实 Compose View（与 ScreenshotTest 同一套做法） ----
 

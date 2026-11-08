@@ -31,7 +31,7 @@ import com.yll682.houche.core.minutesUntil
  * 分钟数只来自所选参考站原始的三条到站行（`Ready.trains`），
  * 位置条上补进来的车不参与这里，因此不会有「别站的 ETA 冒充本站」。
  * 「第N班」用的是**到本站先后**的班号（用户决定：第 1 班 = 最先到本站那班）：
- * 由 `ordinalOfRow` 把本站第 k 行映射到位置条上同一个班号（见 `stationOrdinals`），
+ * 由 `ordinalOfRow` 把本站第 k 行映射到位置条上同一个班号（见 UI 侧的 `arrivalOrdinals`），
  * 于是「第 k 行」与位置条「第 k 班」永远是同一辆车。只有整条位置批次都关联不上时
  * 才会只写「预计到达」，不拿本站第 k 行去冒充别的班。
  */

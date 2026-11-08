@@ -221,11 +221,11 @@ class ScreenshotTest {
         assertEquals(82, between.arriveSeconds)
         assertEquals(1, between.arrivingFlag)
         assertEquals(0.30, between.scale, 0.0)
-        assertEquals(adminIndex + 0.5, direction.positionOf(between), 0.0)
+        assertEquals(adminIndex + 0.3, direction.positionOf(between), 1e-9)
         // 首轮合同仅关联本站三行；现在全方向班序独立保留，本站 ETA 仍只来自原始行。
         assertNull("补位置的区间车没有本站 ETA 行序", direction.arrivalRowOrderOf(between))
-        assertEquals("补充区间车仍显示全方向第一班", 1, direction.arrivalOrderOf(between))
-        assertEquals((1..direction.positions.size).toList(), direction.positionPresentations().map { it.ordinal })
+        assertEquals("补充区间车使用本站三行以外的唯一编号", 4, direction.arrivalOrderOf(between))
+        assertEquals((1..direction.allIdentifiedTrains.size).toList(), direction.positionPresentations().map { it.ordinal }.sorted())
     }
 
     @Test fun metroRealtimeMerge_light() {
@@ -249,7 +249,7 @@ class ScreenshotTest {
         val source = MetroObservationSource("02070000")
         fun train(seconds: Int, next: String, name: String, flag: Int) = MetroTrain(
             arriveSeconds = seconds, nextStationCode = next, nextStationName = name,
-            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
+            scale = if (flag == 2) 1.0 else 0.5, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
         )
         val first = train(170, "02080000", "翁角路", 1)
         val second = train(510, "02090000", "马青路", 1)
@@ -356,7 +356,7 @@ class ScreenshotTest {
             val next = codes[(index - step + 1).coerceAtLeast(0)]
             MetroTrain(
                 arriveSeconds = step * 180, nextStationCode = next, nextStationName = names.getValue(next),
-                scale = 0.0, arrivingFlag = if (step == 1) 2 else 1, specialPosition = 0, specialPositionDesc = "",
+                scale = 1.0, arrivingFlag = if (step == 1) 2 else 1, specialPosition = 0, specialPositionDesc = "",
                 source = source
             )
         }
@@ -414,9 +414,8 @@ class ScreenshotTest {
     }
 
     /**
-     * 三条同位车：同一条 `nextStationCode`、同 `arrivingFlag` 的三条记录在数据层是同一
-     * 「潜在碰撞群」（`stackIndex` 0/1/2），画面必须错层——同一个 x，往上依次一层，
-     * 而不是叠成一坨。浅色/深色各一张，用来核 lane 高度与标签有没有压到轨道/站名。
+     * 三条同位观测：保留三条身份与本站 ETA，只有一个可见车标；
+     * 旧版错层画成三辆站台车的期待已被本轮用户纠正。
      */
     private val stackData: MetroData by lazy {
         val codes = metroLine2.liveStations.map { it.code }
@@ -425,7 +424,7 @@ class ScreenshotTest {
         val source = MetroObservationSource(reference)
         fun at(seconds: Int) = MetroTrain(
             arriveSeconds = seconds, nextStationCode = codes[6], nextStationName = names.getValue(codes[6]),
-            scale = 0.0, arrivingFlag = 2, specialPosition = 0, specialPositionDesc = "", source = source
+            scale = 1.0, arrivingFlag = 2, specialPosition = 0, specialPositionDesc = "", source = source
         )
         val trains = listOf(at(300), at(600), at(900))
         MetroData(
@@ -447,6 +446,15 @@ class ScreenshotTest {
         )
     }
 
+    @Test fun metroStackFixtureRetainsThreeIdentitiesButOnlyOneVisibleMarker() {
+        val direction = requireNotNull(stackData.direction)
+        assertEquals(3, direction.allIdentifiedTrains.size)
+        assertEquals(3, direction.trains.size)
+        assertEquals(1, direction.positions.size)
+        assertEquals(2, direction.positionSuppressions().size)
+        assertEquals(listOf(1, 2, 3), (1..3).map(direction.arrivalOrdinals(stackData.realtimeStation)::ordinalOfRow))
+    }
+
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroRealtimeStack_light() = capture("metro-realtime-stack", false, 1080, 2340) {
         MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
@@ -461,10 +469,10 @@ class ScreenshotTest {
      * 「到本站先后」班号：**5 班未到站 + 1 班刚开走**，一张图看全三件事——
      * ① 第 1 班是最先到本站那班（不是全线最靠终点那班）；
      * ② 班号不截断到 3，第 4、5 班照写；
-     * ③ 已开过本站的那班车标**照画**，标签写「已过」（次要文字色，不是错误红）。
+     * ③ 已开过本站的身份**不占号**，标「已过」但车标照画（用户拍板的规则）。
      *
      * 站码站名取自 `assets/metro.json`（2 号线），参考站「海沧行政中心」；
-     * 真实响应每个参考站只回 3 行，所以「有几班」是构造的（见 `MetroStationOrdinalsTest`）。
+     * 真实响应每个参考站只回 3 行，所以「有几班」是构造的（见 `MetroArrivalOrdinalsTest`）。
      */
     private val manyData: MetroData by lazy {
         val codes = metroLine2.liveStations.map { it.code }
@@ -475,18 +483,18 @@ class ScreenshotTest {
         fun train(seconds: Int, at: Int, flag: Int) = MetroTrain(
             arriveSeconds = seconds, nextStationCode = codes[index + at],
             nextStationName = names.getValue(codes[index + at]),
-            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
+            scale = if (flag == 2) 1.0 else 0.5, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "", source = source
         )
-        // 未到站 5 班：本站站台 → 本站前一段 → 上一站站台 → 再往前两段，坐标与到站先后同向。
+        // 未到站五班相隔至少一站；先前三班半站内的演示本身不合理。
         val upcoming = listOf(
             train(120, 0, 2),
-            train(240, 0, 1),
-            train(360, -1, 2),
-            train(480, -1, 1),
-            train(600, -2, 2)
+            train(240, -1, 2),
+            train(360, -2, 2),
+            train(480, -3, 2),
+            train(600, -4, 2)
         )
-        // 刚开走那班：下一站是本站的下一站（flag=1）⇒ 已过本站，车标照画。
-        val passed = train(60, 1, 1)
+        // 已开走的补充身份在本站下游1.5站，不与本站车冲突。
+        val passed = train(60, 2, 1)
         MetroData(
             lines = metroLines, selected = "2", updated = "2026-11-08",
             realtime = MetroRealtime(
@@ -506,13 +514,15 @@ class ScreenshotTest {
         )
     }
 
-    /** 截图数据自洽：5 班都编号、已过站那班没有班号但仍在车标列表里、行序 1..3 与班号同向。 */
+    /** 未到站的五个身份连续编号 1..5，已过站那班标「已过」不占号，本站行序固定1..3。 */
     @Test
     fun metroManyFixtureNumbersFiveClassesAndKeepsThePassedMarker() {
         val direction = requireNotNull(manyData.direction)
-        val ordinals = direction.stationOrdinals(manyData.realtimeStation)
-        assertEquals(listOf(1, 2, 3, 4, 5), ordinals.trains.mapNotNull { it.ordinal })
+        val ordinals = direction.arrivalOrdinals(manyData.realtimeStation)
+        assertEquals(listOf(null, 1, 2, 3, 4, 5), ordinals.trains.map { it.ordinal })
+        assertEquals(5, ordinals.maxOrdinal)
         assertEquals(1, ordinals.passedCount)
+        assertEquals("已过站那班仍占一个车标", ordinals.trains.size, direction.positions.size)
         assertEquals(listOf(1, 2, 3), (1..3).map { ordinals.ordinalOfRow(it) })
     }
 

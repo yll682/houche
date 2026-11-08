@@ -59,7 +59,8 @@ class MetroRealtimeRemote(
     }
 
     /**
-     * 一批最多八个物理请求、并发最多二；失败不重试，整批八秒截止后保留已成功的参考站。
+     * 已验证 1 号线每批五或六次，其他线路最多八次，并发最多二；失败不重试。
+     * 任意滚动二十秒仍最多八次，整批八秒截止后保留已成功的参考站。
      * 同线路换站只重选这批数据里的 ETA，未采到的站明确无 ETA，不额外发第九个请求。
      */
     suspend fun latestLine(lineCode: String, stationCodes: List<String>, stationCode: String): MetroRealtime =
@@ -248,7 +249,9 @@ class MetroRealtimeRemote(
             trains = entry.list("transTimes").mapNotNull { parseTrain(it, source) },
             // 缺码时保留空位，否则删除站点会改变剩余站数的下标差。
             stationCodes = stations.map { it.s("stationCode") },
-            source = source
+            source = source,
+            // 实时响应自带完整区间运行时间，不额外查询 allStation。
+            runningTimeProfile = parseMetroRunningTimeProfile(stations)
         )
     }
 

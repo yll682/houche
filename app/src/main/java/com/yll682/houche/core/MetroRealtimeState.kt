@@ -69,7 +69,7 @@ data class MetroRealtimeState(
     val displayFrame: MetroRealtime? get() = frame?.let { successful ->
         val directions = successful.directions.map { direction ->
             if (unavailableNote == null && hasStationArrivals(direction)) direction
-            else direction.copy(trains = emptyList(), positionTrains = direction.positions, arrivalsAvailable = false)
+            else direction.copy(trains = emptyList(), positionTrains = direction.allIdentifiedTrains, arrivalsAvailable = false)
         }
         if (successful.stationCode == stationCode && successful.stationName == stationName && directions == successful.directions) successful
         else successful.copy(stationCode = stationCode, stationName = stationName, directions = directions)

@@ -80,10 +80,10 @@ class MetroRealtimeTest {
         assertEquals(listOf(1, 2), result.directions.map { result.remainingStops(it, it.trains.first()) })
     }
 
-    @Test fun `真实六班列车按官方规则放在各自方向的下一站前一段中点`() {
+    @Test fun `真实六班列车按全站证实的方向比例定位`() {
         val result = remote.parse(sample.s("rawResponse"))
         // 样本下一站下标分别为 10、7、4 和 10、8、5；不能共用正向站序。
-        val expectedPositions = listOf(listOf(9.5, 6.5, 3.5), listOf(9.5, 7.5, 4.5))
+        val expectedPositions = listOf(listOf(9.31, 6.54, 3.59), listOf(9.62, 7.05, 4.11))
         expectedPositions.forEachIndexed { directionIndex, positions ->
             val direction = result.directions[directionIndex]
             positions.forEachIndexed { trainIndex, position ->
@@ -140,7 +140,7 @@ class MetroRealtimeTest {
         assertEquals(listOf(3, null, null), parsed.trains.map { it.arrivingFlag })
         parsed.trains.forEachIndexed { index, train ->
             assertEquals(0.3 + index * 0.1, train.scale, 0.0)
-            assertEquals(0.5, parsed.positionOf(train), 0.0)
+            assertEquals(0.3 + index * 0.1, parsed.positionOf(train), 0.0)
             assertFalse(train.arriving)
             assertFalse(train.approaching)
         }

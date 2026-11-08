@@ -4,6 +4,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MetroRealtimePlannerTest {
+    private val line1Stations = (1..24).map { "01%02d0000".format(it) }
+
+    @Test fun `真实一号线固定五锚点加本站每批五或六次且最大间距六站`() {
+        val anchors = listOf(0, 6, 12, 18, 23).map(line1Stations::get)
+        line1Stations.forEach { selected ->
+            val plan = planMetroRealtimeReferences(line1Stations, selected)
+            assertEquals(selected, plan.referenceStationCodes.first())
+            assertEquals((listOf(selected) + anchors).distinct(), plan.referenceStationCodes)
+            assertEquals(if (selected in anchors) 5 else 6, plan.referenceStationCodes.size)
+            assertTrue(plan.maxReferenceGapStations <= 6)
+            assertTrue(plan.gapFillStationCodes.isEmpty())
+        }
+        assertEquals(listOf(7, 0, 6, 12, 18, 23).map(line1Stations::get),
+            planMetroRealtimeReferences(line1Stations, line1Stations[7]).referenceStationCodes)
+    }
+
+    @Test fun `未验证的二十四站线路以及不完整一号线保持八次通用预算`() {
+        val unknown = (1..24).map { "09%02d0000".format(it) }
+        assertEquals(8, planMetroRealtimeReferences(unknown, unknown[7]).referenceStationCodes.size)
+        assertEquals(8, planMetroRealtimeReferences(line1Stations.dropLast(1), line1Stations[7]).referenceStationCodes.size)
+        val altered = line1Stations.toMutableList().apply { this[12] = "unknown" }
+        assertEquals(8, planMetroRealtimeReferences(altered, altered[7]).referenceStationCodes.size)
+    }
+
     @Test fun `三十二站固定五锚点加所选邻站后用空余预算补最大空洞`() {
         val stations = (0 until 32).map(Int::toString)
         val plan = planMetroRealtimeReferences(stations, "9")

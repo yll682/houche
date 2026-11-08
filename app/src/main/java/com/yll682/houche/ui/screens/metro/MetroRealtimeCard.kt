@@ -59,9 +59,9 @@ fun MetroRealtimeCard(
     onTransfer: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    // 本站第 k 行 → 第几班：与位置条**同一套**「到本站先后」编号（[stationOrdinals]）。
+    // 本站第 k 行 → 第几班：与位置条**同一套**「到本站先后」编号（[arrivalOrdinals]）。
     // 补车（arrivalRowOrder 为 null，或已过本站）不参与本站 ETA 行；行序与位置条因此同向。
-    val ordinals = remember(direction, stationCode) { direction?.stationOrdinals(stationCode) }
+    val ordinals = remember(direction, stationCode) { direction?.arrivalOrdinals(stationCode) }
     val ordinalOfRow: (Int) -> Int? = remember(ordinals) { { row -> ordinals?.ordinalOfRow(row) } }
     // 一次成功批次都还没有时，位置条也要画得出来：只用线路自己的完整站表，不编造任何车。
     val stripDirection = direction ?: remember(line) { line.fallbackStripDirection() }

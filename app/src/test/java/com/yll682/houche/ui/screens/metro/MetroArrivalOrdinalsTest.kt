@@ -47,8 +47,11 @@ import org.robolectric.annotation.GraphicsMode
  *
  * 1. 最先到本站那班 = 第 1 班，往后连续递增，**中间不跳号**；
  * 2. 超过 3 班时（第 4、5 班）照样编号，**不截断到 3**；
- * 3. 已过本站的车显示「已过」且**车标仍然画出来**（不能因为没班号就丢车）；
+ * 3. 已过本站的车（`p > r`）**不占班号**：标签写「已过」，车标仍然画出来；
  * 4. ETA 第 k 行与位置条第 k 班是**同一辆车**（同一 fixture 双向校验）。
+ *
+ * 这里调的是 UI 侧的 `arrivalOrdinals`（到本站先后）。`core` 的 `stationOrdinals` 是另一套
+ * 全线进度序口径（已过站也给编号），两者名字不同、互不遮蔽；位置条与 ETA 只用前者。
  *
  * 第 1、3、4 条用官方真实响应：`analysis/fixtures/metro-round2/` 的 095729 那一对
  * （行政中心 02100000 + 马青路 02090000，2026-11-08 09:57 抓包），走生产同一条
@@ -61,7 +64,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp-xxhdpi", application = android.app.Application::class)
-class MetroStationOrdinalsTest {
+class MetroArrivalOrdinalsTest {
     @get:Rule val compose = createComposeRule()
 
     private val lines: List<MetroLine> by lazy {
@@ -111,10 +114,14 @@ class MetroStationOrdinalsTest {
      * （近似跨参考站关联），所以不能拿 data class 相等当身份——按观测身份三要素比。
      */
     private fun sameTrain(row: MetroTrain, position: MetroTrain): Boolean =
-        row.nextStationCode == position.nextStationCode &&
+        (row.nextStationCode == position.nextStationCode &&
             row.arriveSeconds == position.arriveSeconds &&
             row.arrivingFlag == position.arrivingFlag &&
-            row.source == position.source
+            row.source == position.source) || position.matchedObservations.any { observation ->
+            row.nextStationCode == observation.nextStationCode.ifBlank { position.nextStationCode } &&
+                row.arriveSeconds == observation.arriveSeconds && row.scale == observation.scale &&
+                row.arrivingFlag == observation.arrivingFlag && row.source == observation.source
+        }
 
     private fun bounds(label: String) = marker(label).fetchSemanticsNode().boundsInRoot
 
@@ -125,17 +132,22 @@ class MetroStationOrdinalsTest {
         val direction = requireNotNull(realData.direction)
         val reference = "02100000"
         val r = direction.stationCodes.indexOf(reference)
-        val ordinals = direction.stationOrdinals(reference)
+        val ordinals = direction.arrivalOrdinals(reference)
 
         assertEquals("参考站下标必须在该方向站序里", r, ordinals.referenceIndex)
-        // 真实数据里马青路那份的区间车下一站是马青路（flag=1），坐标正好落在本站下游半站：
-        // 它已经开过本站，判「已过」的容差必须小于 0.5 站才抓得住它。
+        // 真实数据里马青路那份的区间车下一站是马青路（flag=1），真实 scale=.30，坐标落在本站下游 .30 站：
+        // 它已过本站；进度连续变化，不能再以旧半格规则判断。
         val passed = ordinals.trains.single { it.passed }
-        assertEquals(r + 0.5, passed.stationPosition, 0.0)
+        assertEquals(r + 0.3, passed.stationPosition, 1e-9)
+
+        // 用户拍板：已过本站的车不占号，只画车标 + 「已过」。
+        assertNull("已过本站的车不许占班号", passed.ordinal)
+        assertNull("已过本站的车没有本站 ETA 行", passed.presentation.arrivalRowOrder)
 
         val numbered = ordinals.trains.filter { !it.passed }
         assertEquals("第 1..3 班连续、不跳号", listOf(1, 2, 3), numbered.map { it.ordinal })
-        assertEquals(3, ordinals.maxOrdinal)
+        assertEquals("已过站的车不再占用第 4 班", 3, ordinals.maxOrdinal)
+        assertEquals("位置条上只有一班标「已过」", 1, ordinals.passedCount)
         // 第 1 班 = 未到站里坐标最大的那班（最先到本站）。
         assertEquals(numbered.maxOf { it.stationPosition }, numbered.single { it.ordinal == 1 }.stationPosition, 0.0)
         // 它同时就是本站原始到站行的第 1 行那辆车。
@@ -143,8 +155,8 @@ class MetroStationOrdinalsTest {
             "第 1 班必须是本站到站行第 1 行那辆车，实际 ${numbered.single { it.ordinal == 1 }.presentation.train}",
             sameTrain(direction.trains.first(), numbered.single { it.ordinal == 1 }.presentation.train)
         )
-        // 旧规则（全线进度序）把这班排第 2 —— 用户报的「ETA 从第 2 班开始」正来自这里。
-        assertEquals("core 的全线进度序确实把它排在第 2", 2, numbered.single { it.ordinal == 1 }.markerKey)
+        // 车标动画身份仍用 core 的全线进度序（只做 compose key，不显示）。
+        assertEquals("车标 key 仍取 core 的全线进度序", 1, numbered.single { it.ordinal == 1 }.markerKey)
 
         Metro { MetroContent(UiState.Success(realData), {}, {}) }
         compose.waitForIdle()
@@ -154,14 +166,16 @@ class MetroStationOrdinalsTest {
         marker("第1班").assertIsDisplayed()
         marker("第2班").assertExists()
         marker("第3班").assertExists()
+        // 已过站那班：标签是「已过」，且车标照画在这条线的下游（第 1 班右侧）。
         val passedBounds = bounds("已过")
         assertTrue("已过站的车标应在第 1 班右侧（下游）", passedBounds.left > first.right - 1f)
+        marker("第4班").assertDoesNotExist()
     }
 
     // ---- ② 5 班要能编到第 5 班（不截断到 3） ----
 
     /**
-     * 2 号线真实站序上的 5 班：本站「海沧行政中心」上游 5 班（含本站前一段与本站台两班），
+     * 2 号线真实站序上的 5 班：本站「海沧行政中心」上游 5 班（每班至少相隔一站），
      * 再加一班刚开走（本站下游半站）的区间车。站码站名全部来自 `metro.json`。
      */
     private fun fiveClassDirection(): MetroDirection {
@@ -170,20 +184,20 @@ class MetroStationOrdinalsTest {
         val source = MetroObservationSource(reference)
         fun at(seconds: Int, nextIndex: Int, flag: Int) = MetroTrain(
             arriveSeconds = seconds, nextStationCode = codes[nextIndex],
-            nextStationName = names.getValue(codes[nextIndex]), scale = 0.0, arrivingFlag = flag,
+            nextStationName = names.getValue(codes[nextIndex]), scale = if (flag == 2) 1.0 else 0.5, arrivingFlag = flag,
             specialPosition = 0, specialPositionDesc = "", source = source
         )
         // 未到站 5 班，坐标与到站先后同向（越近秒数越小）：
-        // p = r（本站站台）、r-0.5（本站前一段）、r-1（上一站站台）、r-1.5、r-2。
+        // p = r、r-1、r-2、r-3、r-4，避免旧演示把车堆在半站内。
         val upcoming = listOf(
             at(120, r, 2),
-            at(240, r, 1),
-            at(360, r - 1, 2),
-            at(480, r - 1, 1),
-            at(600, r - 2, 2)
+            at(240, r - 1, 2),
+            at(360, r - 2, 2),
+            at(480, r - 3, 2),
+            at(600, r - 4, 2)
         )
-        // 刚开走那班：下一站是本站的下一站（flag=1）→ p = r + 0.5 → 已过本站。
-        val passed = at(60, r + 1, 1)
+        // 已开走的补充身份 p = r+1.5，与本站车保持足够间隔。
+        val passed = at(60, r + 2, 1)
         return MetroDirection(
             origin = names.getValue(codes.first()), destination = names.getValue(codes.last()),
             startTime = "06:00", endTime = "23:00", delayMinutes = 0,
@@ -195,9 +209,11 @@ class MetroStationOrdinalsTest {
     @Test
     fun fifthClassIsNumberedNotTruncated() {
         val direction = fiveClassDirection()
-        val ordinals = direction.stationOrdinals("02100000")
-        assertEquals("5 班都要编号，不许截断到 3", listOf(1, 2, 3, 4, 5), ordinals.trains.mapNotNull { it.ordinal })
+        val ordinals = direction.arrivalOrdinals("02100000")
+        // 已过站那班不占号（null 在列表最前面，因为它坐标最大），其余 5 班连续编号 1..5。
+        assertEquals(listOf(null, 1, 2, 3, 4, 5), ordinals.trains.map { it.ordinal })
         assertEquals(5, ordinals.maxOrdinal)
+        assertEquals(1, ordinals.passedCount)
         assertTrue("已过站那班仍然在车标列表里", ordinals.trains.any { it.passed })
 
         val frame = MetroRealtime(
@@ -216,24 +232,28 @@ class MetroStationOrdinalsTest {
         Metro { MetroContent(UiState.Success(data), {}, {}) }
         compose.waitForIdle()
 
-        // 五格班号全部画出来（第 4、5 班以前会被截断成空白/没有班号）。
+        // 五个未到站的身份各自编号，不截断到三班；其中 1..3 对应本站 ETA。
         for (n in 1..5) marker("第${n}班").assertIsDisplayed()
-        // 越近的班号越靠右：第 1 班在第 2 班右边，一直到第 5 班。
+        // 已过本站那班只标「已过」，不占号：第 6 班不存在。
+        marker("已过").assertExists()
+        marker("第6班").assertDoesNotExist()
         val lefts = (1..5).map { bounds("第${it}班").left }
         assertTrue("班号必须随到站先后从右往左递增，实际 $lefts", lefts.zipWithNext().all { (near, far) -> near > far })
         // 行序与班号同向：第 k 行就是第 k 班。
         assertEquals(listOf(1, 2, 3), (1..3).map { ordinals.ordinalOfRow(it) })
     }
 
-    // ---- ③ 已过本站的车显示「已过」，车标照样画出来 ----
+    // ---- ③ 已过本站的车使用补充编号，车标仍保留 ----
 
     @Test
     fun passedTrainStillDrawsItsMarker() {
         val direction = requireNotNull(realData.direction)
-        val ordinals = direction.stationOrdinals("02100000")
-        // 位置批次里所有位置已知的记录都画车标：4 条记录 = 3 个班号 + 1 个「已过」。
+        val ordinals = direction.arrivalOrdinals("02100000")
+        // 本批四个身份位置均满足站距约束：本站三班 + 一个「已过」车标。
         val drawn = ordinals.trains.size
         assertEquals("每条位置记录都要有车标", direction.positions.size, drawn)
+        assertEquals("三个班号加一个「已过」", 3, ordinals.maxOrdinal)
+        assertEquals(1, ordinals.passedCount)
 
         Metro { MetroContent(UiState.Success(realData), {}, {}) }
         compose.waitForIdle()
@@ -264,7 +284,7 @@ class MetroStationOrdinalsTest {
     @Test
     fun etaRowAndClassAreTheSameTrain() {
         val direction = requireNotNull(realData.direction)
-        val ordinals = direction.stationOrdinals("02100000")
+        val ordinals = direction.arrivalOrdinals("02100000")
         assertTrue("真实批次必须已取到本站到站行", realData.etaState is MetroEtaState.Ready)
         assertEquals(3, direction.trains.size)
 

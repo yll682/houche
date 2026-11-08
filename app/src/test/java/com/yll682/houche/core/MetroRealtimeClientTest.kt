@@ -32,6 +32,61 @@ class MetroRealtimeClientTest {
     private val selected = stations[9]
     // 第三轮此参考站因锚点重合只发 7 次；第四轮用剩余槽补下标 4，现在每批精确 8 次。
 
+    @Test fun `真实一号线两轮每批六次无需allStation并在二十秒内共享完整批次`() = runBlocking {
+        val line1 = (1..24).map { "01%02d0000".format(it) }
+        val expected = setOf(7, 0, 6, 12, 18, 23).map(line1::get).toSet()
+        for (tag in listOf("173230", "173330")) {
+            val sent = ConcurrentLinkedQueue<String>()
+            client { request ->
+                assertTrue(request.url.encodedPath.endsWith("pub/transTime/getTransTimes"))
+                val reference = request.reference()
+                sent.add(reference)
+                respond(line1Fixture(reference, tag))
+            }.use { http ->
+                val remote = MetroRealtimeRemote(http, elapsedRealtimeMillis = { 0L })
+                val result = remote.latestLine("01000000", line1, line1[7])
+                assertTrue(result.online)
+                assertEquals(expected, sent.toSet())
+                assertEquals(6, sent.size)
+                assertEquals(2, result.directions.size)
+                result.directions.forEach { direction ->
+                    assertTrue(direction.arrivalsAvailable)
+                    assertEquals(3, direction.trains.size)
+                    assertEquals(24, direction.runningTimeProfile!!.stationCodes.size)
+                    assertEquals(direction.stationCodes, direction.runningTimeProfile!!.stationCodes)
+                }
+                remote.latestLine("01000000", line1, line1[6])
+                assertEquals(6, sent.size)
+            }
+        }
+    }
+
+    @Test fun `全部四十八份真实密文可解密且方向运行时间使用正向timeCost和反向revTimeCost`() {
+        val remote = MetroRealtimeRemote()
+        val line1 = (1..24).map { "01%02d0000".format(it) }
+        for (tag in listOf("173230", "173330")) for (reference in line1) {
+            val result = remote.parse(line1Fixture(reference, tag), "01000000", reference)
+            assertTrue("$tag $reference ${result.note}", result.online)
+            assertEquals(2, result.directions.size)
+            for (direction in result.directions) {
+                val profile = requireNotNull(direction.runningTimeProfile)
+                assertEquals(direction.stationCodes, profile.stationCodes)
+                val codes = profile.stationCodes
+                val seconds = profile.cumulativeSeconds
+                val first = codes.indexOf("01130000")
+                val second = codes.indexOf("01140000")
+                val third = codes.indexOf("01150000")
+                if (first < second) {
+                    assertEquals(240, seconds[second] - seconds[first])
+                    assertEquals(240, seconds[third] - seconds[second])
+                } else {
+                    assertEquals(240, seconds[first] - seconds[second])
+                    assertEquals(180, seconds[second] - seconds[third])
+                }
+            }
+        }
+    }
+
     @Test fun `每批最多八次物理请求且两条线路合计并发也不超过二`() = runBlocking {
         withTimeout(5_000) {
             val entered = CompletableDeferred<Unit>()
@@ -95,7 +150,12 @@ class MetroRealtimeClientTest {
             val unsampled = remote.latestLine("02000000", stations, stations[12])
             assertTrue(unsampled.online)
             assertTrue(unsampled.directions.all { !it.arrivalsAvailable && it.trains.isEmpty() && it.positions.isNotEmpty() })
-            assertEquals(first.directions.map { it.positions }, unsampled.directions.map { it.positions })
+            assertEquals(first.directions.map { it.allIdentifiedTrains }, unsampled.directions.map { it.allIdentifiedTrains })
+            for (view in listOf(first, cachedNeighbor, unsampled)) for (direction in view.directions) {
+                val coordinates = direction.positions.map(direction::positionOf).sorted()
+                assertTrue("物理位置间距：$coordinates",
+                    coordinates.zipWithNext().all { (left, right) -> right - left + 1e-9 >= 1.0 })
+            }
             assertEquals(first.source!!.receivedAtEpochMillis, unsampled.source!!.receivedAtEpochMillis)
             assertEquals(8, requests.get())
         }
@@ -367,6 +427,11 @@ class MetroRealtimeClientTest {
     }
 
     private fun HttpRequestData.reference(): String = requireNotNull(url.parameters["stationCode"])
+
+    private fun line1Fixture(reference: String, tag: String): String {
+        val name = "line1-multi/rt-01000000-$reference-$tag.json"
+        return requireNotNull(javaClass.classLoader!!.getResource(name)).readText()
+    }
 
     private fun response(reference: String, trainCount: Int = 1, scale: String = "0.3"): String {
         val referenceIndex = stations.indexOf(reference)

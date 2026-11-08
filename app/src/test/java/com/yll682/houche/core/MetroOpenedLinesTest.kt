@@ -98,8 +98,11 @@ class MetroOpenedLinesTest {
                         assertTrue(position.isFinite() && position >= 0 && position <= direction.stationCodes.lastIndex)
                     }
                 }
-                val expected = if (line.id == "4") listOf(3.5, 0.5, 0.0) else listOf(6.5, 4.5, 1.5)
-                assertEquals(expected, result.directions.first().trains.map { result.directions.first().positionOf(it) })
+                // 原始密文的 scale 分别为 .23/.13/1 与 .64/.10/.38，旧半格坐标已被全站证据推翻。
+                val expected = if (line.id == "4") listOf(3.23, 0.13, 0.0) else listOf(6.64, 4.1, 1.38)
+                result.directions.first().trains.forEachIndexed { index, train ->
+                    assertEquals(expected[index], result.directions.first().positionOf(train), 1e-9)
+                }
             }
         }
     }

@@ -54,10 +54,11 @@ import kotlin.math.roundToInt
  *
  * 格宽 W 由 [rememberStripCell] **按整条线量一次**（站名竖排 + 普通/Bold 两种样式的最大宽度），
  * 与方向、参考站、viewport、位置批次都无关：站心 `x = (i + 0.5)·W`，
- * 车 `x = (p + 0.5)·W`（p 来自 core 的 `positionOf`，整数表示站点、i−0.5 表示前一段），
+ * 车 `x = (p + 0.5)·W`（p 来自 core 的 `positionOf`，按真实 `scale` **连续**变化：
+ * 整数是站点，`i − 1 + scale` 是站间进度，不再是「只有整数/半整数」），
  * 视口锚点＝选中站落在视口 78%（官方实测 78.4%）。
  *
- * 车标按 `positionPresentations()` 逐条画，班号由 [stationOrdinals] 投影成**到本站先后**：
+ * 车标按 `positionPresentations()` 逐条画，班号由 [arrivalOrdinals] 投影成**到本站先后**：
  * 第 1 班 = 最先到本站那班，已过本站的车不给班号但**照画车标**、标签写「已过」
  * （标签绝对不能消失）。`stackIndex`（core 给的，仍按全线进度序）决定垂直 lane；
  * 消除碰撞只靠错层，**不改 p、不横向挪站**；lane 高度见 [rememberStripLaneHeight]。
@@ -96,7 +97,9 @@ internal fun MetroTrainStrip(
     // 阈值用默认 1.0 站（保守覆盖同格与半格），只影响 lane，不删记录。
     val presentations = remember(direction) { direction.positionPresentations() }
     // 「到本站先后」投影：第 1 班 = 最先到本站那班；已过本站的车标保留、标签写「已过」。
-    val ordinals = remember(direction, stationCode) { direction.stationOrdinals(stationCode) }
+    // 必须显式用 UI 侧这份 [arrivalOrdinals]：core 的 `stationOrdinals` 是全线进度序口径（含
+    // 「已过」也给编号），名字刻意不同，避免再被成员函数静默遮蔽。
+    val ordinals = remember(direction, stationCode) { direction.arrivalOrdinals(stationCode) }
     val lanes = presentations.maxOfOrNull { maxOf(it.stackSize, it.stackIndex + 1) }?.coerceAtLeast(1) ?: 1
     // 标签样张取「最大班号」：字号与「已过」相同，行高只跟字号走，不因班号位数变化。
     val laneHeight = rememberStripLaneHeight(

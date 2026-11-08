@@ -16,7 +16,9 @@ data class MetroTrainObservation(
     val source: MetroObservationSource,
     val arriveSeconds: Int,
     val scale: Double,
-    val arrivingFlag: Int?
+    val arrivingFlag: Int?,
+    /** 跨站观测可能跨过区间边界，不能借代表观测的 next 代替原值。 */
+    val nextStationCode: String = ""
 )
 
 /** 一条真实列车观测；arriveSeconds 只属于 source 的参考站，不是任意当前站的 ETA。 */
@@ -24,9 +26,9 @@ data class MetroTrain(
     val arriveSeconds: Int,
     val nextStationCode: String,
     val nextStationName: String,
-    /** 服务端数值，缺失或无效时为 0；比例方向尚未验证，官方位置显示未使用此字段。 */
+    /** 到 nextStationCode 的前一区间内、沿本方向行驶的进度；缺失或无效时为 0。 */
     val scale: Double,
-    /** 服务端原值，缺失或无效为 null；官方位置显示：1 = 下一站前一段，2 = 下一站站点。 */
+    /** 服务端状态原值；2 也可能仍在站前区间，不可覆盖真实 scale 坐标。 */
     val arrivingFlag: Int?,
     val specialPosition: Int,
     val specialPositionDesc: String,
@@ -36,7 +38,7 @@ data class MetroTrain(
     /** 多于一项表示无车辆 ID 的近似去重；代表观测自身的原值仍保留在本对象。 */
     val matchedObservations: List<MetroTrainObservation> = emptyList()
 ) {
-    /** 官方把 2 画在下一站站点；未知状态不推断为到站。 */
+    /** 服务端进站状态，不等于已经停在站台。 */
     val arriving: Boolean get() = arrivingFlag == 2
     /** 官方把 1 画在下一站前一段，不能据此判断是否接近参考站。 */
     val approaching: Boolean get() = arrivingFlag == 1
@@ -45,16 +47,36 @@ data class MetroTrain(
 /** 接口没有车辆 ID；单条观测和跨参考站的近似关联都不是已确认的物理车辆身份。 */
 enum class MetroTrainIdentityConfidence { SINGLE_OBSERVATION, APPROXIMATE_CROSS_REFERENCE_MATCH }
 
-/** 站点/半区间位置及标记宽度造成的潜在呈现碰撞，不据此删除任何记录。 */
+/** 位置发生冲突的观测来源；保留身份与 ETA，只隐藏缺乏物理间距的车标。 */
 enum class MetroPositionOverlapKind {
     NONE,
-    /** 同一参考站给出多条记录；应分别展示，不能因靠近或同坐标合并。 */
+    /** 同一参考站给出的不同班次，位置字段不足以分别定位。 */
     SAME_REFERENCE_OBSERVATIONS,
     /** 跨参考站记录未获充分身份关联证据，可能重复，也可能是相邻列车。 */
     UNRESOLVED_CROSS_REFERENCE
 }
 
-/** UI 按 stackIndex 错层，ordinal 是全方向观测班序，arrivalRowOrder 仅关联本站原始 ETA 行。 */
+/** 不代表车辆 ID；待发计划不等于已经占据站台的车辆。 */
+enum class MetroTrainPositionState { RUNNING, AT_STATION, TERMINAL_PENDING, SCHEDULED, UNKNOWN }
+
+enum class MetroPositionSuppressionReason {
+    UNKNOWN_POSITION,
+    /** 本站行缺失或关联有歧义，暂不为未关联候选发号，避免冒用本站行号。 */
+    UNRESOLVED_IDENTITY_ASSOCIATION,
+    /** 同一始发端的后续发车计划，不能全夹到 0 后画成多辆站台车。 */
+    SCHEDULED_DEPARTURE,
+    /** 可能重复或位置字段互相矛盾；仅抑制车标，不判为同一身份。 */
+    UNRESOLVED_CLOSE_POSITION
+}
+
+data class MetroPositionSuppression(
+    val train: MetroTrain,
+    val stationPosition: Double,
+    val reason: MetroPositionSuppressionReason,
+    val retainedTrain: MetroTrain? = null
+)
+
+/** 本站 ETA 对应车优先使用 1..3；其余身份使用余下的唯一编号，车标不再错层堆放。 */
 data class MetroPositionPresentation(
     val train: MetroTrain,
     val stationPosition: Double,
@@ -63,12 +85,36 @@ data class MetroPositionPresentation(
     /** 方向站序和语义坐标组成的呈现群键，不是车辆 ID。未知位置不成群。 */
     val clusterId: String?,
     val stackIndex: Int,
-    /** 贪心错层所需的 lane 数，远端记录可以复用同一 lane。 */
+    /** 保留旧 UI 接口；物理约束后的可见车标均为单 lane。 */
     val stackSize: Int,
     val clusterSize: Int,
     val identityConfidence: MetroTrainIdentityConfidence,
     val overlapKind: MetroPositionOverlapKind
 )
+
+/**
+ * core 口径的站位投影：`ordinal` 是**全线行驶进度序**（越靠该方向终点越靠前），`passed`
+ * 只做标记。位置条/ETA 的「第 N 班」用的是 UI 侧的 `arrivalOrdinals`（到本站先后），
+ * 两者名字不同、语义不同，不要混用。
+ */
+data class MetroStationPosition(
+    val presentation: MetroPositionPresentation,
+    val ordinal: Int?,
+    val passed: Boolean
+) {
+    val stationPosition: Double get() = presentation.stationPosition
+    val markerKey: Int get() = presentation.ordinal
+}
+
+data class MetroStationPositionOrdinals(
+    val referenceIndex: Int,
+    val trains: List<MetroStationPosition>,
+    val rowOrdinals: Map<Int, Int>
+) {
+    val maxOrdinal: Int get() = trains.mapNotNull { it.ordinal }.maxOrNull() ?: 0
+    val passedCount: Int get() = trains.count { it.passed }
+    fun ordinalOfRow(row: Int): Int? = rowOrdinals[row]
+}
 
 /** 一个行车方向的实时信息；站序就是列车行驶顺序，下标随行驶递增。 */
 data class MetroDirection(
@@ -86,10 +132,15 @@ data class MetroDirection(
     /** null 表示单站响应，沿用 trains；copy(trains=...) 不会遗留旧位置列表。 */
     val positionTrains: List<MetroTrain>? = null,
     /** false 表示本方向没有当前参考站的响应，不能把空行判断为本站无车。 */
-    val arrivalsAvailable: Boolean = true
+    val arrivalsAvailable: Boolean = true,
+    /** 真实 wayStations 的区间运行时间；缺少时仍执行保守的站距约束。 */
+    val runningTimeProfile: MetroRunningTimeProfile? = null
 ) {
-    /** 只供位置示意图使用，不能用其中其他参考站的秒数生成本站到站行。 */
-    val positions: List<MetroTrain> get() = positionTrains ?: trains
+    /** 全部近似列车身份，包括尚未发出的计划；不能把其数量当作可见车标数。 */
+    val allIdentifiedTrains: List<MetroTrain> get() = positionTrains ?: trains
+
+    /** 仅可见物理位置；被抑制的身份仍在 allIdentifiedTrains，本站原始 ETA 行也完整保留。 */
+    val positions: List<MetroTrain> get() = visiblePositions(1.0).first.map { it.value }
 
     /** 视口锚定距当前站最近的有效位置；同距选上游，不把全线最下游车当作本站最近车。 */
     fun nearestPositionTo(stationCode: String): Double? {
@@ -100,29 +151,28 @@ data class MetroDirection(
     }
 
     /**
-     * 全方向 positions 的第 1..N 班，与所选参考站和本站 ETA 行无关。
-     * “先到”采用可证实的行驶坐标降序：越靠终点越先；同坐标仅在同参考站/同时间域比较 ETA，
-     * 跨参考站以稳定字段打破平局，绝不直接比较不同目的参考站的秒数。
-     * 这不是全线真实 ETA 或车辆 ID，不能据相邻批次班序变化推断物理超车。未知位置排最后。
-     * 完全相同的重复值无法唯一回查时返回 null；呈现层可直接使用 positionPresentations 的 ordinal。
+     * 本站原始 ETA 第 k 行锚定编号 k，其余全线身份按行驶坐标降序使用其余编号。
+     * 已过本站的车不会挤占 1..3。它是当前视图的关联编号，不是车辆 ID 或全线到达顺序。
+     * 被隐藏的待发身份也保留编号；因此可见编号可以不连续，但不会超过身份总数。
      */
     fun arrivalOrderOf(positionTrain: MetroTrain): Int? {
-        val ordered = positions.sortedWith(positionOrder())
-        val exact = ordered.withIndex().filter { it.value === positionTrain }
+        val ordered = numberedIdentities()
+        val exact = ordered.filter { it.value === positionTrain }
         val match = if (exact.isNotEmpty()) exact.singleOrNull()
-            else ordered.withIndex().filter { it.value == positionTrain }.singleOrNull()
+            else ordered.filter { it.value == positionTrain }.singleOrNull()
         return match?.index?.plus(1)
     }
 
     /** 位置车能唯一关联本站某条原始到站行时才有本站行序；补充位置不产生本站 ETA。 */
     fun arrivalRowOrderOf(positionTrain: MetroTrain): Int? {
         val matches = trains.mapIndexedNotNull { index, row ->
-            if (row.nextStationCode != positionTrain.nextStationCode) return@mapIndexedNotNull null
-            val representativeMatches = row.source == positionTrain.source &&
+            val representativeMatches = row === positionTrain || (row.nextStationCode == positionTrain.nextStationCode &&
+                row.source == positionTrain.source &&
                 row.arriveSeconds == positionTrain.arriveSeconds && row.scale.toBits() == positionTrain.scale.toBits() &&
-                row.arrivingFlag == positionTrain.arrivingFlag
+                row.arrivingFlag == positionTrain.arrivingFlag)
             val originalMatches = positionTrain.matchedObservations.any { observation ->
-                row.source == observation.source && row.arriveSeconds == observation.arriveSeconds &&
+                row.nextStationCode == observation.nextStationCode.ifBlank { positionTrain.nextStationCode } &&
+                    row.source == observation.source && row.arriveSeconds == observation.arriveSeconds &&
                     row.scale.toBits() == observation.scale.toBits() && row.arrivingFlag == observation.arrivingFlag
             }
             if (representativeMatches || originalMatches) index + 1 else null
@@ -131,59 +181,134 @@ data class MetroDirection(
     }
 
     /**
-     * 所有真实位置记录均保留并全局编号；相邻坐标差小于阈值的记录连通成潜在碰撞群。
-     * 默认一站纳入半格碰撞；UI 可按实际标记/标签宽度除以站距传入阈值。
-     * 贪心复用与该 lane 前一条相隔至少阈值的 lane，0/.5/1 在阈值 1 时使用 0/1/0。
+     * 两轮一号线修正模型的全站代表位置最小间隔 1.32 站，本站六参考站子集最小 1.25 站。
+     * 取一站作为保守显示约束；这不是适用于所有线路的行车安全定理。
+     * 同向任意可见两车必须相隔至少一站；参数只能扩大间距，不能绕过物理下限。
+     * 不移动坐标、不把冲突身份合并、不为增加可见数量制造车辆；隐藏原因可单独检查。
      */
     fun positionPresentations(collisionDistanceInStations: Double = 1.0): List<MetroPositionPresentation> {
         require(collisionDistanceInStations.isFinite() && collisionDistanceInStations > 0.0)
-        val ordered = positions.sortedWith(positionOrder())
-        val groups = mutableListOf<MutableList<IndexedValue<MetroTrain>>>()
-        ordered.withIndex().filter { positionOf(it.value) >= 0.0 }.forEach { item ->
-            val previous = groups.lastOrNull()?.lastOrNull()
-            if (previous == null || positionOf(previous.value) - positionOf(item.value) >= collisionDistanceInStations) {
-                groups.add(mutableListOf(item))
-            } else groups.last().add(item)
-        }
-        data class Stack(val clusterId: String, val index: Int, val lanes: Int, val size: Int, val kind: MetroPositionOverlapKind)
-        val stacks = mutableMapOf<Int, Stack>()
-        groups.forEach { group ->
-            val laneEnds = mutableListOf<Double>()
-            val lanes = group.map { item ->
-                val position = positionOf(item.value)
-                val available = laneEnds.indexOfFirst { previous -> previous - position >= collisionDistanceInStations }
-                val lane = if (available >= 0) available else laneEnds.size.also { laneEnds.add(position) }
-                laneEnds[lane] = position
-                lane
-            }
-            val references = group.flatMap { (_, member) ->
-                listOf(member.source?.referenceStationCode) + member.matchedObservations.map { it.source.referenceStationCode }
-            }.filterNotNull().filter(String::isNotBlank).distinct()
+        val (visible, suppressed) = visiblePositions(collisionDistanceInStations.coerceAtLeast(1.0))
+        return visible.sortedWith { left, right -> positionOrder().compare(left.value, right.value) }.map { item ->
+            val train = item.value
+            val position = positionOf(train)
+            val conflicts = suppressed.filter { it.retainedTrain === train }
+            val references = (listOf(train) + conflicts.map { it.train }).mapNotNull { it.source?.referenceStationCode }
+                .filter(String::isNotBlank).distinct()
             val kind = when {
-                group.size <= 1 -> MetroPositionOverlapKind.NONE
-                references.size == 1 && group.all { !it.value.source?.referenceStationCode.isNullOrBlank() } ->
-                    MetroPositionOverlapKind.SAME_REFERENCE_OBSERVATIONS
+                conflicts.isEmpty() -> MetroPositionOverlapKind.NONE
+                references.size == 1 -> MetroPositionOverlapKind.SAME_REFERENCE_OBSERVATIONS
                 else -> MetroPositionOverlapKind.UNRESOLVED_CROSS_REFERENCE
             }
-            val clusterId = stationCodes.joinToString("/") + "@" + positionOf(group.first().value) + ":" + positionOf(group.last().value)
-            group.forEachIndexed { index, item ->
-                stacks[item.index] = Stack(clusterId, lanes[index], laneEnds.size, group.size, kind)
-            }
-        }
-        return ordered.mapIndexed { index, train ->
-            val position = positionOf(train)
-            val stack = stacks[index]
             MetroPositionPresentation(
-                train = train, stationPosition = position, ordinal = index + 1,
+                train = train, stationPosition = position, ordinal = item.index + 1,
                 arrivalRowOrder = arrivalRowOrderOf(train),
-                clusterId = stack?.clusterId, stackIndex = stack?.index ?: 0,
-                stackSize = stack?.lanes ?: 1, clusterSize = stack?.size ?: 1,
+                clusterId = stationCodes.joinToString("/") + "@" + position,
+                stackIndex = 0, stackSize = 1, clusterSize = conflicts.size + 1,
                 identityConfidence = if (train.matchedObservations.size > 1)
                     MetroTrainIdentityConfidence.APPROXIMATE_CROSS_REFERENCE_MATCH
                     else MetroTrainIdentityConfidence.SINGLE_OBSERVATION,
-                overlapKind = stack?.kind ?: MetroPositionOverlapKind.NONE
+                overlapKind = kind
             )
         }
+    }
+
+    fun positionSuppressions(): List<MetroPositionSuppression> = visiblePositions(1.0).second
+
+    /**
+     * **全线行驶进度序**口径：ETA 永远是本地第 1/2/3 行，位置记录沿用 `presentation.ordinal`，
+     * 已过本站的身份也照样带编号（`passed` 只作标记）。
+     *
+     * 它**不是**用户拍板的「到本站先后」：那套编号（第 1 班 = 最先到本站那班，已过本站的车
+     * 不占号、标「已过」）在 `ui/screens/metro/MetroArrivalOrdinals.kt` 的 `arrivalOrdinals`。
+     * 上一轮两个实现同名（成员 + 扩展），扩展被成员静默遮蔽，位置条因此把已过本站的车编成
+     * 第 4..N 班；改名后不会再出现同名遮蔽，位置条与 ETA 只调用 `arrivalOrdinals`。
+     */
+    fun stationOrdinals(
+        stationCode: String,
+        rowCount: Int = trains.size,
+        tolerance: Double = 0.0
+    ): MetroStationPositionOrdinals {
+        require(tolerance.isFinite() && tolerance >= 0.0)
+        val reference = stationCodes.indexOf(stationCode)
+        val markers = positionPresentations().map { presentation ->
+            MetroStationPosition(presentation, presentation.ordinal,
+                reference >= 0 && presentation.stationPosition > reference + tolerance)
+        }
+        return MetroStationPositionOrdinals(reference, markers,
+            (1..rowCount.coerceIn(0, trains.size)).associateWith { it })
+    }
+
+    fun positionStateOf(train: MetroTrain): MetroTrainPositionState {
+        val position = positionOf(train)
+        if (!position.isFinite() || position < 0.0) return MetroTrainPositionState.UNKNOWN
+        if (stationCodes.indexOf(train.nextStationCode) == 0 && train.arrivingFlag != 2) {
+            return if (positionSuppressions().any { it.train === train && it.reason == MetroPositionSuppressionReason.SCHEDULED_DEPARTURE })
+                MetroTrainPositionState.SCHEDULED else MetroTrainPositionState.TERMINAL_PENDING
+        }
+        return if (position == position.toInt().toDouble() && (!train.scaleKnown || train.scale == 1.0))
+            MetroTrainPositionState.AT_STATION else MetroTrainPositionState.RUNNING
+    }
+
+    private fun numberedIdentities(): List<IndexedValue<MetroTrain>> {
+        val ordered = allIdentifiedTrains.sortedWith(positionOrder())
+        val anchored = trains.indices.map { row ->
+            ordered.filter { arrivalRowOrderOf(it) == row + 1 }.singleOrNull()
+        }
+        val linked = anchored.mapIndexedNotNull { index, train ->
+            train?.takeIf { index < allIdentifiedTrains.size }?.let { IndexedValue(index, it) }
+        }
+        // 本站行缺失或歧义时只保留已证实关联的编号。不得退回位置排序，让无关车冒用 1..3。
+        if (anchored.any { it == null } || linked.map { it.value }.distinct().size != anchored.size) return linked
+        return linked + ordered.filter { candidate -> anchored.none { it === candidate } }
+            .mapIndexed { index, train -> IndexedValue(trains.size + index, train) }
+    }
+
+    private fun visiblePositions(minimumDistance: Double): Pair<List<IndexedValue<MetroTrain>>, List<MetroPositionSuppression>> {
+        val numbered = numberedIdentities()
+        val retained = mutableListOf<IndexedValue<MetroTrain>>()
+        val suppressed = allIdentifiedTrains.filter { candidate -> numbered.none { it.value === candidate } }
+            .map { MetroPositionSuppression(it, positionOf(it), MetroPositionSuppressionReason.UNRESOLVED_IDENTITY_ASSOCIATION) }
+            .toMutableList()
+        val priority = compareBy<IndexedValue<MetroTrain>> {
+            val train = it.value
+            when {
+                train.arrivingFlag == 2 && (stationCodes.indexOf(train.nextStationCode) == 0 ||
+                    !train.scaleKnown || !train.scale.isFinite() || train.scale !in 0.0..1.0 || train.scale == 1.0) -> 0
+                stationCodes.indexOf(train.nextStationCode) == 0 -> 3
+                arrivalRowOrderOf(train) != null -> 1
+                else -> 2
+            }
+        }.thenBy {
+            val train = it.value
+            if (stationCodes.indexOf(train.nextStationCode) == 0) terminalDepartureKey(train) else 0.0
+        }.thenByDescending { it.value.matchedObservations.map { observation -> observation.source.referenceStationCode }.distinct().size }
+            .thenBy { if (it.value.scaleKnown && it.value.scale > 0.0 && it.value.scale < 1.0) 0 else 1 }
+            .thenComparator { left, right -> positionOrder().compare(left.value, right.value) }
+        numbered.sortedWith(priority).forEach { item ->
+            val train = item.value
+            val position = positionOf(train)
+            if (!position.isFinite() || position < 0.0) {
+                suppressed.add(MetroPositionSuppression(train, position, MetroPositionSuppressionReason.UNKNOWN_POSITION))
+                return@forEach
+            }
+            val conflict = retained.firstOrNull { abs(positionOf(it.value) - position) + 1e-9 < minimumDistance }
+            if (conflict == null) retained.add(item) else {
+                val scheduled = position == 0.0 && stationCodes.indexOf(train.nextStationCode) == 0 && train.arrivingFlag != 2
+                suppressed.add(MetroPositionSuppression(train, position,
+                    if (scheduled) MetroPositionSuppressionReason.SCHEDULED_DEPARTURE
+                    else MetroPositionSuppressionReason.UNRESOLVED_CLOSE_POSITION, conflict.value))
+            }
+        }
+        return retained.sortedWith { left, right -> positionOrder().compare(left.value, right.value) } to suppressed
+    }
+
+    private fun terminalDepartureKey(train: MetroTrain): Double {
+        val reference = stationCodes.indexOf(train.source?.referenceStationCode)
+        val cumulative = runningTimeProfile?.cumulativeSeconds?.getOrNull(reference)
+        // 有真实运行时间时归一到始发端；否则只在相同参考站内比较原 ETA。
+        return if (cumulative != null) train.arrivalTimeKey() - cumulative
+        else if (reference == 0 || train.source == null) train.arrivalTimeKey() else Double.POSITIVE_INFINITY
     }
 }
 
@@ -229,17 +354,19 @@ val MetroDirection.directionKey: MetroDirectionKey?
 
 /**
  * 列车在该方向站序里的语义位置，整数 j 表示第 j 个站点。
- * 官方 H5 / Android 把 flag=1 放在下一站前一段，flag=2 放在下一站；
- * H5 的段内位置取中点，不消费语义尚未验证的 scale。
- * 已知下一站但 flag 缺失或未知时，保守放在该站前一段中点，避免整批车标静默消失。
- * 兜底不声称列车已经到站，也不按方向尚未验证的 scale 插值。
- * 首站前一段没有可展示站点，夹到首站；只有缺码、未知站返回 -1。
- * 这是站点坐标，不包含渲染层的格子中心偏移。证据见 metro-official-position-evidence.json。
+ * 两轮一号线全站数据证实 next 是本方向即将到达的一端，scale 是驶向该端的进度：
+ * p = index(next) - 1 + scale，反向同样使用自己的行驶站序，不能按数值站码猜正反向。
+ * 例如吕厝本站 ETA118/scale0，60秒后 ETA57/scale.51，不能提前画到本站。
+ * flag2 仍可能 scale.83、距本站19秒，故不覆盖连续位置。旧 flag 半格公式已被该证据推翻。
+ * 缺有效比例时保留官方站点/半格兜底；首站仅表示始发端待发，多个计划由可见约束处理。
  */
 fun MetroDirection.positionOf(train: MetroTrain): Double {
     if (train.nextStationCode.isBlank()) return -1.0
     val index = stationCodes.indexOf(train.nextStationCode)
     if (index < 0) return -1.0
+    if (train.scaleKnown && train.scale.isFinite() && train.scale in 0.0..1.0) {
+        return (index - 1.0 + train.scale).coerceAtLeast(0.0)
+    }
     return when (train.arrivingFlag) {
         1 -> (index - 0.5).coerceAtLeast(0.0)
         2 -> index.toDouble()

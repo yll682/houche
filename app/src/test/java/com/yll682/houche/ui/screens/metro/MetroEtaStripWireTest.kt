@@ -27,6 +27,7 @@ import com.yll682.houche.ui.theme.HoucheShapes
 import com.yll682.houche.ui.theme.HoucheTypography
 import com.yll682.houche.ui.theme.LightColors
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -42,9 +43,9 @@ import org.robolectric.annotation.GraphicsMode
  * 2. 切站瞬间 ETA 容器仍在 —— 蓝块不消失、位置与尺寸逐像素不变，只换成「正在获取」；
  *    并且 Empty（确实没车）与 Unavailable（失败/本站没采集）不能显示成同一句；
  * 3. 同线换站 W 不变 —— 站点列宽与相邻列间距逐像素相同（整线测一次的格宽）；
- * 4. 三条同位车能错层 —— 同一 cluster 的三条记录同 x、不同 lane，间距＝一个 lane 高；
- * 5. ETA 行的「第N班」改成**到本站先后** —— 已过本站的补车不占班号（标「已过」、车标照画），
- *    本站第 k 行与位置条第 k 班是同一辆车（旧规则里它会把本站第 1 行顶成「第 2 班」）。
+ * 4. 三条同位观测保留全部身份和 ETA，但最多一个可见站位；
+ * 5. ETA 行的「第N班」是**到本站先后** —— 已过本站（`p > r`）的补车不占班号、标「已过」、
+ *    车标照画；本站第 k 行与位置条第 k 班是同一辆车（旧规则里它会把本站第 1 行顶成「第 2 班」）。
  *
  * 站码、站名全部来自 `assets/metro.json`（2 号线），不手抄；车辆与分钟是构造数据。
  * 车辆位置放在参考站**上游**（画在锚点左侧），保证断言用的节点在视口内。
@@ -78,7 +79,7 @@ class MetroEtaStripWireTest {
         val next = codes[nextIndex]
         return MetroTrain(
             arriveSeconds = seconds, nextStationCode = next, nextStationName = names.getValue(next),
-            scale = 0.0, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "",
+            scale = if (flag == 2) 1.0 else 0.5, arrivingFlag = flag, specialPosition = 0, specialPositionDesc = "",
             source = source(from)
         )
     }
@@ -272,40 +273,31 @@ class MetroEtaStripWireTest {
         assertEquals("换一批位置后格宽不许变", width, visibleCellWidth(), 0f)
     }
 
-    // ---- ④ 三条同位车能错层 ----
+    // ---- ④ 三条同位观测保留身份，最多一个可见车标 ----
 
     @Test
-    fun threeCoLocatedTrainsTakeSeparateLanes() {
-        // 三条记录坐标完全相同（同 nextStationCode、同 flag）：数据层不会删，只标潜在碰撞。
-        val same = listOf(
-            train(300, referenceIndex - 2, flag = 2),
-            train(600, referenceIndex - 2, flag = 2),
-            train(900, referenceIndex - 2, flag = 2)
-        )
+    fun threeCoLocatedObservationsKeepIdentityButOnlyOneMarker() {
+        // 旧测试把三条记录都错层画出，正是本轮用户指出的物理错误。
+        val same = listOf(300, 600, 900).map { train(it, referenceIndex - 2, flag = 2) }
         val seeded = seed(rows = same, positions = same)
-        val presentations = seeded.realtime!!.directions[0].positionPresentations()
-        assertEquals(listOf(1, 2, 3), presentations.map { it.ordinal })
-        assertEquals(listOf(0, 1, 2), presentations.map { it.stackIndex })
-        assertEquals(listOf(3, 3, 3), presentations.map { it.stackSize })
-        assertEquals("三条同位记录属于同一个干扰群", 1, presentations.mapNotNull { it.clusterId }.distinct().size)
+        val direction = seeded.realtime!!.directions[0]
+        val presentations = direction.positionPresentations()
+        assertEquals(3, direction.allIdentifiedTrains.size)
+        assertEquals(3, direction.trains.size)
+        assertEquals(listOf(1), presentations.map { it.ordinal })
+        assertEquals(listOf(0), presentations.map { it.stackIndex })
+        assertEquals(listOf(1), presentations.map { it.stackSize })
+        assertEquals(2, direction.positionSuppressions().size)
+        assertEquals(listOf(1, 2, 3), (1..3).map(direction.arrivalOrdinals(reference)::ordinalOfRow))
 
         Metro { MetroContent(UiState.Success(seeded), {}, {}) }
         compose.waitForIdle()
-
-        val marks = listOf("第1班", "第2班", "第3班").map { label ->
-            compose.onNodeWithContentDescription(label).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithContentDescription("第1班").assertIsDisplayed()
+        compose.onNodeWithContentDescription("第2班").assertDoesNotExist()
+        compose.onNodeWithContentDescription("第3班").assertDoesNotExist()
+        listOf(300, 600, 900).forEachIndexed { index, seconds ->
+            compose.onNodeWithContentDescription("${seconds / 60} 分钟第${index + 1}班预计到达").assertIsDisplayed()
         }
-        // 同 x：错层不许横向挪位置，也不许把车挪到别的站。
-        assertEquals(marks[0].left, marks[1].left, 0f)
-        assertEquals(marks[0].left, marks[2].left, 0f)
-        // 不同 lane：lane 0 贴主线（第 1 班），往上依次是 lane 1、2；层高 44dp。
-        val lane = 44f * density
-        assertEquals("相邻两层应正好差一个 lane 高", lane, marks[0].top - marks[1].top, 1f)
-        assertEquals("相邻两层应正好差一个 lane 高", lane, marks[1].top - marks[2].top, 1f)
-        assertTrue("车标图标本身不许重叠", marks[1].bottom <= marks[0].top)
-        assertTrue(marks[2].bottom <= marks[1].top)
-        // 最上层仍在位置条内部（没有被 clipToBounds 裁掉）。
-        assertTrue("最上层不能贴到 0 以外，实际 ${marks[2].top}", marks[2].top >= 0f)
     }
 
     // ---- ⑤ 已过本站的补车不占班号，ETA 行与位置条同向 ----
@@ -318,13 +310,16 @@ class MetroEtaStripWireTest {
         val passed = train(82, referenceIndex + 1, flag = 1, from = codes[referenceIndex + 1])
         val seeded = seed(rows = listOf(rowFirst, rowSecond), positions = listOf(passed, rowFirst, rowSecond))
 
-        // core 的全线进度序把刚开走那班排第 1 —— 这正是用户报的错位来源；投影后它没有班号。
+        // 本站 ETA 先锚定 1/2；刚开走那班已过本站，**不占号**（core 的全线进度序仍把它排第 1，
+        // 那正是用户报的错位来源，UI 的 arrivalOrdinals 会把它判成「已过」）。
         val presentations = seeded.realtime!!.directions[0].positionPresentations()
-        assertEquals(listOf(1, 2, 3), presentations.map { it.ordinal })
+        assertEquals(listOf(3, 1, 2), presentations.map { it.ordinal })
         assertEquals(listOf(null, 1, 2), presentations.map { it.arrivalRowOrder })
-        val ordinals = seeded.realtime!!.directions[0].stationOrdinals(reference)
+        val ordinals = seeded.realtime!!.directions[0].arrivalOrdinals(reference)
         assertTrue("已过本站的车不许占班号", ordinals.trains.first().passed)
+        assertNull("已过本站的车没有班号", ordinals.trains.first().ordinal)
         assertEquals("到本站先后编号不许被它顶掉", listOf(1, 2), ordinals.trains.drop(1).map { it.ordinal })
+        assertEquals(2, ordinals.maxOrdinal)
         assertTrue("本站两条原始行仍是 Ready", seeded.etaState is MetroEtaState.Ready)
 
         Metro { MetroContent(UiState.Success(seeded), {}, {}) }
@@ -335,6 +330,7 @@ class MetroEtaStripWireTest {
         compose.onNodeWithContentDescription("10 分钟第2班预计到达").assertIsDisplayed()
         // 已过站的车标还在：标签换成「已过」，不是丢标签。
         compose.onNodeWithContentDescription("已过").assertIsDisplayed()
+        compose.onNodeWithContentDescription("第3班").assertDoesNotExist()
         // 补车的源站 ETA 不许进本站框。
         assertTrue(seeded.direction!!.trains.none { it.nextStationCode == passed.nextStationCode })
     }

@@ -7,10 +7,14 @@ internal const val METRO_REALTIME_MAX_REFERENCES = 8
 internal const val METRO_REALTIME_WINDOW_MILLIS = 20_000L
 internal const val METRO_REALTIME_MAX_CONCURRENCY = 2
 
+/** 两轮全站快照验证过的完整站码链；其他 24 站线路不能借用此采样结论。 */
+private val verifiedLine1StationCodes = (1..24).map { "01${it.toString().padStart(2, '0')}0000" }
+private val verifiedLine1AnchorIndices = listOf(0, 6, 12, 18, 23)
+
 /** 完整站序只用于选锚点，不意味着把整条线路逐站请求一遍。 */
 internal data class MetroRealtimePlan(
     val stationCodes: List<String>,
-    /** 用户所选站优先发送，其后邻站、固定锚点，最后使用剩余预算补覆盖空洞。 */
+    /** 用户所选站优先发送；已验证线路使用固定锚点，其他线路保留邻站和补洞策略。 */
     val referenceStationCodes: List<String>,
     val selectedStationCode: String,
     /** 只补固定锚点/邻站去重后空出的槽位，不增加单线物理请求预算。 */
@@ -23,7 +27,8 @@ internal data class MetroRealtimePlan(
 }
 
 /**
- * 最多五个固定锚点（含两端）加用户参考站及左右邻站，总数不超过八个。
+ * 已验证的 1 号线完整站码链使用五个固定锚点加所选站，每批五或六次。
+ * 其他线路最多五个固定锚点（含两端）加用户参考站及左右邻站，总数不超过八个。
  * 锚点与邻站重复时，把剩余槽位分配给当前最大参考站间隙的中点；同长间隙先取站序较小者。
  * 保留五个稳定锚点，不依赖上一批列车或参考站 ETA 猜测密度，避免把旧车带入新一批。
  * 三十二站时固定锚点下标为 0/8/16/23/31，广域间隔最多八站。
@@ -34,6 +39,13 @@ internal fun planMetroRealtimeReferences(stationCodes: List<String>, selectedSta
     val stations = stationCodes.filter(String::isNotBlank).distinct()
     if (stations.isEmpty()) return MetroRealtimePlan(emptyList(), emptyList(), "")
     val selected = selectedStationCode.takeIf { it in stations } ?: stations.first()
+    if (stations == verifiedLine1StationCodes) {
+        // 2026-11-08 两轮 24 站实测：五锚点同时覆盖两个方向全部观测身份。
+        // 固定站距至多六站；所选站额外最多一次，不把样本最优解表写成运营保证。
+        // analysis/round6_evidence_audit.py 重现五站下界、漏区间和样本适用范围。
+        val anchors = verifiedLine1AnchorIndices.map(stations::get)
+        return MetroRealtimePlan(stations, (listOf(selected) + anchors).distinct(), selected)
+    }
     val anchors = if (stations.size <= METRO_REALTIME_MAX_REFERENCES) stations else {
         val count = 5
         List(count) { index -> stations[(index.toDouble() * stations.lastIndex / (count - 1)).roundToInt()] }

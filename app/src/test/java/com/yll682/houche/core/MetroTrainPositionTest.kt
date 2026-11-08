@@ -29,7 +29,7 @@ class MetroTrainPositionTest {
         assertEquals("02180000", transfer.s("code"))
     }
 
-    @Test fun `真实二号线密文逐字匹配明文且flag2必须落在本站`() {
+    @Test fun `真实二号线密文逐字匹配且flag2仍按真实比例定位`() {
         val outer = BusNetwork.json.parseToJsonElement(line2Sample.s("rawResponse"))
         assertEquals(line2Sample.s("plaintext"), MetroGateway.decrypt(outer.s("responseData")))
         assertTrue(line2Realtime.note, line2Realtime.online)
@@ -37,7 +37,7 @@ class MetroTrainPositionTest {
         assertEquals("育秀东路", line2Realtime.stationName)
         assertEquals(listOf("天竺山", "五缘湾"), line2Realtime.directions.map { it.destination })
         assertEquals(line2Realtime.directions.first().stationCodes.reversed(), line2Realtime.directions.last().stationCodes)
-        val positions = listOf(listOf(15.0, 11.5, 8.5), listOf(16.0, 12.5, 10.5))
+        val positions = listOf(listOf(14.62, 11.62, 8.62), listOf(15.64, 12.64, 10.64))
         line2Realtime.directions.forEachIndexed { index, direction ->
             assertEquals(listOf(2, 1, 1), direction.trains.map { it.arrivingFlag })
             val first = direction.trains.first()
@@ -66,8 +66,8 @@ class MetroTrainPositionTest {
         )
         val reverse = forward.copy(origin = forward.destination, destination = forward.origin, stationCodes = forward.stationCodes.reversed())
         val train = forward.trains.first().copy(nextStationCode = "02100000", nextStationName = "海沧行政中心", arrivingFlag = 1)
-        assertEquals(8.5, forward.positionOf(train), 0.0)
-        assertEquals(22.5, reverse.positionOf(train.copy(nextStationCode = "02090000", nextStationName = "马青路")), 0.0)
+        assertEquals(8.31, forward.positionOf(train), 0.0)
+        assertEquals(22.31, reverse.positionOf(train.copy(nextStationCode = "02090000", nextStationName = "马青路")), 0.0)
     }
 
     @Test fun `真实响应的双向下一站均落在该方向的前一段`() {
@@ -83,24 +83,27 @@ class MetroTrainPositionTest {
         assertEquals(0.31, train.scale, 0.0)
         assertEquals(1, train.arrivingFlag)
         // 塘边(9)—火炬园(10)，不能把火炬园解释成刚离开的站。
-        assertEquals(9.5, forward.positionOf(train), 0.0)
+        assertEquals(9.31, forward.positionOf(train), 0.0)
         // 同一个下一站，反向的上一站是殿前(12)，火炬园在13。
-        assertEquals(12.5, reverse.positionOf(train), 0.0)
+        assertEquals(12.31, reverse.positionOf(train), 0.0)
 
         val reverseTrain = reverse.trains.first()
         assertEquals("01140000", reverseTrain.nextStationCode)
         assertEquals("集美学村", reverseTrain.nextStationName)
         assertEquals(0.62, reverseTrain.scale, 0.0)
         // 园博苑(9)—集美学村(10)。
-        assertEquals(9.5, reverse.positionOf(reverseTrain), 0.0)
+        assertEquals(9.62, reverse.positionOf(reverseTrain), 0.0)
     }
 
-    @Test fun `比例为零接近一或越界都不改变官方段中点和站点位置`() {
-        // 此处仅对比例构造边界变体；flag=2 另由真实二号线响应覆盖。
-        val scales = listOf(0.0, 0.000001, 0.999999, 1.0, -0.5, 1.5, Double.NaN, Double.POSITIVE_INFINITY)
+    @Test fun `有效比例连续插值而无效比例保守退回站点和区间`() {
         realtime.directions.forEach { direction ->
             val train = direction.trains.first()
-            scales.forEach { scale ->
+            listOf(0.0, 0.000001, 0.999999, 1.0).forEach { scale ->
+                // next 的下标均为 10；flag2 并不把尚未走完的区间提前吸到站台。
+                assertEquals(9.0 + scale, direction.positionOf(train.copy(scale = scale, arrivingFlag = 1)), 0.0)
+                assertEquals(9.0 + scale, direction.positionOf(train.copy(scale = scale, arrivingFlag = 2)), 0.0)
+            }
+            listOf(-0.5, 1.5, Double.NaN, Double.POSITIVE_INFINITY).forEach { scale ->
                 assertEquals(9.5, direction.positionOf(train.copy(scale = scale, arrivingFlag = 1)), 0.0)
                 assertEquals(10.0, direction.positionOf(train.copy(scale = scale, arrivingFlag = 2)), 0.0)
             }
@@ -116,8 +119,8 @@ class MetroTrainPositionTest {
                 val atLast = train.copy(nextStationCode = direction.stationCodes.last(), scale = scale)
                 assertEquals(0.0, direction.positionOf(atFirst.copy(arrivingFlag = 1)), 0.0)
                 assertEquals(0.0, direction.positionOf(atFirst.copy(arrivingFlag = 2)), 0.0)
-                assertEquals(22.5, direction.positionOf(atLast.copy(arrivingFlag = 1)), 0.0)
-                assertEquals(23.0, direction.positionOf(atLast.copy(arrivingFlag = 2)), 0.0)
+                assertEquals(22.0 + scale, direction.positionOf(atLast.copy(arrivingFlag = 1)), 0.0)
+                assertEquals(22.0 + scale, direction.positionOf(atLast.copy(arrivingFlag = 2)), 0.0)
             }
         }
     }
@@ -130,8 +133,8 @@ class MetroTrainPositionTest {
             assertEquals(10, atOrigin.remainingStops(direction, train))
             assertEquals(13, atDestination.remainingStops(direction, train))
             assertEquals(-1, realtime.copy(stationCode = "不在该线").remainingStops(direction, train))
-            assertEquals(9.5, direction.positionOf(train), 0.0)
-            assertEquals(10.0, direction.positionOf(train.copy(arrivingFlag = 2)), 0.0)
+            assertEquals(9.0 + train.scale, direction.positionOf(train), 0.0)
+            assertEquals(9.0 + train.scale, direction.positionOf(train.copy(arrivingFlag = 2)), 0.0)
         }
     }
 
@@ -153,11 +156,12 @@ class MetroTrainPositionTest {
             listOf(null, -1, 0, 3, Int.MAX_VALUE).forEach { flag ->
                 scales.forEach { scale ->
                     val unknown = train.copy(arrivingFlag = flag, scale = scale)
-                    assertEquals(9.5, direction.positionOf(unknown), 0.0)
+                    val valid = scale.isFinite() && scale in 0.0..1.0
+                    assertEquals(if (valid) 9.0 + scale else 9.5, direction.positionOf(unknown), 0.0)
                     assertFalse(unknown.arriving)
                     assertFalse(unknown.approaching)
                     assertEquals(0.0, direction.positionOf(unknown.copy(nextStationCode = direction.stationCodes.first())), 0.0)
-                    assertEquals(22.5, direction.positionOf(unknown.copy(nextStationCode = direction.stationCodes.last())), 0.0)
+                    assertEquals(if (valid) 22.0 + scale else 22.5, direction.positionOf(unknown.copy(nextStationCode = direction.stationCodes.last())), 0.0)
                     assertEquals(-1.0, direction.positionOf(unknown.copy(nextStationCode = "其他线路")), 0.0)
                 }
             }

@@ -44,7 +44,7 @@ class MetroRealtimeSelectionStateTest {
     @Test fun `选中站不在缓存批次时完成为不可用且缓存采样不续命`() {
         val original = frame("A", sourceA)
         val cachedAtB = original.copy(stationCode = "B", stationName = "乙站", directions = original.directions.map {
-            it.copy(trains = emptyList(), positionTrains = it.positions, arrivalsAvailable = false)
+            it.copy(trains = emptyList(), positionTrains = it.allIdentifiedTrains, arrivalsAvailable = false)
         })
         val completed = MetroRealtimeState(frame = original).selectStation("B", "乙站").complete(cachedAtB)
 
@@ -157,6 +157,28 @@ class MetroRealtimeSelectionStateTest {
         val future = MetroRealtimeState(frame = frame("A", sourceA))
         assertNull(future.positionsAt(999).ageMillis)
         assertTrue(future.positionsAt(999).isStale)
+    }
+
+    @Test fun `切站等待与失败投影都保留被隐藏的待发身份和原因`() {
+        val pending = listOf(164, 344, 644).map {
+            MetroTrain(it, "A", "甲站", 0.0, 1, 0, "", sourceA, scaleKnown = false)
+        }
+        val original = frame("A", sourceA).let { snapshot ->
+            snapshot.copy(directions = listOf(snapshot.directions.first().copy(trains = pending, positionTrains = pending)))
+        }
+        val initial = MetroRealtimeState(frame = original)
+        val states = listOf(initial.selectStation("B", "乙站"),
+            initial.beginRequest().complete(MetroRealtime(false, "超时")))
+        states.forEach { state ->
+            val projected = state.displayFrame!!.directions.single()
+            assertSame(original, state.frame)
+            assertEquals(pending, projected.allIdentifiedTrains)
+            assertEquals(3, projected.allIdentifiedTrains.size)
+            assertEquals(listOf(pending.first()), projected.positions)
+            assertEquals(2, projected.positionSuppressions().size)
+            assertTrue(projected.positionSuppressions().all { it.reason == MetroPositionSuppressionReason.SCHEDULED_DEPARTURE })
+            assertTrue(projected.trains.isEmpty())
+        }
     }
 
     private fun frame(station: String, source: MetroObservationSource): MetroRealtime {

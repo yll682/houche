@@ -2,15 +2,17 @@ package com.yll682.houche.core
 
 import kotlin.math.abs
 
-private const val MATCH_CAPTURE_GAP_MILLIS = 5_000L
-private const val MATCH_SCALE_DIFFERENCE = 0.10
-private const val MATCH_OFFSET_SPREAD_MILLIS = 2_000L
+private const val MATCH_CAPTURE_GAP_MILLIS = 8_000L
+private const val MATCH_POSITION_TOLERANCE_SECONDS = 150.0
+private const val MATCH_ANCHOR_TOLERANCE_SECONDS = 200.0
+private const val MATCH_DEGENERATE_ANCHOR_TOLERANCE_SECONDS = 150.0
 
 /**
  * 只合并本次输入的真实响应，不记忆上一轮列车。
  * trains 始终来自 stationCode 自身的响应；其他参考站只补充 positions。
- * 没有车辆 ID：仅在近同时、位置相容且至少两组互为唯一候选的站间 ETA 偏移一致时近似去重。
- * 缺证据、存在歧义或方向链不完整时保留原车；这里不推算其他参考站到本站的 ETA。
+ * 没有车辆 ID：用方向运行秒 profile 对齐「位置运行秒」与「到站秒−参考站累计运行秒」。
+ * 所有身份候选均保留于 positionTrains；首站未来计划是否可画车由位置层另行判断。
+ * 缺运行资料、共同时间域或完整方向链时保留原车；这里不推算其他参考站到本站的 ETA。
  */
 fun mergeMetroRealtime(
     snapshots: List<MetroRealtime>,
@@ -94,7 +96,13 @@ fun mergeMetroRealtime(
 private data class IncompleteDirection(val snapshotIndex: Int, val directionIndex: Int)
 private data class MissingReference(val observationIndex: Int)
 private data class DirectionObservation(val direction: MetroDirection, val source: MetroObservationSource)
-private data class TrainObservation(val train: MetroTrain, val source: MetroObservationSource, val referenceIndex: Int)
+private data class TrainObservation(
+    val train: MetroTrain,
+    val source: MetroObservationSource,
+    val referenceIndex: Int,
+    val profile: MetroRunningTimeProfile?,
+    val consistentSource: Boolean
+)
 
 private val sourceRecency = compareBy<MetroObservationSource> { it.receivedAtElapsedMillis ?: Long.MIN_VALUE }
     .thenBy { it.serverEpochMillis ?: Long.MIN_VALUE }
@@ -109,85 +117,102 @@ private fun mergePositions(observations: List<DirectionObservation>): List<Metro
     val ordered = observations.sortedWith(observationStableOrder)
     val direction = ordered.first().direction
     val nodes = mutableListOf<TrainObservation>()
-    val ranges = ordered.map { observation ->
-        val first = nodes.size
+    ordered.forEach { observation ->
         observation.direction.trains.forEach { train ->
             val source = train.source ?: observation.source
-            nodes.add(TrainObservation(train.copy(source = source), source, direction.stationCodes.indexOf(source.referenceStationCode)))
+            val profile = observation.direction.runningTimeProfile?.takeIf {
+                it.valid && it.stationCodes == direction.stationCodes
+            }
+            nodes.add(TrainObservation(train.copy(source = source), source,
+                direction.stationCodes.indexOf(source.referenceStationCode), profile, source == observation.source))
         }
-        (first until nodes.size).toList()
     }
-    val edges = Array(nodes.size) { mutableSetOf<Int>() }
-    if (direction.directionKey != null) {
-        for (leftIndex in ordered.indices) for (rightIndex in leftIndex + 1 until ordered.size) {
-            val leftSource = ordered[leftIndex].source
-            val rightSource = ordered[rightIndex].source
-            val elapsed = matchingTimeDifference(leftSource, rightSource) ?: continue
-            if (abs(elapsed) > MATCH_CAPTURE_GAP_MILLIS ||
-                leftSource.referenceStationCode == rightSource.referenceStationCode ||
-                leftSource.referenceStationCode !in direction.stationCodes ||
-                rightSource.referenceStationCode !in direction.stationCodes) continue
-            val candidates = ranges[leftIndex].associateWith { left ->
-                ranges[rightIndex].filter { right ->
-                    // 冲突的车级来源不能套用方向级参考站的时间偏移，但原车仍会保留。
-                    nodes[left].source == leftSource && nodes[right].source == rightSource &&
-                        compatiblePosition(nodes[left], nodes[right], direction)
+    // 排序只打破完全相同分数的平局，不以用户选站、网络完成先后或期望车辆数量决定身份。
+    nodes.sortWith(compareBy<TrainObservation> { it.source.referenceStationCode }
+        .thenBy { it.source.serverEpochMillis ?: Long.MIN_VALUE }
+        .thenBy { it.source.receivedAtElapsedMillis ?: Long.MIN_VALUE }
+        .thenBy { it.train.arriveSeconds }.thenBy { it.train.nextStationCode }
+        .thenBy { it.train.scale }.thenBy { it.train.arrivingFlag ?: Int.MIN_VALUE })
+    val groups = nodes.indices.map { mutableListOf(it) }.toMutableList()
+    val distances = Array(nodes.size) { left -> DoubleArray(nodes.size) { right ->
+        if (left == right || direction.directionKey == null) Double.POSITIVE_INFINITY
+        else identityDistance(nodes[left], nodes[right])
+    } }
+    val active = BooleanArray(nodes.size) { true }
+    while (true) {
+        var bestLeft = -1
+        var bestRight = -1
+        var bestDistance = Double.POSITIVE_INFINITY
+        for (left in nodes.indices) if (active[left]) {
+            for (right in left + 1 until nodes.size) if (active[right]) {
+                if (distances[left][right] < bestDistance) {
+                    bestDistance = distances[left][right]
+                    bestLeft = left
+                    bestRight = right
                 }
             }
-            val unique = candidates.mapNotNull { (left, rightCandidates) ->
-                val right = rightCandidates.singleOrNull() ?: return@mapNotNull null
-                if (candidates.values.count { right in it } == 1) left to right else null
-            }
-            // 两组不同列车的共同偏移是最小交叉支持；一个 next 相同还不足以删除一条车记录。
-            if (unique.size < 2) continue
-            val offsets = unique.map { (left, right) ->
-                elapsed + (nodes[right].train.arriveSeconds.toLong() - nodes[left].train.arriveSeconds) * 1_000L
-            }
-            if (offsets.maxOrNull()!! - offsets.minOrNull()!! > MATCH_OFFSET_SPREAD_MILLIS) continue
-            val referenceAdvance = direction.stationCodes.indexOf(rightSource.referenceStationCode) -
-                direction.stationCodes.indexOf(leftSource.referenceStationCode)
-            // 下游参考站的到站时刻应较晚；不估计站间运行秒数，仅排除明显反向的偏移。
-            if (offsets.any { if (referenceAdvance > 0) it < -MATCH_OFFSET_SPREAD_MILLIS else it > MATCH_OFFSET_SPREAD_MILLIS }) continue
-            unique.forEach { (left, right) -> edges[left].add(right); edges[right].add(left) }
+        }
+        if (bestLeft < 0) break
+        groups[bestLeft].addAll(groups[bestRight])
+        active[bestRight] = false
+        for (other in nodes.indices) if (active[other] && other != bestLeft) {
+            // Complete linkage：新组最不相容的一对仍必须直接过双判据；A~B~C 不可跨越阈值。
+            val distance = maxOf(distances[bestLeft][other], distances[bestRight][other])
+            distances[bestLeft][other] = distance
+            distances[other][bestLeft] = distance
         }
     }
-    val visited = mutableSetOf<Int>()
-    val result = mutableListOf<MetroTrain>()
-    nodes.indices.forEach { first ->
-        if (!visited.add(first)) return@forEach
-        val component = mutableListOf(first)
-        var cursor = 0
-        while (cursor < component.size) {
-            edges[component[cursor++]].sorted().forEach { neighbor ->
-                if (visited.add(neighbor)) component.add(neighbor)
-            }
-        }
-        // 不对 A~B、B~C 作传递身份推断。每对都须直接通过，且同一参考源只能有一条车。
-        val onePerSource = component.map { nodes[it].source.referenceStationCode }.distinct().size == component.size
-        val clique = component.all { left -> component.all { right -> left == right || right in edges[left] } }
-        if (component.size == 1 || !onePerSource || !clique) {
-            result.addAll(component.map { nodes[it].train })
-        } else {
-            val members = component.map { nodes[it] }
+    val result = nodes.indices.filter { active[it] }.map { groupIndex ->
+        val members = groups[groupIndex].map { nodes[it] }
+        if (members.size == 1) members.single().train else {
             val representative = members.sortedWith(representativeOrder(direction)).first()
-            result.add(representative.train.copy(matchedObservations = members.sortedWith(Comparator { left, right ->
+            representative.train.copy(matchedObservations = members.sortedWith(Comparator { left, right ->
                 sourceStableOrder.compare(left.source, right.source)
             }).map {
-                MetroTrainObservation(it.source, it.train.arriveSeconds, it.train.scale, it.train.arrivingFlag)
-            }))
+                MetroTrainObservation(it.source, it.train.arriveSeconds, it.train.scale, it.train.arrivingFlag,
+                    nextStationCode = it.train.nextStationCode)
+            })
         }
     }
     return result.sortedWith(direction.positionOrder())
 }
 
-private fun compatiblePosition(left: TrainObservation, right: TrainObservation, direction: MetroDirection): Boolean =
-    left.source.referenceStationCode != right.source.referenceStationCode &&
-        left.train.nextStationCode.isNotBlank() && left.train.nextStationCode == right.train.nextStationCode &&
-        left.train.nextStationCode in direction.stationCodes &&
-        left.train.scaleKnown && right.train.scaleKnown &&
-        left.train.scale.isFinite() && right.train.scale.isFinite() &&
-        left.train.scale in 0.0..1.0 && right.train.scale in 0.0..1.0 &&
-        abs(left.train.scale - right.train.scale) <= MATCH_SCALE_DIFFERENCE + 1e-9
+/**
+ * 150 秒位置容差覆盖站间运行/停站及参考站预测抖动；200 秒时刻容差覆盖累计运行分钟的舍入。
+ * 两者是物理运行秒，和站格、车标宽度、期望车数无关。实测邻车超过 280 秒时不会因位置接近误并。
+ * 缺/0/1 比例是服务端退化位置，缺少第二证据时收紧到站基准容差至 150 秒，
+ * 小于实测首站最短两班待发间隔 180 秒，防止参考站丢失时误并不同未来计划。
+ * 同一参考站的三班始终是三条身份。
+ */
+private fun identityDistance(left: TrainObservation, right: TrainObservation): Double {
+    if (!left.consistentSource || !right.consistentSource ||
+        left.source.referenceStationCode.isBlank() || left.source.referenceStationCode == right.source.referenceStationCode ||
+        left.referenceIndex < 0 || right.referenceIndex < 0) return Double.POSITIVE_INFINITY
+    if (!left.train.scale.isFinite() || !right.train.scale.isFinite() ||
+        left.train.scale !in 0.0..1.0 || right.train.scale !in 0.0..1.0) return Double.POSITIVE_INFINITY
+    val leftProfile = left.profile ?: return Double.POSITIVE_INFINITY
+    val rightProfile = right.profile ?: return Double.POSITIVE_INFINITY
+    if (leftProfile != rightProfile || left.train.nextStationCode !in leftProfile.stationCodes ||
+        right.train.nextStationCode !in rightProfile.stationCodes) return Double.POSITIVE_INFINITY
+    val elapsed = matchingTimeDifference(left.source, right.source) ?: return Double.POSITIVE_INFINITY
+    if (abs(elapsed) > MATCH_CAPTURE_GAP_MILLIS) return Double.POSITIVE_INFINITY
+    val elapsedSeconds = elapsed / 1_000.0
+    val leftAnchor = left.train.arriveSeconds.toDouble() - leftProfile.cumulativeSeconds[left.referenceIndex]
+    val rightAnchor = right.train.arriveSeconds.toDouble() - rightProfile.cumulativeSeconds[right.referenceIndex]
+    val anchorDifference = abs(rightAnchor + elapsedSeconds - leftAnchor)
+    if (anchorDifference > MATCH_ANCHOR_TOLERANCE_SECONDS) return Double.POSITIVE_INFINITY
+    val leftPosition = leftProfile.physicalPositionSeconds(left.train)
+    val rightPosition = rightProfile.physicalPositionSeconds(right.train)
+    if (leftPosition != null && rightPosition != null) {
+        // 较晚采样的位置退回共同采样时刻，不能把行驶中的列车当作位置突然改变。
+        val positionDifference = abs(rightPosition - elapsedSeconds - leftPosition)
+        if (positionDifference > MATCH_POSITION_TOLERANCE_SECONDS) return Double.POSITIVE_INFINITY
+        return maxOf(positionDifference / MATCH_POSITION_TOLERANCE_SECONDS,
+            anchorDifference / MATCH_ANCHOR_TOLERANCE_SECONDS)
+    }
+    if (anchorDifference > MATCH_DEGENERATE_ANCHOR_TOLERANCE_SECONDS) return Double.POSITIVE_INFINITY
+    return anchorDifference / MATCH_DEGENERATE_ANCHOR_TOLERANCE_SECONDS
+}
 
 private fun matchingTimeDifference(left: MetroObservationSource, right: MetroObservationSource): Long? = when {
     left.serverEpochMillis != null && right.serverEpochMillis != null -> right.serverEpochMillis - left.serverEpochMillis
