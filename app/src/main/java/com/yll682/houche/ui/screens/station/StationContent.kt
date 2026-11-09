@@ -95,17 +95,8 @@ import com.yll682.houche.ui.theme.Capsule
                 } else {
                     item {
                         CardSurface {
-                            // 行序跟到站走：有实时信息的按「近→远」排，没有的按线路号垫底。
-                            val paired = stop.lines.mapNotNull { summary ->
-                                val matches = data.arrivals.filter { it.name == summary.name && it.direction == summary.direction }
-                                matches.firstOrNull()?.let { Triple(summary, it, matches.drop(1)) }
-                            }.sortedWith { (_, a), (_, b) -> arrivalComparator.compare(a, b) }
-                            val rest = stop.lines.filter { summary ->
-                                paired.none { it.first.name == summary.name && it.first.direction == summary.direction }
-                            }
-                            val rows: List<Pair<LineSummary, List<Arrival>>> =
-                                paired.map { (summary, first, extra) -> summary to (listOf(first) + extra) } +
-                                    rest.map { it to emptyList() }
+                            // 行序跟到站走：按「到本站还剩几站」从近到远，没有实时信息的线路按线路号垫底。
+                            val rows = stationLineRows(stop.lines, data.arrivals)
                             rows.forEachIndexed { index, (summary, arrivals) ->
                                 if (index > 0) Hairline()
                                 LineRow(summary, arrivals.firstOrNull(), arrivals.drop(1)) { line(summary, stop) }
@@ -118,6 +109,16 @@ import com.yll682.houche.ui.theme.Capsule
         }
     }
 }
+
+/**
+ * 站点页「经过线路」的行序：每条线路取自己的到站记录，按「还剩几站」从近到远排；
+ * 没有实时记录的线路整条垫底并按线路号自然序排。
+ */
+internal fun stationLineRows(lines: List<LineSummary>, arrivals: List<Arrival>): List<Pair<LineSummary, List<Arrival>>> =
+    orderLinesByNear(lines, arrivals).map { summary ->
+        summary to arrivals.filter { it.name == summary.name && it.direction == summary.direction }
+            .sortedWith(nearArrivalComparator)
+    }
 
 /** 同名站台用「站台 1 / 站台 2」表示，不把上游内部编号暴露给用户。 */
 @Composable private fun PlatformSelector(stop: Station, numbers: List<String>, platform: (Station) -> Unit) {

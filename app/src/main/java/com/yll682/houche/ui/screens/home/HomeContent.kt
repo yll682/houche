@@ -308,7 +308,8 @@ import com.yll682.houche.ui.theme.HeaderTop
         }
         if (station.lines.isNotEmpty()) {
             Hairline()
-            station.lines.take(3).forEachIndexed { index, summary ->
+            // 只露出最近的三条线：按「到本站还剩几站」从近到远挑，没有实时数据的垫底。
+            nearbyLines(station.lines, arrivals).forEachIndexed { index, summary ->
                 if (index > 0) Hairline()
                 StationLineRow(summary, arrivals.firstOrNull { it.name == summary.name && it.direction == summary.direction }) { onLine(summary) }
             }
@@ -369,3 +370,7 @@ import com.yll682.houche.ui.theme.HeaderTop
         Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
     }
 }
+
+/** 首页附近站点卡片默认展示的线路：按「到本站还剩几站」从近到远取前三条。 */
+internal fun nearbyLines(lines: List<LineSummary>, arrivals: List<Arrival>): List<LineSummary> =
+    orderLinesByNear(lines, arrivals).take(3)

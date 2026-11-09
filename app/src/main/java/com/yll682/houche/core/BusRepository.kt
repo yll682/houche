@@ -173,7 +173,8 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
             (errors + "这个站点尚未取得实时车辆接口").distinct())
 
         val results = platforms.map { platform -> async { platformArrivals(city, platform) } }.awaitAll()
-        val arrivals = results.flatMap { it.arrivals }.sortedWith(arrivalComparator)
+        // 站点聚合结果给站点页与首页「附近站点」共用，按「到该站还剩几站」从近到远排。
+        val arrivals = orderArrivalsByNear(results.flatMap { it.arrivals })
         errors += results.flatMap { it.errors }
         val gaps = results.flatMap { result ->
             result.station.lines.filter { summary -> result.arrivals.none { it.name == summary.name && it.direction == summary.direction } }
@@ -300,6 +301,11 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
         } catch (error: Exception) { CityResolution(fallback, false, error = failure(error, "定位城市查询失败").message) }
     }
 }
+/**
+ * 掌上公交（非厦门）路线车辆列表用「距离」排序：那里的 [Arrival.distance] 是线路级到站距离，
+ * 与站点的「还剩几站」不是同一语义，线路页 `data.arrivals.firstOrNull()` 依赖它，
+ * 因此保持不变。站点页 / 首页「从近到远」用 `ArrivalOrder.nearArrivalComparator`。
+ */
 internal val arrivalComparator = compareBy<Arrival> { it.waiting }.thenBy { it.distance == null }.thenBy { it.distance ?: Double.POSITIVE_INFINITY }.thenBy { it.remainingStations ?: Int.MAX_VALUE }
 internal fun publicArrivals(raw: JsonElement): List<Arrival> = raw.list("routeOnStationRTimeInfoList").map {
     val waiting = it.s("busNumber").isEmpty() || (it.i("busToStationCount") ?: -1) < 0
