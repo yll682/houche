@@ -319,4 +319,24 @@ class BusStationArrivalsTest {
             assertEquals(2, queried.size)
         }
     }
+
+    @Test fun `站点页仅查询所选坐标站台`() = runBlocking {
+        val queried = ConcurrentLinkedQueue<String>()
+        client { request ->
+            val form = (request.body as io.ktor.http.content.OutgoingContent.ByteArrayContent).bytes().decodeToString()
+            if (form.contains("CMD=209")) json("""{"status":1,"info":[{"name":"测试站","lat":1,"lon":2},{"name":"测试站","lat":3,"lon":4}]}""")
+            else {
+                queried += form
+                val name = if (form.contains("MYLAT=3.0")) "2路" else "1路"
+                json("""{"status":1,"data":[{"lineName":"$name","upperOrDown":"1","to":"终点"}]}""")
+            }
+        }.use { http ->
+            val result = repository(http).stationPlatformArrivals(City("0", "北京市", "010"), Station("测试站", lat = 3.0, lng = 4.0))
+            assertEquals(StationArrivalsStatus.READY, result.status)
+            assertEquals(listOf("2路"), result.arrivals.map { it.name })
+            assertEquals(listOf("2路"), result.station.lines.map { it.name })
+            assertEquals(2, result.station.platforms.size)
+            assertTrue(queried.all { it.contains("MYLAT=3.0") })
+        }
+    }
 }

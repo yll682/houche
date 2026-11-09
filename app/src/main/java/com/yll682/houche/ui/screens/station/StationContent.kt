@@ -26,7 +26,7 @@ import com.yll682.houche.ui.theme.Capsule
 
 @Composable fun StationContent(
     state: UiState<StationData>, back: () -> Unit, line: (LineSummary, Station) -> Unit,
-    refresh: () -> Unit, platform: (Station) -> Unit, favorite: () -> Unit,
+    refresh: () -> Unit, platform: (Int) -> Unit, favorite: () -> Unit,
     modifier: Modifier = Modifier,
     openMetro: (String) -> Unit = {}
 ) {
@@ -53,7 +53,7 @@ import com.yll682.houche.ui.theme.Capsule
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 DistanceChip(stop.distance)
-                                val platforms = maxOf(1, stop.platformNumbers.distinct().size, stop.platforms.size)
+                                val platforms = data.platforms.size
                                 if (platforms > 1) {
                                     Spacer(Modifier.width(10.dp))
                                     MetaPill(stringResource(R.string.platform_count, platforms))
@@ -63,9 +63,11 @@ import com.yll682.houche.ui.theme.Capsule
                     }
                 }
                 feedback(state) { refresh() }
-                val platforms = stop.platformNumbers.distinct()
-                if (platforms.size > 1 || stop.platforms.size > 1) {
-                    item { PlatformSelector(stop, platforms, platform) }
+                if (data.liveState is StationLiveState.Partial && data.liveState.message != null) {
+                    item { Text(data.liveState.message.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                }
+                if (data.platforms.size > 1) {
+                    item { PlatformSelector(data.platforms.size, data.selectedPlatform, platform) }
                 }
                 if (data.metro.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.metro_transfer), data.metro.size) }
@@ -121,19 +123,16 @@ internal fun stationLineRows(lines: List<LineSummary>, arrivals: List<Arrival>):
     }
 
 /** 同名站台用「站台 1 / 站台 2」表示，不把上游内部编号暴露给用户。 */
-@Composable private fun PlatformSelector(stop: Station, numbers: List<String>, platform: (Station) -> Unit) {
-    val count = maxOf(numbers.size, stop.platforms.size)
+@Composable private fun PlatformSelector(count: Int, selectedPlatform: Int, platform: (Int) -> Unit) {
     Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
         Box(Modifier.height(48.dp).width(IntrinsicSize.Max), contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxWidth().height(36.dp).clip(Capsule).background(MaterialTheme.colorScheme.surface)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, Capsule))
             Row {
                 repeat(count) { index ->
-                    val target = if (numbers.size > index) stop.copy(number = numbers[index]) else stop.platforms.getOrNull(index)
-                    val active = if (numbers.size > index) stop.number == numbers[index]
-                        else stop.platforms.getOrNull(index)?.let { stop.lat == it.lat && stop.lng == it.lng } == true
+                    val active = index == selectedPlatform
                     val label = stringResource(R.string.platform_index, index + 1)
-                    Box(Modifier.height(48.dp).clickable(role = Role.Tab) { target?.let(platform) }
+                    Box(Modifier.height(48.dp).clickable(role = Role.Tab) { platform(index) }
                         .semantics { contentDescription = label; selected = active }, contentAlignment = Alignment.Center) {
                         Box(Modifier.padding(horizontal = 3.dp).height(30.dp).clip(Capsule)
                             .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else Color.Transparent)

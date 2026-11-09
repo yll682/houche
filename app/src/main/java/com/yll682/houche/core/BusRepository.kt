@@ -123,8 +123,14 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
         }
     }
 
-    /** 首页、详情、收藏都先解析站台，再走相同的逐站台查询；失败结果不缓存。 */
-    suspend fun stationArrivals(city: City, station: Station, lat: Double? = station.lat, lng: Double? = station.lng): StationArrivals = coroutineScope {
+    /** 首页等调用者获取全站聚合；站点详情可单独请求所选站台。 */
+    suspend fun stationArrivals(city: City, station: Station, lat: Double? = station.lat, lng: Double? = station.lng): StationArrivals =
+        stationArrivals(city, station, lat, lng, selectedOnly = false)
+
+    suspend fun stationPlatformArrivals(city: City, station: Station): StationArrivals =
+        stationArrivals(city, station, station.lat, station.lng, selectedOnly = true)
+
+    private suspend fun stationArrivals(city: City, station: Station, lat: Double?, lng: Double?, selectedOnly: Boolean): StationArrivals = coroutineScope {
         val errors = mutableListOf<String>()
         val seed = station.copy(lat = lat, lng = lng)
         val resolved = try {
@@ -141,7 +147,9 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
             }
             known?.copy(distance = seed.distance, platformNumbers = (known.platformNumbers + seed.platformNumbers).distinct(), platforms = seed.platforms) ?: seed
         }
-        val platforms = if (city.isXiamen) {
+        val platforms = if (selectedOnly) {
+            listOf(resolved.copy(platforms = emptyList()))
+        } else if (city.isXiamen) {
             // relativeStationNoList 可能含自身；只按明确编号扩展，绝不按同名合并站台。
             val byNumber = linkedMapOf<String, Station>()
             val queue = ArrayDeque<String>()
@@ -186,8 +194,8 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
                 LineSummary(it.name, it.direction, to = it.to, stationOrder = it.stationOrder)
             }).distinctBy { it.name to it.direction }, platforms = emptyList())
         }
-        // 经过线路为全部站台并集；每条线路的站台来源仍保存在 platforms[].lines 中。
-        val detail = resolved.copy(platforms = completePlatforms,
+        // 聚合模式保留各站台线路来源；单站台模式只返回所选站台线路。
+        val detail = resolved.copy(platforms = if (selectedOnly) seed.platforms.ifEmpty { resolved.platforms } else completePlatforms,
             platformNumbers = (resolved.platformNumbers + completePlatforms.mapNotNull { it.number }).distinct(),
             lines = completePlatforms.flatMap { it.lines }.distinctBy { it.name to it.direction }, linesError = null)
         val status = when {

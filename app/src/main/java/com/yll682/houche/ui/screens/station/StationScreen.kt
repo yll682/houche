@@ -12,5 +12,5 @@ import com.yll682.houche.ui.components.*
 
 @Composable fun StationScreen(vm: StationViewModel, back: () -> Unit, line: (LineSummary, Station) -> Unit, metro: (String) -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
-    StationContent(state, back, line, { vm.load() }, { vm.load(it) }, { vm.favorite() }, openMetro = metro)
+    StationContent(state, back, line, { vm.load() }, { vm.selectPlatform(it) }, { vm.favorite() }, openMetro = metro)
 }

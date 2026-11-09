@@ -67,8 +67,8 @@ class StationArrivalsViewModelsTest {
         val detailRepo = repository(detailServer)
         val station = keep("detail", StationViewModel(graph, city, data.stations[2], { detailRepo }))
         await { station.state.value.data!!.liveState is StationLiveState.Ready }
-        assertEquals(data.arrivals.getValue(2), station.state.value.data!!.arrivals)
-        assertEquals(setOf("3", "4"), detailServer.nativeRequests.toSet())
+        assertEquals(data.arrivals.getValue(2).filter { it.platformNumber == "3" }, station.state.value.data!!.arrivals)
+        assertEquals(setOf("3"), detailServer.nativeRequests.toSet())
         assertFalse(station.state.value is UiState.Error)
 
         val singleServer = Server()
@@ -95,10 +95,10 @@ class StationArrivalsViewModelsTest {
         assertTrue(homeData.liveErrors.getValue(2)!!.isNotBlank())
         val failed = keep("failed", StationViewModel(graph, city, homeData.stations[1], { repo }))
         val partial = keep("partial", StationViewModel(graph, city, homeData.stations[2], { repo }))
-        await { failed.state.value.data!!.liveState is StationLiveState.Failed && partial.state.value.data!!.liveState is StationLiveState.Partial }
+        await { failed.state.value.data!!.liveState is StationLiveState.Failed && partial.state.value.data!!.liveState is StationLiveState.Ready }
         assertTrue(failed.state.value is UiState.Error)
         assertEquals(homeData.arrivals.getValue(1), failed.state.value.data!!.arrivals)
-        assertEquals(homeData.arrivals.getValue(2), partial.state.value.data!!.arrivals)
+        assertEquals(homeData.arrivals.getValue(2).filter { it.platformNumber == "3" }, partial.state.value.data!!.arrivals)
     }
 
     @Test fun `真正空响应与已知线路缺报不混为暂无`() {
@@ -147,6 +147,52 @@ class StationArrivalsViewModelsTest {
             idle()
             assertEquals("2", station.state.value.data!!.station.number)
             assertEquals(listOf("803"), station.state.value.data!!.arrivals.map { it.name })
+        } finally { gate.release.complete(Unit) }
+    }
+
+    @Test fun `站台往返切换保持顺序并查询对应编号和线路`() {
+        val server = Server()
+        val repo = repository(server)
+        val vm = keep("platforms", StationViewModel(AppGraph(app), city, Station("温头溪", "3"), { repo }))
+        await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+        assertEquals(listOf("3", "4"), vm.state.value.data!!.platforms.map { it.number })
+        assertEquals(0, vm.state.value.data!!.selectedPlatform)
+        assertEquals(setOf("M18", "M26"), vm.state.value.data!!.station.lines.map { it.name }.toSet())
+        vm.selectPlatform(1)
+        assertEquals(1, vm.state.value.data!!.selectedPlatform)
+        assertTrue(vm.state.value is UiState.Loading)
+        await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+        assertEquals(listOf("3", "4"), vm.state.value.data!!.platforms.map { it.number })
+        assertEquals("4", vm.state.value.data!!.station.number)
+        assertEquals(listOf("M99"), vm.state.value.data!!.station.lines.map { it.name })
+        assertEquals(listOf("4"), vm.state.value.data!!.arrivals.map { it.platformNumber })
+        assertTrue(server.nativeRequests.contains("4"))
+        vm.selectPlatform(0)
+        await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+        assertEquals(0, vm.state.value.data!!.selectedPlatform)
+        assertEquals("3", vm.state.value.data!!.station.number)
+        assertEquals(setOf("M18", "M26"), vm.state.value.data!!.arrivals.map { it.name }.toSet())
+    }
+
+    @Test fun `目标站台加载和失败不被其他站台掩盖`() {
+        val gate = Gate()
+        val repo = repository(Server(failures = setOf("4"), gateNumber = "4", gate = gate))
+        val vm = keep("failure", StationViewModel(AppGraph(app), city, Station("温头溪", "3"), { repo }))
+        try {
+            await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+            vm.selectPlatform(1)
+            await { gate.started.isCompleted }
+            assertTrue(vm.state.value is UiState.Loading)
+            assertEquals(1, vm.state.value.data!!.selectedPlatform)
+            assertTrue(vm.state.value.data!!.arrivals.isEmpty())
+            gate.release.complete(Unit)
+            await { vm.state.value.data!!.liveState is StationLiveState.Failed }
+            assertTrue(vm.state.value is UiState.Error)
+            assertFalse(vm.state.value.data!!.liveState.message.isNullOrBlank())
+            assertEquals(1, vm.state.value.data!!.selectedPlatform)
+            vm.selectPlatform(0)
+            await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+            assertEquals(0, vm.state.value.data!!.selectedPlatform)
         } finally { gate.release.complete(Unit) }
     }
 
