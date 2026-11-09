@@ -15,6 +15,10 @@ import com.yll682.houche.core.MetroProbe
 import com.yll682.houche.core.MetroRealtime
 import com.yll682.houche.core.MetroRealtimeRetryController
 import com.yll682.houche.core.MetroRealtimeState
+import com.yll682.houche.core.MetroOperatingStatus
+import com.yll682.houche.core.MetroOperatingWindow
+import com.yll682.houche.core.metroOperatingWindow
+import com.yll682.houche.core.METRO_OPERATING_ZONE
 import com.yll682.houche.core.METRO_REALTIME_WINDOW_MILLIS
 import com.yll682.houche.core.MetroSnapshot
 import com.yll682.houche.core.normalizeMetroOpenings
@@ -23,8 +27,15 @@ import com.yll682.houche.ui.StateViewModel
 import com.yll682.houche.ui.UiState
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.util.Calendar
 
 /** online 表示这一屏用的是官方接口拿到的站序；note 只在「设置 → 关于」里露脸。 */
@@ -56,7 +67,9 @@ data class MetroData(
     /** 请求失败与成功空车分开；成功位置批次仍可保留并标注陈旧时长。 */
     val realtimeUnavailable: Boolean = false,
     /** 独立本站成功响应，不能用它的时间替位置批次续命。 */
-    val realtimeArrivalFrame: MetroRealtime? = null
+    val realtimeArrivalFrame: MetroRealtime? = null,
+    /** 由 VM 的可注入时钟更新；纯数据默认未知，getter 不读取系统墙钟。 */
+    val realtimeOutOfService: Boolean = false
 ) {
     val line: MetroLine? get() = lines.firstOrNull { it.id == selected } ?: lines.firstOrNull()
 
@@ -68,7 +81,8 @@ data class MetroData(
         unavailableNote = realtimeNote.takeIf { realtimeUnavailable },
         selectedDirectionKey = selectedDirectionKey,
         directionIndex = directionIndex,
-        arrivalFrame = realtimeArrivalFrame
+        arrivalFrame = realtimeArrivalFrame,
+        outOfService = realtimeOutOfService
     )
 
     /** 当前展开的方向；切站等待保留方向和位置，不借用旧站 ETA。 */
@@ -106,6 +120,10 @@ internal data class MetroRealtimeRequest(
     val stationCodes: List<String>
 )
 
+sealed interface MetroEvent {
+    data class StationTimetableUnavailable(val stationName: String) : MetroEvent
+}
+
 private fun MetroData.withRealtimeState(value: MetroRealtimeState): MetroData = copy(
     realtime = value.displayFrame,
     realtimeLastSuccessfulFrame = value.frame,
@@ -115,15 +133,31 @@ private fun MetroData.withRealtimeState(value: MetroRealtimeState): MetroData = 
     realtimeUnavailable = value.unavailableNote != null,
     realtimeNote = value.unavailableNote ?: realtimeNote.takeUnless { realtimeUnavailable }.orEmpty(),
     realtimeArrivalFrame = value.arrivalFrame,
+    realtimeOutOfService = value.outOfService,
     selectedDirectionKey = value.selectedDirectionKey,
     directionIndex = value.selectedDirectionIndex
 )
+
+internal fun MetroData.operatingWindowAt(now: Instant): MetroOperatingWindow {
+    val current = line ?: return MetroOperatingWindow(MetroOperatingStatus.Unknown)
+    val code = realtimeStation.ifBlank { current.liveStations.firstOrNull()?.code.orEmpty() }
+    val station = current.liveStations.firstOrNull { it.code == code }
+        ?: return MetroOperatingWindow(MetroOperatingStatus.Unknown)
+    return metroOperatingWindow(current, station, now)
+}
+
+internal fun MetroData.withOperatingHours(now: Instant): MetroData {
+    val closed = operatingWindowAt(now).status == MetroOperatingStatus.OutOfService
+    if (closed == realtimeOutOfService) return this
+    val next = withRealtimeState(realtimeState.setOutOfService(closed))
+    return next.copy(realtimeNote = "", realtimeRequestId = if (closed) 0 else next.realtimeRequestId)
+}
 
 /** 切站只改变参考站和 ETA 状态；位置批次、采样时间及方向都保留。 */
 internal fun MetroData.selectRealtimeStation(code: String): MetroData {
     val station = line?.liveStations?.firstOrNull { it.code == code } ?: return this
     // 同一目标仍在等待时保持序号，刷新/轮询共享同一条请求和退避链。
-    if (realtimeStation == station.code && realtimeLoading) return this
+    if (realtimeStation == station.code) return this
     return withRealtimeState(realtimeState.selectStation(station.code, station.name)).copy(
         realtimeRequestId = 0
     )
@@ -136,7 +170,7 @@ internal fun MetroData.selectRealtimeLine(id: String): MetroData {
         selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null,
         realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0,
         selectedDirectionKey = null, realtimeLastSuccessfulFrame = null, realtimeUnavailable = false,
-        realtimeArrivalFrame = null
+        realtimeArrivalFrame = null, realtimeOutOfService = false
     )
 }
 
@@ -186,7 +220,8 @@ internal fun MetroData.withMetroSnapshot(snapshot: MetroSnapshot, preferred: Str
         selectedDirectionKey = selectedDirectionKey.takeIf { keepRealtime },
         realtimeLastSuccessfulFrame = realtimeLastSuccessfulFrame.takeIf { keepRealtime },
         realtimeUnavailable = realtimeUnavailable && keepRealtime,
-        realtimeArrivalFrame = realtimeArrivalFrame.takeIf { keepRealtime }
+        realtimeArrivalFrame = realtimeArrivalFrame.takeIf { keepRealtime },
+        realtimeOutOfService = realtimeOutOfService && keepRealtime
     )
 }
 
@@ -236,19 +271,22 @@ internal fun MetroData.completeRealtimeStationRequest(request: MetroRealtimeRequ
 }
 
 private fun MetroData.acceptsRealtimeRequest(request: MetroRealtimeRequest): Boolean =
-    realtimeRequestId == request.id && line?.id == request.lineId && line?.realtimeCode() == request.lineCode &&
+    !realtimeOutOfService && realtimeRequestId == request.id && line?.id == request.lineId && line?.realtimeCode() == request.lineCode &&
         realtimeStation.ifBlank { line?.liveStations?.firstOrNull()?.code.orEmpty() } == request.stationCode
 
 /** 位置结果只受线路身份约束，切本站后同一条线的在途批次仍可提供位置。 */
 internal fun MetroData.completeRealtimePositions(lineId: String, lineCode: String, result: MetroRealtime): MetroData {
-    if (line?.id != lineId || line?.realtimeCode() != lineCode || !result.online) return this
+    if (realtimeOutOfService || line?.id != lineId || line?.realtimeCode() != lineCode || !result.online) return this
     return withRealtimeState(realtimeState.completePositions(result))
 }
 
 class MetroViewModel(
     private val graph: AppGraph,
     val city: City,
-    initial: String? = null
+    initial: String? = null,
+    private val realtimeClock: Clock = Clock.system(METRO_OPERATING_ZONE),
+    private val elapsedRealtimeMillis: () -> Long = SystemClock::elapsedRealtime,
+    private val waitMillis: suspend (Long) -> Unit = { delay(it) }
 ) : StateViewModel<MetroData>(MetroData()) {
     private val loader = MetroLoader(graph.metro::networkFor, graph.metroRemote::latest, graph.metro::supports)
     private var loading: Job? = null
@@ -259,11 +297,24 @@ class MetroViewModel(
     private var positionsLine: String? = null
     private var positionsStartedAt: Long? = null
     private var positionsGeneration = 0L
+    private val eventChannel = Channel<MetroEvent>(Channel.BUFFERED)
+    val events: Flow<MetroEvent> = eventChannel.receiveAsFlow()
     private val realtimeController = MetroRealtimeRetryController<MetroRealtimeRequest>(
         scope = viewModelScope,
-        request = { request -> graph.metroRealtime.latestStation(request.lineCode, request.stationCode) },
-        onLoading = { request ->
-            // 首次建立固定上下文；之后的预算/退避只切 Loading，不借新请求序号重置重试链。
+        request = { request ->
+            when (val result = graph.metroRealtime.latestStation(request.lineCode, request.stationCode)) {
+                is com.yll682.houche.core.MetroRealtimeRequestResult.Deferred -> result
+                is com.yll682.houche.core.MetroRealtimeRequestResult.Completed -> {
+                    val response = result.realtime
+                    if (response.online && response.stationCode.isNotBlank() && response.stationCode != request.stationCode) {
+                        com.yll682.houche.core.MetroRealtimeRequestResult.Completed(MetroRealtime(false, "本站响应参考站不匹配"))
+                    } else result
+                }
+            }
+        },
+        onLoading = {},
+        onStarted = { request ->
+            // 只固定请求上下文；失败退避和同站刷新保留错误态，不重置为 Loading。
             val current = data
             val station = current.realtimeStation.ifBlank { current.line?.liveStations?.firstOrNull()?.code.orEmpty() }
             if (current.line?.id == request.lineId && current.line?.realtimeCode() == request.lineCode && station == request.stationCode) {
@@ -271,6 +322,7 @@ class MetroViewModel(
             }
         },
         onResult = { request, result ->
+            syncOperatingHours()
             val current = data
             val sampledAt = result.source?.receivedAtEpochMillis?.let(::clock).orEmpty()
             val completed = current.completeRealtimeStationRequest(request, result, sampledAt)
@@ -279,12 +331,30 @@ class MetroViewModel(
         sameTarget = { first, second ->
             first.lineId == second.lineId && first.lineCode == second.lineCode && first.stationCode == second.stationCode
         },
-        elapsedRealtimeMillis = SystemClock::elapsedRealtime
+        elapsedRealtimeMillis = elapsedRealtimeMillis,
+        waitMillis = waitMillis,
+        onUnavailable = { request ->
+            if (data.acceptsRealtimeRequest(request)) {
+                val name = data.line?.liveStations?.firstOrNull { it.code == request.stationCode }?.name.orEmpty()
+                eventChannel.trySend(MetroEvent.StationTimetableUnavailable(name))
+            }
+        }
     )
 
     init {
         mutable.value = UiState.Loading(data)
         load(initial)
+        viewModelScope.launch {
+            while (true) {
+                val wasClosed = data.realtimeOutOfService
+                val open = syncOperatingHours()
+                if (wasClosed && open) refreshRealtime()
+                // 精确等候已知首末边界；每秒重查墙钟，手动改时/跨时区也能自然更新。
+                val next = data.operatingWindowAt(realtimeClock.instant()).nextChangeAt
+                val untilBoundary = next?.let { Duration.between(realtimeClock.instant(), it).toMillis().coerceAtLeast(1) }
+                waitMillis(minOf(untilBoundary ?: 1_000L, 1_000L))
+            }
+        }
     }
 
     /**
@@ -318,14 +388,15 @@ class MetroViewModel(
                     realtimeController.cancel()
                     cancelRealtimePositions()
                 }
-                update(next, empty = next.lines.isEmpty())
+                update(next.withOperatingHours(realtimeClock.instant()), empty = next.lines.isEmpty())
+                syncOperatingHours()
                 if (applied || (changedContext && previous.realtimeRequestId != 0L)) refreshRealtime()
             }
         }.also { loading = it }
     }
 
     fun select(id: String) {
-        val value = data.selectRealtimeLine(id)
+        val value = data.selectRealtimeLine(id).withOperatingHours(realtimeClock.instant())
         if (value === data) return
         realtimeController.cancel()
         cancelRealtimePositions()
@@ -348,7 +419,7 @@ class MetroViewModel(
     /** 换参考站时保留成功位置批次，仅将新站 ETA 置为等待。 */
     fun selectStation(code: String) {
         if (data.line?.liveStations?.none { it.code == code } != false) return
-        val selected = data.selectRealtimeStation(code)
+        val selected = data.selectRealtimeStation(code).withOperatingHours(realtimeClock.instant())
         initialSelection = initialSelection.manualSelection()
         preferred = selected.line?.id
         if (selected !== data) update(selected)
@@ -363,7 +434,7 @@ class MetroViewModel(
     /** 只验证并提交一次目标，实时请求直接查询目标站，不会先请求目标线首站。 */
     fun selectTransfer(lineId: String, stationCode: String): Boolean {
         if (!data.hasRealtimeTarget(lineId, stationCode)) return false
-        val selected = data.selectRealtimeTarget(lineId, stationCode)
+        val selected = data.selectRealtimeTarget(lineId, stationCode).withOperatingHours(realtimeClock.instant())
         initialSelection = initialSelection.manualSelection()
         preferred = lineId
         if (selected !== data) update(selected)
@@ -380,7 +451,7 @@ class MetroViewModel(
         val result = initialSelection.receive(location, data.lines)
         initialSelection = result.state
         val target = result.station ?: return false
-        val selected = data.selectRealtimeTarget(target.lineId, target.stationCode)
+        val selected = data.selectRealtimeTarget(target.lineId, target.stationCode).withOperatingHours(realtimeClock.instant())
         if (selected === data) return false
         preferred = target.lineId
         update(selected)
@@ -396,6 +467,7 @@ class MetroViewModel(
      * 广域位置在另一条通道按二十秒 TTL 更新，本站响应无需等待整批结束。
      */
     fun refreshRealtime(): Job? {
+        if (!syncOperatingHours()) return null
         val (_, request) = data.beginRealtimeRequest(++realtimeRequestSequence) ?: run {
             realtimeController.cancel()
             return null
@@ -407,19 +479,22 @@ class MetroViewModel(
 
     /** 供以后显式绑定自动位置轮询；当前页面仍兼容 refreshRealtime 的本站优先入口。 */
     fun refreshRealtimeAutomatically() {
+        if (!syncOperatingHours()) return
         val (_, request) = data.beginRealtimeRequest(realtimeRequestSequence) ?: return
         refreshRealtimePositions(request)
     }
 
     private fun refreshRealtimePositions(request: MetroRealtimeRequest) {
+        if (!syncOperatingHours()) return
         if (positionsLine != request.lineCode) cancelRealtimePositions()
-        val now = SystemClock.elapsedRealtime()
+        val now = elapsedRealtimeMillis()
         if (positionsJob?.isActive == true || positionsStartedAt?.let { now - it in 0 until METRO_REALTIME_WINDOW_MILLIS } == true) return
         positionsLine = request.lineCode
         positionsStartedAt = now
         val generation = ++positionsGeneration
         positionsJob = viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
             val result = graph.metroRealtime.latestLine(request.lineCode, request.stationCodes, request.stationCode)
+            syncOperatingHours()
             if (positionsGeneration != generation) return@launch
             val current = data
             val completed = current.completeRealtimePositions(request.lineId, request.lineCode, result)
@@ -433,6 +508,18 @@ class MetroViewModel(
         positionsJob = null
         positionsLine = null
         positionsStartedAt = null
+    }
+
+    /** 非运营时立即取消本站与位置通道；仅时钟重开时自动恢复，无需页面刷新。 */
+    private fun syncOperatingHours(): Boolean {
+        val next = data.withOperatingHours(realtimeClock.instant())
+        if (next !== data) update(next)
+        if (next.realtimeOutOfService) {
+            realtimeController.cancel()
+            cancelRealtimePositions()
+            return false
+        }
+        return true
     }
 
     /** 只显示时分秒，秒级精度对到站信息没有意义。 */

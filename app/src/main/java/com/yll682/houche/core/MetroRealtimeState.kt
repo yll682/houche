@@ -1,6 +1,6 @@
 package com.yll682.houche.core
 
-/** 本站 ETA 的四种状态；位置观测不能代替本站的到站行。 */
+/** 本站 ETA 的五种状态；位置观测不能代替本站的到站行。 */
 sealed interface MetroEtaState {
     val stationCode: String
     /** 只属于本站的真实成功采样；换站等待时不会借用旧站的时间。 */
@@ -12,6 +12,11 @@ sealed interface MetroEtaState {
     ) : MetroEtaState
 
     data class Empty(
+        override val stationCode: String,
+        override val lastSuccessAt: MetroObservationSource? = null
+    ) : MetroEtaState
+
+    data class OutOfService(
         override val stationCode: String,
         override val lastSuccessAt: MetroObservationSource? = null
     ) : MetroEtaState
@@ -50,7 +55,8 @@ data class MetroRealtimeState(
     val unavailableNote: String? = null,
     val selectedDirectionKey: MetroDirectionKey? = null,
     val directionIndex: Int = 0,
-    val arrivalFrame: MetroRealtime? = null
+    val arrivalFrame: MetroRealtime? = null,
+    val outOfService: Boolean = false
 ) {
     val selectedDirectionIndex: Int get() {
         val directions = combinedFrame?.directions.orEmpty()
@@ -73,7 +79,7 @@ data class MetroRealtimeState(
 
     val displayFrame: MetroRealtime? get() = combinedFrame?.let { successful ->
         val directions = successful.directions.map { direction ->
-            if (unavailableNote == null && hasStationArrivals(direction)) direction
+            if (!outOfService && unavailableNote == null && hasStationArrivals(direction)) direction
             else direction.copy(trains = emptyList(), positionTrains = direction.allIdentifiedTrains, arrivalsAvailable = false)
         }
         if (successful.stationCode == stationCode && successful.stationName == stationName && directions == successful.directions) successful
@@ -88,8 +94,9 @@ data class MetroRealtimeState(
             (current.source ?: frame?.source)?.takeIf { it.referenceStationCode == stationCode }
         }
         return when {
-            loading -> MetroEtaState.Loading(stationCode, sampledAt)
+            outOfService -> MetroEtaState.OutOfService(stationCode, sampledAt)
             unavailableNote != null -> MetroEtaState.Unavailable(stationCode, unavailableNote, sampledAt)
+            loading -> MetroEtaState.Loading(stationCode, sampledAt)
             // 没查询、批次没覆盖本站、预算排队都没有发生 HTTP 失败，继续等待本站响应。
             direction == null || !hasStationArrivals(direction) -> MetroEtaState.Loading(stationCode)
             direction.trains.isEmpty() -> MetroEtaState.Empty(stationCode, sampledAt)
@@ -114,7 +121,7 @@ data class MetroRealtimeState(
             frame = displayFrame,
             lastSuccessAt = sampledAt,
             ageMillis = age,
-            isStale = unavailableNote != null || age == null || age >= METRO_REALTIME_WINDOW_MILLIS
+            isStale = outOfService || unavailableNote != null || age == null || age >= METRO_REALTIME_WINDOW_MILLIS
         )
     }
 
@@ -123,6 +130,7 @@ data class MetroRealtimeState(
         stationName = name,
         loading = true,
         unavailableNote = null,
+        outOfService = false,
         selectedDirectionKey = rawDirection?.directionKey ?: selectedDirectionKey,
         directionIndex = selectedDirectionIndex
     )
@@ -134,9 +142,17 @@ data class MetroRealtimeState(
     }
 
     fun beginRequest(): MetroRealtimeState = copy(
-        loading = true,
+        loading = unavailableNote == null && !outOfService,
         selectedDirectionKey = rawDirection?.directionKey ?: selectedDirectionKey,
         directionIndex = selectedDirectionIndex
+    )
+
+    /** 关门不改成功观测；开门先等待新响应，不能恢复昨日旧 ETA。 */
+    fun setOutOfService(value: Boolean): MetroRealtimeState = if (value == outOfService) this else copy(
+        outOfService = value,
+        loading = !value,
+        unavailableNote = null,
+        arrivalFrame = null
     )
 
     fun complete(result: MetroRealtime): MetroRealtimeState {

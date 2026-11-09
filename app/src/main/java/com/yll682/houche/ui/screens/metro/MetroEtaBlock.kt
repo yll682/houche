@@ -1,5 +1,6 @@
 package com.yll682.houche.ui.screens.metro
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -7,12 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroEtaState
 import com.yll682.houche.core.minutesUntil
@@ -25,7 +29,7 @@ import com.yll682.houche.core.minutesUntil
  * ②列序反着排——最右一列是最前面那班（官方截图左 16分钟/中 9分钟/右 3分钟）。
  *
  * **容器永远在**：绑定的是 [MetroEtaState]，不再是「trains 为空就整块 return」。
- * 切站瞬间整块不消失，只是换成占位文案；三种非 Ready 状态各自一句话，
+ * 切站瞬间整块不消失，只是换成占位文案；四种非 Ready 状态各自一句话，
  * 失败/该站尚未采集（Unavailable）与「确实没有到站列车」（Empty）不能混为一谈。
  *
  * 分钟数只来自所选参考站原始的三条到站行（`Ready.trains`），
@@ -85,25 +89,41 @@ internal fun MetroEtaBlock(
                     }
                 }
             }
-            // 非 Ready：容器不变，只换一句话。
-            else -> Text(
-                etaPlaceholder(etaState),
+            // 官方非 Ready：图标跟随首行，文字列内居中；容器与 Ready 几何不变。
+            else -> Row(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-                style = type.EtaLabel,
-                textAlign = TextAlign.Center,
-                maxLines = 2
-            )
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.Top
+            ) {
+                Canvas(Modifier.size(16.dp).clearAndSetSemantics {}) {
+                    drawCircle(palette.TabIndicator)
+                    drawLine(
+                        color = palette.OnBrand,
+                        start = Offset(size.width / 2f, size.height * .25f),
+                        end = Offset(size.width / 2f, size.height * .55f),
+                        strokeWidth = size.width * .1f,
+                        cap = StrokeCap.Round
+                    )
+                    drawCircle(
+                        color = palette.OnBrand,
+                        radius = size.width * .05f,
+                        center = Offset(size.width / 2f, size.height * .75f)
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    requireNotNull(metroEtaMessage(etaState)),
+                    style = type.EtaLabel.copy(
+                        color = palette.TabIndicator,
+                        fontSize = 16.sp,
+                        lineHeight = 16.sp
+                    ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                )
+            }
         }
     }
-}
-
-/** 三种非 Ready 状态各自的占位文案；Unavailable 绝不能显示成 Empty。 */
-@Composable
-private fun etaPlaceholder(state: MetroEtaState): String = when (state) {
-    is MetroEtaState.Loading -> stringResource(R.string.metro_position_eta_loading)
-    is MetroEtaState.Empty -> stringResource(R.string.metro_position_eta_empty)
-    is MetroEtaState.Unavailable -> stringResource(R.string.metro_position_eta_unavailable)
-    is MetroEtaState.Ready -> stringResource(R.string.metro_position_eta_title)
 }
 
 /**

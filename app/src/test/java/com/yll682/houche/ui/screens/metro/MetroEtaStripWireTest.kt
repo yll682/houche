@@ -210,7 +210,7 @@ class MetroEtaStripWireTest {
         data = data.copy(realtimeUnavailable = true, realtimeNote = "超时", realtimeLoading = false)
         compose.waitForIdle()
         assertTrue(data.etaState is MetroEtaState.Unavailable)
-        compose.onNodeWithText("本站到站暂不可用").assertIsDisplayed()
+        compose.onNodeWithText("暂时无法获取列车到站信息").assertIsDisplayed()
         compose.onNodeWithText("暂无到站列车").assertDoesNotExist()
     }
 

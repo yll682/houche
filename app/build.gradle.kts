@@ -20,8 +20,8 @@ android {
         applicationId = "com.yll682.houche"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "1.7.8"
+        versionCode = 20
+        versionName = "1.7.9"
         resourceConfigurations += listOf("zh", "en")
     }
 

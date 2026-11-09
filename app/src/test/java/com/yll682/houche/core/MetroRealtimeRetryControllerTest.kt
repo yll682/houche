@@ -18,12 +18,16 @@ class MetroRealtimeRetryControllerTest {
         val clock = ManualClock()
         val calls = mutableListOf<Long>()
         val results = mutableListOf<MetroEtaState>()
+        // 首个请求必须挂起：控制器用 CoroutineStart.UNDISPATCHED 启动，假请求同步失败时
+        // 请求在 refresh() 返回前就已失败，「正在获取」这一态根本观察不到。
+        val firstResponse = CompletableDeferred<MetroRealtimeRequestResult>()
         var state = MetroRealtimeState(stationCode = "A")
         val controller = MetroRealtimeRetryController<String>(
             scope = this,
             request = {
                 calls += clock.now
-                completed(if (calls.size <= 5) MetroRealtime(false, "超时 ${calls.size}") else success("A"))
+                if (calls.size == 1) firstResponse.await()
+                else completed(if (calls.size <= 5) MetroRealtime(false, "超时 ${calls.size}") else success("A"))
             },
             onLoading = { state = state.beginRequest() },
             onResult = { _, result -> state = state.complete(result); results += state.etaState },
@@ -31,14 +35,19 @@ class MetroRealtimeRetryControllerTest {
         )
         val job = controller.refresh("A")
         assertEquals(listOf(0L), calls)
+        // 请求在途：状态真的停在「正在获取」，不是同步失败后的 Unavailable。
         assertTrue(state.etaState is MetroEtaState.Loading)
+        firstResponse.complete(completed(MetroRealtime(false, "超时 1")))
+        settle()
+        assertEquals(1, results.count { it is MetroEtaState.Unavailable })
         for (wait in listOf(1_000L, 2_000L, 4_000L, 8_000L, 8_000L)) {
             clock.advance(wait)
             settle()
         }
         job.join()
         assertEquals(listOf(0L, 1_000L, 3_000L, 7_000L, 15_000L, 23_000L), calls)
-        assertEquals(listOf(1_000L, 2_000L, 4_000L, 8_000L, 8_000L), clock.waits)
+        // 首个在途请求挂过一个八秒超时定时器（请求返回后被取消），其余是 1/2/4/8/8 秒的失败退避。
+        assertEquals(listOf(METRO_ETA_LOADING_LIMIT_MILLIS, 1_000L, 2_000L, 4_000L, 8_000L, 8_000L), clock.waits)
         assertEquals(5, results.count { it is MetroEtaState.Unavailable })
         assertTrue(state.etaState is MetroEtaState.Empty)
         clock.advance(60_000)
@@ -82,6 +91,36 @@ class MetroRealtimeRetryControllerTest {
         assertEquals(5, calls)
     }
 
+    /**
+     * 「正在获取」上限八秒：请求一直不回来时，八秒整必须落到失败提示，
+     * 永远不能停在 Loading（用户现场就是永远停在「正在获取」）。
+     */
+    @Test fun `正在获取最多八秒超时后必须落到失败不能停在加载中`() = runBlocking {
+        assertEquals("首次获取的显示上限就是八秒", 8_000L, METRO_ETA_LOADING_LIMIT_MILLIS)
+        val clock = ManualClock()
+        var state = MetroRealtimeState(stationCode = "A")
+        val results = mutableListOf<MetroEtaState>()
+        val controller = MetroRealtimeRetryController<String>(
+            scope = this,
+            // 永远不返回的请求：只能靠八秒截止收尾。
+            request = { CompletableDeferred<MetroRealtimeRequestResult>().await() },
+            onLoading = { state = state.beginRequest() },
+            onResult = { _, result -> state = state.complete(result); results += state.etaState },
+            elapsedRealtimeMillis = { clock.now }, waitMillis = clock::wait
+        )
+        val job = controller.refresh("A")
+        assertTrue(state.etaState is MetroEtaState.Loading)
+        clock.advance(METRO_ETA_LOADING_LIMIT_MILLIS - 1)
+        settle()
+        assertTrue("八秒之前仍然是加载中", state.etaState is MetroEtaState.Loading)
+        clock.advance(1)
+        settle()
+        assertTrue("超时后必须落到 Unavailable，不能停在 Loading", state.etaState is MetroEtaState.Unavailable)
+        assertEquals("超时也要算一次失败", 1, results.count { it is MetroEtaState.Unavailable })
+        controller.cancel()
+        job.join()
+    }
+
     @Test fun `同目标轮询和手刷共用单条请求退避链且成功后允许重新刷新`() = runBlocking {
         val clock = ManualClock()
         val response = CompletableDeferred<MetroRealtimeRequestResult>()
@@ -105,10 +144,12 @@ class MetroRealtimeRetryControllerTest {
         assertNull(lateLocation.station)
         assertEquals(MetroInitialSelectionPhase.Consumed, lateLocation.state.phase)
         assertEquals(1, calls)
-        assertTrue(clock.waits.isEmpty())
+        // 在途请求只挂着一个八秒超时定时器：同目标刷新既没另起请求，也没消费失败退避档位。
+        assertEquals(listOf(METRO_ETA_LOADING_LIMIT_MILLIS), clock.waits)
         response.complete(completed(MetroRealtime(false, "超时")))
         settle()
-        assertEquals(listOf(1_000L), clock.waits)
+        // 失败后按第一档 1 秒退避重试；八秒超时定时器随请求返回被取消，不构成退避档位。
+        assertEquals(listOf(METRO_ETA_LOADING_LIMIT_MILLIS, 1_000L), clock.waits)
         clock.advance(1_000)
         settle()
         first.join()
@@ -225,13 +266,19 @@ class MetroRealtimeRetryControllerTest {
             elapsedRealtimeMillis = { clock.now }, waitMillis = clock::wait
         )
         val job = controller.refresh("B")
-        assertEquals(MetroEtaState.Loading("B"), state.etaState)
+        // 失败提示在退避期间保持可见：不能再显示「正在获取」，也不要借用旧站的采样时钟。
+        val afterFailure = state.etaState
+        assertTrue("切站失败必须落到 Unavailable，不能停在 Loading", afterFailure is MetroEtaState.Unavailable)
+        assertEquals("B", afterFailure.stationCode)
+        assertNull("退避期间不借用旧站的采样时钟", afterFailure.lastSuccessAt)
         assertEquals(MetroEtaState.Unavailable("B", "超时"), failed.single())
         assertSame(original, state.frame)
         assertEquals(source, state.lastSuccessAt)
         clock.advance(1_000)
         settle()
-        assertEquals(MetroEtaState.Loading("B"), state.etaState)
+        // 退避中仍是失败提示：旧站 ETA 不回填，原采样时钟也不被这次失败改写。
+        assertEquals(MetroEtaState.Unavailable("B", "超时", null), state.etaState)
+        assertNull(state.etaState.lastSuccessAt)
         assertEquals(1_000L, state.positionsAt(clock.now).ageMillis)
         assertTrue(state.displayFrame!!.directions.all { it.trains.isEmpty() })
         controller.cancel()

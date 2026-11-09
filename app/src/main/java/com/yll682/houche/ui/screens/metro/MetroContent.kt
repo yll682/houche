@@ -26,6 +26,7 @@ import com.yll682.houche.R
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroStation
 import com.yll682.houche.core.MetroTransferTarget
+import com.yll682.houche.core.metroStationOperatingTimes
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.EmptyState
 import com.yll682.houche.ui.components.LoadingSkeleton
@@ -114,8 +115,10 @@ fun MetroContent(
                 )
             }
             itemsIndexed(line.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
+                val times = metroStationOperatingTimes(heading, stop)
                 MetroStopRow(
-                    stop, index, line.stations.size, officialLineColor(heading), !stop.opened,
+                    stop.copy(first = times.first, last = times.last),
+                    index, line.stations.size, officialLineColor(heading), !stop.opened,
                     selected = stop.code.isNotBlank() && stop.code == data.realtimeStation,
                     // 换乘徽标把完整目标（目标线 id + 目标线自己的站码）交给数据层，一次提交、一次刷新。
                     onTransfer = { target: MetroTransferTarget -> selectTransfer(target.lineId, target.stationCode) }
@@ -219,7 +222,7 @@ fun MetroContent(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // 逐站时间按接口原文展示，空值不补造；次日时间与窄屏允许自然换行。
+                    // 与运营状态判断共用首末班来源；次日时间与窄屏允许自然换行。
                     if (firstTime.isNotEmpty()) StopFlowItem {
                         Text(firstTime, Modifier.clearAndSetSemantics {}, style = type.MetaLabel)
                     }

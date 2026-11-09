@@ -169,6 +169,26 @@ class ScreenshotTest {
     }
 
     /**
+     * 非运营时段的官方提示：4 号线集美软件园北（首 08:00 末 20:00），07:19 时蓝块显示
+     * 「非运营时段，暂时无法提供列车到站查询功能」，与官方参照图
+     * `notes/refs/official-out-of-service.jpg` 一致；浅深各一张。
+     */
+    private val metroOutOfServiceData: MetroData by lazy {
+        MetroData(
+            lines = metroLines, selected = "4", updated = "2026-11-08",
+            realtimeStation = "04010000", realtimeStationName = "集美软件园北",
+            realtimeOutOfService = true
+        )
+    }
+
+    @Test fun metroOutOfService_light() = capture("metro-out-of-service", false) {
+        MetroContent(UiState.Success(metroOutOfServiceData), {}, {}, {}, {}, refresh = {})
+    }
+    @Test fun metroOutOfService_dark() = capture("metro-out-of-service", true) {
+        MetroContent(UiState.Success(metroOutOfServiceData), {}, {}, {}, {}, refresh = {})
+    }
+
+    /**
      * 多参考站合并：同一秒的行政中心（02100000）与马青路（02090000）两份原始响应，
      * 走线上同一条路径——按站序计划最多八个参考站、只有这两份真有响应、再 mergeMetroRealtime 合并。
      * 画面要回答用户那句话：「海沧行政中心—马青路之间那班车画出来了没有」。

@@ -1,10 +1,10 @@
 {
-  "versionName": "1.7.8",
-  "versionCode": 19,
+  "versionName": "1.7.9",
+  "versionCode": 20,
   "released": "2026-11-09",
-  "notes": "统一线路徽标：字色改白字（与官方一致）、并排徽标同规格；新增 App 接口参考文档 docs/api-reference.md。",
+  "notes": "地铁取不到数据时不再永远显示「正在获取」：区分非运营时段、暂时无法获取、暂无到站列车，文案与提示样式照抄官方。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v1.7.8/houche-v1.7.8.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.8/houche-v1.7.8.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v1.7.9/houche-v1.7.9.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v1.7.9/houche-v1.7.9.apk"
   }
 }
