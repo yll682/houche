@@ -109,6 +109,12 @@ class VehicleViewModel(
 
     fun refresh() = action { refreshLive() }
 
+    fun selectVehicle(plate: String) {
+        if (plate == data.plate) return
+        update(data.copy(plate = plate, vehicle = null, arrival = null, offline = false))
+        load()
+    }
+
     // 跟踪器的选择由 Route 同步，界面状态在点击时立即变化。
     fun toggleTracking() {
         setTracking(!data.tracking)

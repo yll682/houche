@@ -13,5 +13,5 @@ fun VehicleScreen(
     notify: () -> Unit
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    VehicleContent(state, back, share, toggleTracking, notify, { vm.refresh() })
+    VehicleContent(state, back, share, toggleTracking, notify, { vm.refresh() }, { vm.selectVehicle(it) })
 }

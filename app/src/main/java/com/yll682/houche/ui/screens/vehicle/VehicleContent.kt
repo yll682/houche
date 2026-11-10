@@ -63,6 +63,7 @@ fun VehicleContent(
     toggleTracking: () -> Unit,
     notify: () -> Unit,
     refresh: () -> Unit,
+    selectVehicle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val data = state.data
@@ -102,7 +103,7 @@ fun VehicleContent(
                         )
                     }
                     itemsIndexed(vehicles, key = { index, vehicle -> "${vehicle.plate}-$index" }) { _, vehicle ->
-                        VehicleRow(vehicle, data.boarding, vehicle.plate == data.plate)
+                        VehicleRow(vehicle, data.boarding, vehicle.plate == data.plate) { selectVehicle(vehicle.plate) }
                     }
                     data.updatedAt?.let { time -> item {
                         Text(
@@ -236,11 +237,11 @@ private fun ActionRow(icon: ImageVector, label: String, enabled: Boolean, onClic
 }
 
 @Composable
-private fun VehicleRow(vehicle: Vehicle, boarding: RouteStation?, selected: Boolean) {
+private fun VehicleRow(vehicle: Vehicle, boarding: RouteStation?, selected: Boolean, select: () -> Unit) {
     val remaining = remainingStops(boarding, vehicle)
     val running = vehicle.positionState != "at-stop"
     val tint = if (running) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
-    CardSurface {
+    CardSurface(onClick = select) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // 当前这辆车靠左侧 3dp 竖条识别：小字号下只换字重看不出来。
