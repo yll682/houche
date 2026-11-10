@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.yll682.houche.ui.theme.Capsule
 import com.yll682.houche.R
+import com.yll682.houche.data.RefreshPolicy
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
 
@@ -34,6 +35,8 @@ import com.yll682.houche.ui.components.*
     val scroll = rememberScrollState()
     val reselect = LocalSettingsReselect.current
     LaunchedEffect(reselect) { if (reselect > 0) scroll.animateScrollTo(0) }
+    var pickInterval by remember { mutableStateOf(false) }
+    if (pickInterval) IntervalSheet { pickInterval = false }
     Column(
         modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 12.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -60,6 +63,13 @@ import com.yll682.houche.ui.components.*
                 value = if (data.cleared) stringResource(R.string.cache_cleared) else null,
                 onClick = clearCache
             )
+            Hairline()
+            SettingRow(
+                icon = Icons.Outlined.DirectionsBus,
+                title = stringResource(R.string.refresh_interval),
+                value = intervalLabel(RefreshPolicy.seconds),
+                onClick = { pickInterval = true }
+            )
         }
         CardSurface {
             SettingRow(
@@ -80,7 +90,7 @@ import com.yll682.houche.ui.components.*
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.about), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.about_text).replace("每 20 秒", "每 ${RefreshPolicy.seconds} 秒"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (data.metroNote.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -143,5 +153,32 @@ import com.yll682.houche.ui.components.*
             Spacer(Modifier.width(6.dp))
         }
         Icon(Icons.Outlined.ChevronRight, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f))
+    }
+}
+
+private fun intervalLabel(seconds: Int): String = if (seconds >= 60) "${seconds / 60} 分钟" else "$seconds 秒"
+
+/** 「自动刷新间隔」选择面板：当前项带「当前」和对勾，点一项即生效并关闭。 */
+@Composable private fun IntervalSheet(dismiss: () -> Unit) {
+    TelegramSheet(dismiss = dismiss) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Text(stringResource(R.string.refresh_interval_title), style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(8.dp))
+            RefreshPolicy.options.forEach { value ->
+                val current = value == RefreshPolicy.seconds
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { RefreshPolicy.set(value); dismiss() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(intervalLabel(value), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                    if (current) {
+                        Text(stringResource(R.string.refresh_interval_current), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.Outlined.Check, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }

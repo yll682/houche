@@ -406,13 +406,14 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-/** 前台每 20 秒刷新一次，切到后台自动停下。 */
+/** 前台按「自动刷新间隔」（默认 15 秒）刷新，切到后台自动停下；间隔改了会按新值重启。 */
 @Composable fun PollEvery20Seconds(enabled: Boolean = true, refresh: suspend () -> Unit) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val current by rememberUpdatedState(refresh)
-    LaunchedEffect(lifecycle, enabled) {
+    val seconds = com.yll682.houche.data.RefreshPolicy.seconds
+    LaunchedEffect(lifecycle, enabled, seconds) {
         if (enabled) lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) { current(); delay(20_000) }
+            while (true) { current(); delay(seconds * 1000L) }
         }
     }
 }

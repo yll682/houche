@@ -10,6 +10,7 @@ class HoucheApp : Application() {
         private set
     override fun onCreate() {
         super.onCreate()
+        RefreshPolicy.init(this)
         graph = AppGraph(this)
     }
 }
