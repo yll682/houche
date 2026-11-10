@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import com.yll682.houche.R
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import com.yll682.houche.ui.components.*
 import com.yll682.houche.ui.theme.*
 
@@ -106,64 +108,55 @@ import com.yll682.houche.ui.theme.*
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable private fun RouteHeaderCard(
     route: Route, nextDeparture: String?, loading: Boolean, fare: Boolean, toggleFare: () -> Unit,
     timetable: (Route) -> Unit, reverse: () -> Unit
 ) {
     CardSurface {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Text(route.from, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Icon(Icons.AutoMirrored.Outlined.ArrowRightAlt, null, Modifier.padding(horizontal = 8.dp).size(18.dp), tint = MaterialTheme.colorScheme.outline)
-                    Text(route.to, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                IconButton(reverse, Modifier.size(48.dp)) {
-                    Icon(Icons.Outlined.SwapHoriz, stringResource(R.string.reverse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            LineBadge(route.name)
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text(stringResource(R.string.to, route.to), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (route.from.isNotBlank()) {
+                    Text(route.from, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                ServicePill(stringResource(R.string.first_time, route.first.ifBlank { stringResource(R.string.no_time) }), MaterialTheme.colorScheme.primary, .10f)
-                Spacer(Modifier.width(6.dp))
-                ServicePill(stringResource(R.string.last_time, route.last.ifBlank { stringResource(R.string.no_time) }), MaterialTheme.colorScheme.tertiary, .12f)
-                Spacer(Modifier.weight(1f))
-                if (route.showTimetable) {
-                    TextButton({ timetable(route) }, Modifier.touch(stringResource(R.string.timetable)), enabled = !loading, contentPadding = PaddingValues(start = 6.dp)) {
-                        Icon(Icons.Outlined.Schedule, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.timetable), style = MaterialTheme.typography.labelLarge)
-                    }
-                }
+            IconButton(reverse, Modifier.size(48.dp), enabled = !loading) {
+                Icon(Icons.Outlined.SwapHoriz, stringResource(R.string.reverse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
             }
-            if (route.fareDescription.isNotBlank() || !nextDeparture.isNullOrBlank()) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (route.fareDescription.isNotBlank()) {
-                        Text(route.fareDescription,
-                            Modifier.weight(1f).touch(stringResource(R.string.fare)).clickable(onClick = toggleFare).wrapContentHeight(),
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = if (fare) 4 else 1, overflow = TextOverflow.Ellipsis)
-                    } else Spacer(Modifier.weight(1f))
-                    if (!nextDeparture.isNullOrBlank()) {
-                        Text(stringResource(R.string.origin_departure, nextDeparture), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                    }
+        }
+        Hairline(Modifier.padding(horizontal = 16.dp))
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.layout.FlowRow(
+                Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(stringResource(R.string.first_time, route.first.ifBlank { stringResource(R.string.no_time) }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.last_time, route.last.ifBlank { stringResource(R.string.no_time) }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (route.showTimetable) {
+                IconButton({ timetable(route) }, Modifier.size(40.dp).touch(stringResource(R.string.timetable)), enabled = !loading) {
+                    Icon(Icons.Outlined.Schedule, stringResource(R.string.timetable), Modifier.size(22.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
-    }
-}
-
-@Composable private fun ServicePill(text: String, color: Color, alpha: Float) {
-    Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = alpha)) {
-        Text(text, Modifier.padding(horizontal = 8.dp, vertical = 3.dp), style = MaterialTheme.typography.labelSmall, color = color)
+        if (route.fareDescription.isNotBlank()) {
+            Text(route.fareDescription,
+                Modifier.fillMaxWidth().touch(stringResource(R.string.fare)).clickable(onClick = toggleFare)
+                    .animateContentSize(tween(200, easing = TelegramQuint)).padding(start = 16.dp, top = 4.dp, end = 16.dp),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (fare) 8 else 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (!nextDeparture.isNullOrBlank()) {
+            Text(stringResource(R.string.origin_departure, nextDeparture), Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        } else Spacer(Modifier.height(if (route.fareDescription.isNotBlank()) 12.dp else 0.dp))
     }
 }
 
 @Composable private fun LiveCard(route: Route, data: LineData, vehicles: List<Vehicle>, previewStation: (RouteStation) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val dark = isSystemInDarkTheme()
-    Surface(Modifier.fillMaxWidth(), shape = CardShape,
-        color = if (dark) colors.primaryContainer.copy(alpha = .45f) else colors.primary.copy(alpha = .06f),
-        border = BorderStroke(1.dp, colors.primary.copy(alpha = .16f))) {
+    Surface(Modifier.fillMaxWidth(), shape = CardShape, color = colors.surface) {
         Column(Modifier.padding(vertical = 12.dp)) {
             Column(Modifier.padding(horizontal = 14.dp)) {
                 if (data.selected != null) {
