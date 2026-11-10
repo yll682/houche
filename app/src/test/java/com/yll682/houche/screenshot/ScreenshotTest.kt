@@ -825,7 +825,7 @@ class ScreenshotTest {
             assertFalse("设置读取同份资料不应进入错误态", settingsVm!!.state.value is UiState.Error)
             val metro = compose.onNodeWithContentDescription("地铁")
             metro.assertIsDisplayed().assertHasClickAction()
-            val refresh = compose.onNodeWithContentDescription("刷新").assertIsDisplayed()
+            val refresh = compose.onNodeWithContentDescription("重新定位").assertIsDisplayed()
             assertTrue("地铁入口应在刷新左边", metro.fetchSemanticsNode().boundsInRoot.right <= refresh.fetchSemanticsNode().boundsInRoot.left)
             metro.performClick()
             assertTrue("地铁按钮必须触发导航回调", opened)
