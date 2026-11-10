@@ -168,7 +168,7 @@ class MetroEtaMessageUiTest {
         val lastOnly = MetroStation(2, "末班站", code = "01020000", last = "次日00:20")
         val line = MetroLine("1", "1号线", "#DA7028", "首班站", "末班站", first = "08:00", last = "20:00", stations = listOf(firstOnly, lastOnly))
         val data = MetroData(lines = listOf(line), selected = "1", realtimeStation = "01010000", realtimeStationName = "首班站")
-        compose.setContent { MaterialTheme { MetroContent(UiState.Success(data), {}, {}) } }
+        compose.setContent { MaterialTheme { MetroContent(UiState.Success(data), {}) } }
         compose.waitForIdle()
         compose.onNodeWithContentDescription("首班站，首 08:02，末 20:00，乘车站").assertIsDisplayed()
         compose.onNodeWithContentDescription("末班站，首 08:00，末 次日00:20").assertIsDisplayed()

@@ -19,7 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.testTag
-import com.yll682.houche.ui.components.Page
 import com.yll682.houche.ui.components.TelegramSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +53,7 @@ import com.yll682.houche.ui.theme.Capsule
 /**
  * 地铁「列车位置」页：照官方厦门地铁 App 的版式做（见 `notes/spec-official-train-position.md`）。
  *
- * 骨架：品牌蓝顶栏（白返回箭头 + 居中标题，候车 1.7.2 的样式）→ 线路 tab 条（色块徽标 + 方形下划线）→
+ * 顶栏与底栏由首页层承载，这里保留线路 tab 条（色块徽标 + 方形下划线）→
  * 白卡片（方向行 / 站名+刷新 / ETA 蓝块 / 位置条）→ 卡片外居中免责说明 → 站序列表。
  *
  * 站序列表官方这页没有，但候车用它在换参考站（`selectStation` 的唯一入口），
@@ -62,7 +61,7 @@ import com.yll682.houche.ui.theme.Capsule
  */
 @Composable
 fun MetroContent(
-    state: UiState<MetroData>, select: (String) -> Unit, back: () -> Unit,
+    state: UiState<MetroData>, select: (String) -> Unit,
     selectStation: (String) -> Unit = {}, selectDirection: (Int) -> Unit = {},
     refresh: () -> Unit = {},
     selectTransfer: (String, String) -> Unit = { _, _ -> },
@@ -80,8 +79,7 @@ fun MetroContent(
     val openSheet: (String) -> Unit = { code ->
         if (code.isNotBlank() && line?.stations?.any { it.code == code } == true) sheetStation = code
     }
-    Page(stringResource(R.string.metro_realtime_position), back, modifier) { padding ->
-      Column(Modifier.fillMaxSize().padding(padding)) {
+    Column(modifier.fillMaxSize()) {
         MetroLineTabs(data.lines, data.selected, select)
         if (line == null || heading == null) {
             Box(Modifier.fillMaxSize().padding(16.dp)) {
@@ -90,7 +88,10 @@ fun MetroContent(
             }
             return@Column
         }
-        LazyColumn(Modifier.fillMaxSize().navigationBarsPadding(), contentPadding = PaddingValues(bottom = 32.dp)) {
+        LazyColumn(
+            Modifier.fillMaxSize().testTag("metro-stations"),
+            contentPadding = PaddingValues(bottom = 88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+        ) {
             item {
                 MetroRealtimeCard(
                     direction = data.direction,
@@ -152,7 +153,6 @@ fun MetroContent(
                 }
             }
         }
-      }
     }
     sheetStation?.let { code ->
         val stop = line?.stations?.firstOrNull { it.code == code }

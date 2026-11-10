@@ -204,7 +204,7 @@ class MetroTransferBadgeTest {
                         realtimeStation = reference.code, realtimeStationName = reference.name
                     )
                 ),
-                {}, {},
+                {},
                 selectTransfer = { lineId, code -> picked += lineId to code }
             )
         }

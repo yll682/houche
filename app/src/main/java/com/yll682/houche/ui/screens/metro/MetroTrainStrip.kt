@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -180,13 +181,18 @@ internal fun MetroTrainStrip(
                     // 线只画在首站圆心到末站圆心之间，不再往两头多出半格。
                     val trackStart = cell.toPx() * .5f
                     val trackEnd = cell.toPx() * (cells.size - .5f)
-                    drawRect(tint, topLeft = Offset(trackStart, cy - track / 2f), size = androidx.compose.ui.geometry.Size((trackEnd - trackStart).coerceAtLeast(0f), track))
+                    // 两端做成圆头（整条轨道是胶囊形），一眼看得出起点和终点在哪；
+                    // 圆角半径取轨道厚度的一半，跨度不变，仍然严格止于首末站圆心。
+                    val trackRadius = CornerRadius(track / 2f, track / 2f)
+                    drawRoundRect(tint, topLeft = Offset(trackStart, cy - track / 2f), size = androidx.compose.ui.geometry.Size((trackEnd - trackStart).coerceAtLeast(0f), track), cornerRadius = trackRadius)
                     if (edge) {
                         val w = StripLineEdge.toPx()
-                        drawRect(
+                        // 描边用同一个圆心：路径圆角取轨道厚度的一半，描边外沿正好是轨道圆头再外扩 w/2。
+                        drawRoundRect(
                             palette.LineEdge,
                             topLeft = Offset(trackStart, cy - track / 2f - w / 2f),
                             size = androidx.compose.ui.geometry.Size((trackEnd - trackStart).coerceAtLeast(0f), track + w),
+                            cornerRadius = CornerRadius(track / 2f, track / 2f),
                             style = Stroke(width = w)
                         )
                     }

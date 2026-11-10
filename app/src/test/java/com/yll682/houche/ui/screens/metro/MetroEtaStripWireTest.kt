@@ -168,7 +168,7 @@ class MetroEtaStripWireTest {
     @Test
     fun etaContainerSurvivesStationSwitch() {
         var data by mutableStateOf(seed())
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         compose.waitForIdle()
 
         val ready = compose.onNodeWithContentDescription("预计到达").fetchSemanticsNode().boundsInRoot
@@ -202,7 +202,7 @@ class MetroEtaStripWireTest {
         )
         assertTrue("成功批次确实没有到站行才是 Empty", data.etaState is MetroEtaState.Empty)
 
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         compose.waitForIdle()
         compose.onNodeWithText("暂无到站列车").assertIsDisplayed()
 
@@ -219,7 +219,7 @@ class MetroEtaStripWireTest {
     @Test
     fun cellWidthUnchangedAcrossStationSwitch() {
         var data by mutableStateOf(seed())
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         compose.waitForIdle()
 
         /** 锚点到相邻列左沿的距离＝站距；相邻列不可见时返回 -1。 */
@@ -290,7 +290,7 @@ class MetroEtaStripWireTest {
         assertEquals(2, direction.positionSuppressions().size)
         assertEquals(listOf(1, 2, 3), (1..3).map(direction.arrivalOrdinals(reference)::ordinalOfRow))
 
-        Metro { MetroContent(UiState.Success(seeded), {}, {}) }
+        Metro { MetroContent(UiState.Success(seeded), {}) }
         compose.waitForIdle()
         compose.onNodeWithContentDescription("第1班").assertIsDisplayed()
         compose.onNodeWithContentDescription("第2班").assertDoesNotExist()
@@ -322,7 +322,7 @@ class MetroEtaStripWireTest {
         assertEquals(2, ordinals.maxOrdinal)
         assertTrue("本站两条原始行仍是 Ready", seeded.etaState is MetroEtaState.Ready)
 
-        Metro { MetroContent(UiState.Success(seeded), {}, {}) }
+        Metro { MetroContent(UiState.Success(seeded), {}) }
         compose.waitForIdle()
 
         // 本站第 1 行（300s＝5 分钟）就是位置条第 1 班；第 2 行（10 分钟）是第 2 班。

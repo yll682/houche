@@ -124,7 +124,7 @@ import com.yll682.houche.ui.theme.Capsule
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
                     val columns = ((maxWidth.value - 24f) / (fontScale * 72f)).toInt().coerceIn(2, 5)
-                    Column(Modifier.padding(start = 12.dp, top = 0.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         group.times.chunked(columns).forEach { row ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { departure ->

@@ -23,9 +23,11 @@ import com.yll682.houche.core.METRO_REALTIME_WINDOW_MILLIS
 import com.yll682.houche.core.MetroSnapshot
 import com.yll682.houche.core.normalizeMetroOpenings
 import com.yll682.houche.core.realtimeCode
+import com.yll682.houche.data.Position
 import com.yll682.houche.ui.StateViewModel
 import com.yll682.houche.ui.UiState
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -292,6 +294,8 @@ class MetroViewModel(
     private var loading: Job? = null
     private var preferred = initial?.takeIf { it.isNotBlank() }
     private var initialSelection = MetroInitialSelection.start(initial)
+    private var initialLocationRequested = false
+    private var realtimeVisible = false
     private var realtimeRequestSequence = 0L
     private var positionsJob: Job? = null
     private var positionsLine: String? = null
@@ -395,6 +399,41 @@ class MetroViewModel(
         }.also { loading = it }
     }
 
+    /** 深链可能早于站序到达，先记住目标，也防止迟到定位覆盖用户的选择。 */
+    fun selectLine(id: String) {
+        if (id.isBlank()) return
+        if (data.lines.any { it.id == id }) { select(id); return }
+        preferred = id
+        initialSelection = initialSelection.manualSelection()
+    }
+
+    /** 首次定位跟随同城 ViewModel 存活，切 Tab 或返回首页都不再问系统。 */
+    fun requestInitialLocation(locate: suspend () -> Position) {
+        if (initialLocationRequested) return
+        initialLocationRequested = true
+        viewModelScope.launch {
+            val position = try {
+                locate()
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                null
+            }
+            applyInitialLocation(position?.let {
+                MetroInitialLocation(it.lat, it.lng, it.accuracy?.toDouble(), it.coordinateSystem)
+            })
+        }
+    }
+
+    /** VM 留在首页 Store 中，隐藏时仍须停掉失败退避和位置批次，首次定位则继续完成。 */
+    fun setRealtimeVisible(visible: Boolean) {
+        realtimeVisible = visible
+        if (!visible) {
+            realtimeController.cancel()
+            cancelRealtimePositions()
+        }
+    }
+
     fun select(id: String) {
         val value = data.selectRealtimeLine(id).withOperatingHours(realtimeClock.instant())
         if (value === data) return
@@ -467,6 +506,7 @@ class MetroViewModel(
      * 广域位置在另一条通道按二十秒 TTL 更新，本站响应无需等待整批结束。
      */
     fun refreshRealtime(): Job? {
+        if (!realtimeVisible) return null
         if (!syncOperatingHours()) return null
         val (_, request) = data.beginRealtimeRequest(++realtimeRequestSequence) ?: run {
             realtimeController.cancel()
@@ -479,6 +519,7 @@ class MetroViewModel(
 
     /** 供以后显式绑定自动位置轮询；当前页面仍兼容 refreshRealtime 的本站优先入口。 */
     fun refreshRealtimeAutomatically() {
+        if (!realtimeVisible) return
         if (!syncOperatingHours()) return
         val (_, request) = data.beginRealtimeRequest(realtimeRequestSequence) ?: return
         refreshRealtimePositions(request)

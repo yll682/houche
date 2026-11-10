@@ -54,7 +54,6 @@ sealed interface Screen {
     data class Stop(val city: City, val station: Station) : Screen
     data class Times(val city: City, val route: Route) : Screen
     data class Vehicle(val city: City, val route: Route, val plate: String, val boarding: RouteStation?) : Screen
-    data class Metro(val city: City, val line: String? = null) : Screen
 }
 class PageEntry(val screen: Screen) : ViewModelStoreOwner {
     val stateKey = java.util.UUID.randomUUID().toString()
@@ -66,12 +65,17 @@ class NavigationState : ViewModel() {
     val stack = mutableStateListOf(PageEntry(Screen.Home))
     private val retired = mutableSetOf<PageEntry>()
     var cityVisible by mutableStateOf(false)
-    // 首页 / 收藏 / 设置是同一层的三个 Tab，设置不再是压栈页面。
-    var segment by mutableIntStateOf(0)
+    // 四个 Tab 共用首页条目，切换时保留各自的 ViewModel。
+    var segment by mutableIntStateOf(HomeTab.BUS)
+    var pendingMetroLine by mutableStateOf<String?>(null)
+    // 收藏站点可能来自别城，地铁保留来源城市，不改公交当前城市。
+    var metroCity by mutableStateOf<City?>(null)
     fun push(screen: Screen) { stack.add(PageEntry(screen)) }
     fun pop() { if (stack.size > 1) { val entry = stack.removeAt(stack.lastIndex); retired.add(entry) } }
     fun release(entry: PageEntry) { if (entry !in stack) { entry.viewModelStore.clear(); retired.remove(entry) } }
-    fun home() { val visible = stack.last(); while (stack.size > 1) pop(); segment = 0; retired.filter { it != visible }.toList().forEach { release(it) } }
+    fun home() { val visible = stack.last(); while (stack.size > 1) pop(); segment = HomeTab.BUS; pendingMetroLine = null; metroCity = null; retired.filter { it != visible }.toList().forEach { release(it) } }
+    // 站点也可能从搜索页进入，换乘时要把中间页一并退掉，才能露出地铁 Tab。
+    fun metro(line: String, city: City? = null) { home(); segment = HomeTab.METRO; metroCity = city; pendingMetroLine = line }
     override fun onCleared() { (stack + retired).forEach { it.viewModelStore.clear() } }
 }
 data class RootData(val cities: List<City> = emptyList(), val city: City? = null)
@@ -174,7 +178,7 @@ class MainActivity : ComponentActivity() {
     var lastBack by remember { mutableLongStateOf(0L) }
     BackHandler(!navigation.cityVisible && navigation.stack.size == 1) {
         if (navigation.stack.size > 1) navigation.pop()
-        else if (navigation.segment != 0) navigation.segment = 0
+        else if (navigation.segment != HomeTab.BUS) navigation.segment = HomeTab.BUS
         else {
             val now = SystemClock.elapsedRealtime()
             if (lastBack != 0L && now - lastBack < 2000) exit()
@@ -212,19 +216,33 @@ class MainActivity : ComponentActivity() {
                 pageStates.SaveableStateProvider(entry.stateKey) {
                 CompositionLocalProvider(LocalViewModelStoreOwner provides entry) {
                     when (val screen = entry.screen) {
-                        Screen.Home -> HomeRoute(
-                            model(key = city.key) { HomeViewModel(graph, city) },
-                            model(key = "settings-${city.key}") { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) },
-                            navigation.segment, { navigation.segment = it },
-                            { open(Screen.Search(city)) }, { navigation.cityVisible = true },
-                            { c, l, s -> open(Screen.Line(c, l, s)) }, { c, s -> open(Screen.Stop(c, s)) },
-                            { line -> open(Screen.Metro(city, line)) }
-                        )
+                        Screen.Home -> {
+                            // 按城市留在首页的 Store 中；第一次进地铁前不加载站序。
+                            val metroCity = navigation.metroCity ?: city
+                            val metro: MetroViewModel? = if (navigation.segment == HomeTab.METRO || navigation.pendingMetroLine != null) {
+                                model(key = "metro-${metroCity.key}") { MetroViewModel(graph, metroCity) }
+                            } else null
+                            val pending = navigation.pendingMetroLine
+                            LaunchedEffect(metro, pending) {
+                                if (metro != null && pending != null) {
+                                    metro.selectLine(pending)
+                                    navigation.pendingMetroLine = null
+                                }
+                            }
+                            HomeRoute(
+                                model(key = city.key) { HomeViewModel(graph, city) },
+                                model(key = "settings-${city.key}") { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) },
+                                navigation.segment, { navigation.segment = it },
+                                { open(Screen.Search(city)) }, { navigation.cityVisible = true },
+                                { c, l, s -> open(Screen.Line(c, l, s)) }, { c, s -> open(Screen.Stop(c, s)) },
+                                metroContent = { if (metro != null) MetroRoute(metro) }
+                            )
+                        }
                         is Screen.Search -> SearchRoute(
                             model { SearchViewModel(graph, screen.city) }, navigation::pop,
                             { open(Screen.Line(screen.city, it)) },
                             { open(Screen.Stop(screen.city, it)) },
-                            { lineId -> open(Screen.Metro(screen.city, lineId)) }
+                            { lineId -> navigation.metro(lineId, screen.city) }
                         )
                         is Screen.Line -> LineRoute(
                             model { LineViewModel(graph, screen.city, screen.line, screen.station) },
@@ -236,10 +254,9 @@ class MainActivity : ComponentActivity() {
                             model { StationViewModel(graph, screen.city, screen.station) },
                             navigation::pop,
                             { line, stop -> open(Screen.Line(screen.city, line, stop)) },
-                            { lineId -> open(Screen.Metro(screen.city, lineId)) }
+                            { lineId -> navigation.metro(lineId, screen.city) }
                         )
                         is Screen.Times -> TimetableRoute(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
-                        is Screen.Metro -> MetroRoute(model { MetroViewModel(graph, screen.city, screen.line) }, navigation::pop)
                         is Screen.Vehicle -> VehicleRoute(
                             model { VehicleViewModel(graph, screen.city, screen.route, screen.plate, screen.boarding) },
                             navigation::pop,

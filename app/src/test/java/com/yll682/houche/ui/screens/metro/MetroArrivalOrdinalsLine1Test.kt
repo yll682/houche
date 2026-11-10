@@ -251,7 +251,7 @@ class MetroArrivalOrdinalsLine1Test {
         org.robolectric.RuntimeEnvironment.setQualifiers("+notnight")
         compose.setContent {
             MaterialTheme(colorScheme = LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
-                Surface(Modifier.fillMaxSize()) { MetroContent(UiState.Success(data), {}, {}) }
+                Surface(Modifier.fillMaxSize()) { MetroContent(UiState.Success(data), {}) }
             }
         }
         compose.waitForIdle()

@@ -142,7 +142,7 @@ class MetroStripInteractionTest {
         val picks = mutableListOf<String>()
         Metro {
             MetroContent(
-                UiState.Success(data), {}, {},
+                UiState.Success(data), {},
                 selectStation = { code ->
                     picks += code
                     // 模拟 ViewModel 那一步的可见结果：参考站跟着数据走（这里不清实时数据，好看清选中变化）
@@ -177,7 +177,7 @@ class MetroStripInteractionTest {
     fun stripDragDoesNotSwitchReference() {
         var data by mutableStateOf(seed())
         val picks = mutableListOf<String>()
-        Metro { MetroContent(UiState.Success(data), {}, {}, selectStation = { code -> picks += code }) }
+        Metro { MetroContent(UiState.Success(data), {}, selectStation = { code -> picks += code }) }
         compose.waitForIdle()
 
         stripStation(names.getValue(codes[referenceIndex - 1])).performTouchInput { swipeLeft() }
@@ -189,7 +189,7 @@ class MetroStripInteractionTest {
 
     @Test
     fun stripStationHitAreaCoversWholeColumn() {
-        Metro { MetroContent(UiState.Success(seed()), {}, {}) }
+        Metro { MetroContent(UiState.Success(seed()), {}) }
         compose.waitForIdle()
 
         val density = ApplicationProvider.getApplicationContext<android.content.Context>()
@@ -202,7 +202,7 @@ class MetroStripInteractionTest {
     @Test
     fun refreshGlyphSpinsThenStopsOnWholeTurn() {
         compose.mainClock.autoAdvance = false
-        Metro { MetroContent(UiState.Success(seed()), {}, {}, refresh = {}) }
+        Metro { MetroContent(UiState.Success(seed()), {}, refresh = {}) }
         repeat(4) { compose.mainClock.advanceTimeByFrame() }
 
         val button = compose.onNodeWithContentDescription("刷新")
@@ -233,7 +233,7 @@ class MetroStripInteractionTest {
     fun trainMarkerGlidesOnSmallMoveAndSnapsOnBigJump() {
         compose.mainClock.autoAdvance = false
         var data by mutableStateOf(oneTrain(at = -1, scale = 0.10, flag = 1, seconds = 170))
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         repeat(4) { compose.mainClock.advanceTimeByFrame() }
 
         val start = markerLeft()

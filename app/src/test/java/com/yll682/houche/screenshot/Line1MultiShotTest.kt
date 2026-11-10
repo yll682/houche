@@ -11,10 +11,14 @@ import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.core.app.ApplicationProvider
 import com.yll682.houche.core.MetroFixtures
+import com.yll682.houche.core.City
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroNetwork
 import com.yll682.houche.core.MetroRealtime
@@ -23,6 +27,9 @@ import com.yll682.houche.core.mergeMetroRealtime
 import com.yll682.houche.core.metroTransfers
 import com.yll682.houche.core.positionOf
 import com.yll682.houche.ui.UiState
+import com.yll682.houche.ui.HomeTab
+import com.yll682.houche.ui.screens.home.HomeContent
+import com.yll682.houche.ui.screens.home.HomeData
 import com.yll682.houche.ui.screens.metro.MetroContent
 import com.yll682.houche.ui.screens.metro.MetroData
 import com.yll682.houche.ui.screens.metro.arrivalOrdinals
@@ -191,6 +198,9 @@ class Line1MultiShotTest {
     @Test
     fun metroLine1Multi_light() {
         render()
+        compose.onNodeWithText("列车位置").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回").assertDoesNotExist()
+        listOf("公交", "地铁", "收藏", "设置").forEach { compose.onNodeWithText(it).assertIsDisplayed() }
         val bitmap = compose.onRoot().let { root ->
             val node = root.fetchSemanticsNode()
             val view = (node.root as ViewRootForTest).view
@@ -221,7 +231,14 @@ class Line1MultiShotTest {
         compose.setContent {
             MaterialTheme(colorScheme = LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
                 Surface(Modifier.fillMaxSize()) {
-                    MetroContent(UiState.Success(data), {}, {}, refresh = {})
+                    HomeContent(
+                        state = UiState.Success(HomeData(hasMetro = true)),
+                        city = City("xiamen", "厦门市"), granted = false,
+                        segment = HomeTab.METRO, selectSegment = {},
+                        locate = {}, search = {}, cities = {},
+                        line = { _, _, _ -> }, station = { _, _ -> },
+                        metroContent = { MetroContent(UiState.Success(data), {}, refresh = {}) }
+                    )
                 }
             }
         }

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.yll682.houche.core.City
 import com.yll682.houche.ui.UiState
+import com.yll682.houche.ui.HomeTab
 import com.yll682.houche.ui.screens.home.*
 import com.yll682.houche.ui.screens.search.*
 import com.yll682.houche.ui.screens.settings.*
@@ -29,23 +30,80 @@ class TelegramInteractionTest {
     private val city = City("xiamen", "厦门市", "0592", "福建省", "xiamen")
 
     @Test fun destinationsSwitchAndExposeSelectedState() {
+        val selections = mutableListOf<Int>()
         compose.setContent {
-            var segment by remember { mutableIntStateOf(0) }
+            var segment by remember { mutableIntStateOf(HomeTab.BUS) }
             HoucheTheme {
-                HomeContent(UiState.Success(HomeData()), city, false, segment, { segment = it }, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
+                HomeContent(UiState.Success(HomeData()), city, false, segment, { segment = it; selections += it }, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
+                    metroContent = { Box(Modifier.fillMaxSize()) { Text("地铁内容") } },
                     settingsContent = { Box(Modifier.fillMaxSize()) { Text("设置内容") } })
             }
         }
-        compose.onNodeWithText("收藏").performClick()
+        assertTabs("公交")
+        tab("地铁").performClick()
+        compose.onNodeWithText("地铁内容").assertIsDisplayed()
+        compose.onNodeWithText("列车位置").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回").assertDoesNotExist()
+        compose.onNodeWithContentDescription("重新定位").assertDoesNotExist()
+        compose.onNodeWithText(city.name).assertDoesNotExist()
+        compose.onNodeWithText("搜线路 / 站点").assertDoesNotExist()
+        assertTabs("地铁")
+        tab("收藏").performClick()
         compose.onNode(isSelected() and hasText("收藏")).assertIsDisplayed()
-        compose.onNodeWithText("设置", useUnmergedTree = false).performClick()
+        compose.onNodeWithText("地铁内容").assertDoesNotExist()
+        assertTabs("收藏")
+        tab("设置").performClick()
         compose.waitUntil(3000) { compose.onNodeWithText("设置内容").isDisplayed() }
         compose.onNodeWithText("设置内容").assertIsDisplayed()
         compose.onNode(isSelected() and hasText("设置")).assertIsDisplayed()
-        compose.onNodeWithText("首页").performClick()
+        assertTabs("设置")
+        tab("公交").performClick()
         compose.waitForIdle()
         compose.waitUntil(3000) { compose.onNodeWithText("搜线路 / 站点").isDisplayed() }
         compose.onNodeWithText("搜线路 / 站点").assertIsDisplayed()
+        assertTabs("公交")
+        compose.runOnIdle { assertEquals(listOf(HomeTab.METRO, HomeTab.FAVORITES, HomeTab.SETTINGS, HomeTab.BUS), selections) }
+    }
+
+    @Test fun metroTabRemainsAvailableWithoutMetroDataAndReselectKeepsItsContent() {
+        var entered = 0
+        var disposed = 0
+        compose.setContent {
+            var segment by remember { mutableIntStateOf(HomeTab.BUS) }
+            HoucheTheme {
+                HomeContent(
+                    UiState.Success(HomeData(hasMetro = false)), city, false, segment,
+                    { segment = it }, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
+                    metroContent = {
+                        DisposableEffect(Unit) {
+                            entered++
+                            onDispose { disposed++ }
+                        }
+                        Text("暂无地铁资料")
+                    }
+                )
+            }
+        }
+        assertTabs("公交")
+        tab("地铁").performClick()
+        compose.onNodeWithText("暂无地铁资料").assertIsDisplayed()
+        assertTabs("地铁")
+        tab("地铁").performClick()
+        compose.runOnIdle {
+            assertEquals("重复选择地铁 Tab 不重建内容", 1, entered)
+            assertEquals(0, disposed)
+        }
+    }
+
+    private fun tab(label: String) = compose.onNode(hasText(label) and hasClickAction())
+
+    private fun assertTabs(selected: String) {
+        listOf("公交", "地铁", "收藏", "设置").forEach { label ->
+            tab(label).assertIsDisplayed()
+            if (label == selected) tab(label).assertIsSelected() else tab(label).assertIsNotSelected()
+        }
+        val bounds = listOf("公交", "地铁", "收藏", "设置").map { tab(it).fetchSemanticsNode().boundsInRoot }
+        org.junit.Assert.assertTrue(bounds.zipWithNext().all { (left, right) -> left.right <= right.left })
     }
 
     @Test fun recentSearchDeletionUpdatesImmediatelyAndKeepsOtherItems() {

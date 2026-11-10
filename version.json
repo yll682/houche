@@ -1,10 +1,10 @@
 {
-  "versionName": "2.0.0",
-  "versionCode": 33,
-  "released": "2026-11-10",
-  "notes": "地铁页线路徽标改为每条线自己的官方色；站点与线路页术语统一为「乘车站」，到站提醒改叫「通知设置」，新增「重新定位」；界面残留英文文案中文化。",
+  "versionName": "2.1.0",
+  "versionCode": 34,
+  "released": "2026-11-11",
+  "notes": "底部导航改成四个 Tab：公交、地铁、收藏、设置；地铁整页内嵌在底栏层，底栏始终可见，地铁页不再有返回箭头；底栏支持直接拖动切换，返回时选中指示块不再闪烁；地铁线路条支持长按拖动切换线路，首末端改为圆头，起终点更易辨认；时刻表的发车时间与分割线之间补了间距。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v2.0.0/houche-v2.0.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.0.0/houche-v2.0.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v2.1.0/houche-v2.1.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.1.0/houche-v2.1.0.apk"
   }
 }

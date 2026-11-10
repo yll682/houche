@@ -13,12 +13,16 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.core.app.ApplicationProvider
 import com.yll682.houche.core.MetroFixtures
+import com.yll682.houche.core.City
 import com.yll682.houche.core.MetroLine
 import com.yll682.houche.core.MetroNetwork
 import com.yll682.houche.core.MetroRealtime
 import com.yll682.houche.core.MetroRealtimeRemote
 import com.yll682.houche.core.mergeMetroRealtime
 import com.yll682.houche.ui.UiState
+import com.yll682.houche.ui.HomeTab
+import com.yll682.houche.ui.screens.home.HomeContent
+import com.yll682.houche.ui.screens.home.HomeData
 import com.yll682.houche.ui.theme.HoucheShapes
 import com.yll682.houche.ui.theme.HoucheTypography
 import com.yll682.houche.ui.theme.LightColors
@@ -36,7 +40,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * ETA 三格的「第N班」必须与「第几近」同向：最近的一班是第 1 班，越往左班号越大，且三格连续无空格。
+ * ETA 三格按 2.0.x 的左到右顺序显示第 1/2/3 班，最近的一班是第 1 班，且三格连续无空格。
  *
  * 数据不是手编的：直接读 `analysis/fixtures/metro-realtime-line2-flag2-sample.json`
  * （官方二号线真实响应，参考站 02170000 育秀东路，服务端 2026-11-08 08:15:41 +08），
@@ -80,7 +84,16 @@ class MetroEtaOrdinalOrderTest {
     private fun Metro(content: @Composable () -> Unit) {
         compose.setContent {
             MaterialTheme(colorScheme = LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
-                Surface(Modifier.fillMaxSize()) { content() }
+                Surface(Modifier.fillMaxSize()) {
+                    HomeContent(
+                        state = UiState.Success(HomeData(hasMetro = true)),
+                        city = City("11", "厦门市"), granted = false,
+                        segment = HomeTab.METRO, selectSegment = {},
+                        locate = {}, search = {}, cities = {},
+                        line = { _, _, _ -> }, station = { _, _ -> },
+                        metroContent = content
+                    )
+                }
             }
         }
     }
@@ -116,10 +129,10 @@ class MetroEtaOrdinalOrderTest {
     fun etaCellsNumberNearestFirstWithoutGaps() {
         val data = data()
         assertTrue("真实响应必须已取到本站到站行", data.etaState is com.yll682.houche.core.MetroEtaState.Ready)
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         compose.waitForIdle()
 
-        // 真实值：44s/404s/764s → 1/7/13 分钟；最近的一班在最右一格，是第 1 班。
+        // 真实值：44s/404s/764s → 1/7/13 分钟；2.0.x 从左到右按本站到站顺序显示。
         val nearest = compose.onNodeWithContentDescription("1 分钟第1班预计到达")
             .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val middle = compose.onNodeWithContentDescription("7 分钟第2班预计到达")
@@ -127,9 +140,10 @@ class MetroEtaOrdinalOrderTest {
         val farthest = compose.onNodeWithContentDescription("13 分钟第3班预计到达")
             .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
 
-        // 列序反排：最右＝最近。班号 3 → 2 → 1 从左到右。
-        assertTrue("第1班必须在第2班右边", nearest.left > middle.left)
-        assertTrue("第2班必须在第3班右边", middle.left > farthest.left)
+        assertTrue("第1班必须完整位于第2班左边：$nearest / $middle", nearest.right <= middle.left)
+        assertTrue("第2班必须完整位于第3班左边：$middle / $farthest", middle.right <= farthest.left)
+        assertEquals(nearest.top, middle.top, 1f)
+        assertEquals(middle.top, farthest.top, 1f)
 
         // 三格都不许退化成没有班号的「预计到达」。
         val descriptions = compose.onAllNodes(

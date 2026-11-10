@@ -35,7 +35,7 @@ import com.yll682.houche.ui.theme.HeaderTop
     locate: () -> Unit, search: () -> Unit, cities: () -> Unit,
     line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit,
     modifier: Modifier = Modifier,
-    metro: ((String?) -> Unit)? = null,
+    metroContent: @Composable () -> Unit = {},
     settingsContent: @Composable () -> Unit = {},
     refresh: () -> Unit = locate
 ) {
@@ -51,120 +51,131 @@ import com.yll682.houche.ui.theme.HeaderTop
     val currentSegment = rememberUpdatedState(segment)
     val changeSegment = rememberUpdatedState(selectSegment)
     fun destination(index: Int) {
-        if (index == currentSegment.value) scope.launch {
-            when(index) { 0 -> nearbyScroll.animateScrollToItem(0); 1 -> favoriteScroll.animateScrollToItem(0); else -> settingsTop++ }
+        if (index == currentSegment.value) {
+            when (index) {
+                HomeTab.BUS -> scope.launch { nearbyScroll.animateScrollToItem(0) }
+                HomeTab.METRO -> Unit
+                HomeTab.FAVORITES -> scope.launch { favoriteScroll.animateScrollToItem(0) }
+                HomeTab.SETTINGS -> settingsTop++
+            }
         } else changeSegment.value(index)
     }
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { HomeHeader(city, cities, locate, search, searchable = segment != 2, refreshable = segment != 2,
-            metro = if (data.hasMetro && segment == 0) metro else null, segment = segment) }
+        topBar = { HomeHeader(city, cities, locate, search, segment = segment) }
     ) { padding ->
-      Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
-       Box(Modifier.fillMaxSize().navigationBackdrop(backdrop)) {
-        if (segment == 2) {
-            Box(Modifier.fillMaxSize().padding(bottom = 80.dp).navigationBarsPadding()) {
-                CompositionLocalProvider(LocalSettingsReselect provides settingsTop) { tabStates.SaveableStateProvider("settings") { settingsContent() } }
-            }
-        } else {
-        PullToRefresh(loading, { if (data.stations.isNotEmpty()) refresh() else locate() }) {
-            LazyColumn(
-                Modifier.fillMaxSize(),
-                state = if (segment == 0) nearbyScroll else favoriteScroll,
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (segment == 0) {
-                    item {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.NearMe, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.width(6.dp))
-                            // 定位结论只给一句：正在定位 / 已定位 / 已按定位城市查询 / 未识别回退。
-                            val status = when {
-                                loading -> R.string.locating
-                                data.position == null -> R.string.nearby
-                                data.position.fromLastKnown -> R.string.last_location
-                                data.cityResolved -> R.string.location_city
-                                else -> R.string.location_fallback
-                            }
-                            Text(
-                                stringResource(status),
-                                Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (data.position == null) {
-                                Text(
-                                    stringResource(if (granted && data.permissionDenied) R.string.open_settings else R.string.enable_location),
-                                    Modifier.touch(stringResource(R.string.enable_location)).clickable { locate() }.padding(horizontal = 4.dp).wrapContentHeight(),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
+        Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+            Box(Modifier.fillMaxSize().navigationBackdrop(backdrop)) {
+                when (segment) {
+                    HomeTab.METRO -> metroContent()
+                    HomeTab.SETTINGS -> {
+                        Box(Modifier.fillMaxSize().padding(bottom = 80.dp).navigationBarsPadding()) {
+                            CompositionLocalProvider(LocalSettingsReselect provides settingsTop) { tabStates.SaveableStateProvider("settings") { settingsContent() } }
                         }
                     }
-                    if (!granted || data.permissionDenied || (data.position == null && !loading)) {
-                        item { LocationCard(data.permissionDenied, locate) }
-                    }
-                    feedback(state, cards = 5, hasContent = data.stations.isNotEmpty()) { locate() }
-                    if (data.stations.isEmpty() && state is UiState.Empty) {
-                        item { EmptyState(stringResource(R.string.no_stations), action = stringResource(R.string.search_action), onClick = search) }
-                    }
-                    itemsIndexed(data.stations, key = { _, stop -> "${stop.number}-${stop.name}-${stop.lat}-${stop.lng}" }) { index, stop ->
-                        StationCard(
-                            station = stop,
-                            arrivals = data.arrivals[index].orEmpty(),
-                            error = data.liveErrors[index],
-                            collapsed = index >= 3,
-                            onOpen = { station(city, stop) },
-                            onLine = { summary -> line(city, summary, stop) }
-                        )
-                    }
-                } else {
-                    feedback(state, cards = 4, hasContent = data.favoriteLines.isNotEmpty() || data.favoriteStations.isNotEmpty()) { locate() }
-                    if (data.favoriteLines.isEmpty() && data.favoriteStations.isEmpty()) {
-                        item { EmptyState(stringResource(R.string.no_favorites), action = stringResource(R.string.search_action), onClick = search) }
-                    }
-                    if (data.favoriteLines.isNotEmpty()) {
-                        item { SectionHeader(stringResource(R.string.favorite_lines), data.favoriteLines.size) }
-                        item {
-                            CardSurface {
-                                data.favoriteLines.forEachIndexed { index, saved ->
-                                    if (index > 0) Hairline()
-                                    Column {
-                                        Text(
-                                            saved.city.name,
-                                            Modifier.padding(start = 16.dp, top = 10.dp),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        LineRow(saved.line) { line(saved.city, saved.line, null) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (data.favoriteStations.isNotEmpty()) {
-                        item { SectionHeader(stringResource(R.string.favorite_stations), data.favoriteStations.size) }
-                        item {
-                            CardSurface {
-                                data.favoriteStations.forEachIndexed { index, saved ->
-                                    if (index > 0) Hairline()
-                                    Row(
-                                        Modifier.fillMaxWidth().touch(saved.station.name).clickable { station(saved.city, saved.station) }
-                                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Outlined.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                        Spacer(Modifier.width(10.dp))
-                                        Column(Modifier.weight(1f)) {
-                                            Text(saved.station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            Text(saved.city.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    HomeTab.BUS, HomeTab.FAVORITES -> {
+                        PullToRefresh(loading, { if (data.stations.isNotEmpty()) refresh() else locate() }) {
+                            LazyColumn(
+                                Modifier.fillMaxSize(),
+                                state = if (segment == HomeTab.BUS) nearbyScroll else favoriteScroll,
+                                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                if (segment == HomeTab.BUS) {
+                                    item {
+                                        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Outlined.NearMe, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Spacer(Modifier.width(6.dp))
+                                            // 定位结论只给一句：正在定位 / 已定位 / 已按定位城市查询 / 未识别回退。
+                                            val status = when {
+                                                loading -> R.string.locating
+                                                data.position == null -> R.string.nearby
+                                                data.position.fromLastKnown -> R.string.last_location
+                                                data.cityResolved -> R.string.location_city
+                                                else -> R.string.location_fallback
+                                            }
+                                            Text(
+                                                stringResource(status),
+                                                Modifier.weight(1f),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            if (data.position == null) {
+                                                Text(
+                                                    stringResource(if (granted && data.permissionDenied) R.string.open_settings else R.string.enable_location),
+                                                    Modifier.touch(stringResource(R.string.enable_location)).clickable { locate() }.padding(horizontal = 4.dp).wrapContentHeight(),
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
-                                        Text(stringResource(R.string.station_count, saved.station.lines.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    if (!granted || data.permissionDenied || (data.position == null && !loading)) {
+                                        item { LocationCard(data.permissionDenied, locate) }
+                                    }
+                                    feedback(state, cards = 5, hasContent = data.stations.isNotEmpty()) { locate() }
+                                    if (data.stations.isEmpty() && state is UiState.Empty) {
+                                        item { EmptyState(stringResource(R.string.no_stations), action = stringResource(R.string.search_action), onClick = search) }
+                                    }
+                                    itemsIndexed(data.stations, key = { _, stop -> "${stop.number}-${stop.name}-${stop.lat}-${stop.lng}" }) { index, stop ->
+                                        StationCard(
+                                            station = stop,
+                                            arrivals = data.arrivals[index].orEmpty(),
+                                            error = data.liveErrors[index],
+                                            collapsed = index >= 3,
+                                            onOpen = { station(city, stop) },
+                                            onLine = { summary -> line(city, summary, stop) }
+                                        )
+                                    }
+                                } else {
+                                    feedback(state, cards = 4, hasContent = data.favoriteLines.isNotEmpty() || data.favoriteStations.isNotEmpty()) { locate() }
+                                    if (data.favoriteLines.isEmpty() && data.favoriteStations.isEmpty()) {
+                                        item { EmptyState(stringResource(R.string.no_favorites), action = stringResource(R.string.search_action), onClick = search) }
+                                    }
+                                    if (data.favoriteLines.isNotEmpty()) {
+                                        item { SectionHeader(stringResource(R.string.favorite_lines), data.favoriteLines.size) }
+                                        item {
+                                            CardSurface {
+                                                data.favoriteLines.forEachIndexed { index, saved ->
+                                                    if (index > 0) Hairline()
+                                                    Column {
+                                                        Text(
+                                                            saved.city.name,
+                                                            Modifier.padding(start = 16.dp, top = 10.dp),
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                        LineRow(saved.line) { line(saved.city, saved.line, null) }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (data.favoriteStations.isNotEmpty()) {
+                                        item { SectionHeader(stringResource(R.string.favorite_stations), data.favoriteStations.size) }
+                                        item {
+                                            CardSurface {
+                                                data.favoriteStations.forEachIndexed { index, saved ->
+                                                    if (index > 0) Hairline()
+                                                    Row(
+                                                        Modifier.fillMaxWidth().touch(saved.station.name).clickable { station(saved.city, saved.station) }
+                                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(Icons.Outlined.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                                        Spacer(Modifier.width(10.dp))
+                                                        Column(Modifier.weight(1f)) {
+                                                            Text(saved.station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                            Text(saved.city.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                        Text(stringResource(R.string.station_count, saved.station.lines.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -172,27 +183,32 @@ import com.yll682.houche.ui.theme.HeaderTop
                     }
                 }
             }
+            Box(Modifier.align(Alignment.BottomCenter)) { HomeBottomBar(segment, ::destination, backdrop) }
         }
-        }
-       }
-       Box(Modifier.align(Alignment.BottomCenter)) { HomeBottomBar(segment, ::destination, backdrop) }
-      }
     }
 }
 
-@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true, metro: ((String?) -> Unit)? = null, segment: Int = 0) {
+@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, segment: Int = HomeTab.BUS) {
+    val searchable = segment == HomeTab.BUS || segment == HomeTab.FAVORITES
     HeaderSurface {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 20.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(when (segment) { 1 -> R.string.favorites; 2 -> R.string.settings; else -> R.string.app_name }),
+            Text(stringResource(when (segment) {
+                HomeTab.BUS -> R.string.app_name
+                HomeTab.METRO -> R.string.metro_realtime_position
+                HomeTab.FAVORITES -> R.string.favorites
+                HomeTab.SETTINGS -> R.string.settings
+                else -> R.string.app_name
+            }),
                 Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Surface(onClick = cities, modifier = Modifier.widthIn(max = 144.dp), shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                Row(Modifier.heightIn(min = 40.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(city.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Icon(Icons.Outlined.ExpandMore, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            if (segment != HomeTab.METRO) {
+                Surface(onClick = cities, modifier = Modifier.widthIn(max = 144.dp), shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    Row(Modifier.heightIn(min = 40.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(city.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Icon(Icons.Outlined.ExpandMore, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
-            if (metro != null) HeaderIcon(Icons.Outlined.Subway, stringResource(R.string.metro), { metro(null) })
-            if (refreshable) HeaderIcon(Icons.Outlined.MyLocation, stringResource(R.string.relocate), locate)
+            if (searchable) HeaderIcon(Icons.Outlined.MyLocation, stringResource(R.string.relocate), locate)
         }
         if (searchable) {
             Surface(onClick = search, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 10.dp).height(40.dp),
@@ -208,7 +224,12 @@ import com.yll682.houche.ui.theme.HeaderTop
 
 @Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit, backdrop: NavigationBackdrop) {
     Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-        TelegramNavigation(segment, selectSegment, backdrop = backdrop)
+        TelegramNavigation(
+            selected = segment,
+            select = selectSegment,
+            tabs = homeTabs(),
+            backdrop = backdrop
+        )
     }
 }
 

@@ -10,6 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -23,6 +26,7 @@ import com.yll682.houche.model
 import com.yll682.houche.core.*
 import com.yll682.houche.data.Position
 import com.yll682.houche.ui.UiState
+import com.yll682.houche.ui.HomeTab
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -115,7 +119,7 @@ class ScreenshotTest {
         )
     )
 
-    /** 设置现在是首页的第三个 Tab，截图也要连底部导航一起拍。 */
+    /** 设置是首页的第四个 Tab，截图也要连底部导航一起拍。 */
 
     /**
      * 地铁演示数据直接读 assets/metro.json，不再手抄：
@@ -140,14 +144,78 @@ class ScreenshotTest {
     private val metroLine4: MetroLine get() = metroLines.first { it.id == "4" }
     private val metroData: MetroData get() = MetroData(metroLines, "1", "2026-11-06")
 
-    @Composable private fun MetroShot() = MetroContent(UiState.Success(metroData), {}, {})
+    @Composable private fun MetroShot() = MetroPage(metroData)
+
+    @Composable private fun MetroPage(data: MetroData) = HomeContent(
+        state = UiState.Success(HomeData(hasMetro = true)),
+        city = city, granted = false, segment = HomeTab.METRO, selectSegment = {},
+        locate = {}, search = {}, cities = {}, line = { _, _, _ -> }, station = { _, _ -> },
+        metroContent = { MetroContent(UiState.Success(data), {}) }
+    )
 
     @Test fun metro_light() = capture("metro", false) { MetroShot() }
     @Test fun metro_dark() = capture("metro", true) { MetroShot() }
 
+    @Test fun metroBottom_light() = capture("metro-bottom", false, beforeCapture = { assertMetroBottom() }) {
+        MetroPage(metroData.copy(updated = ""))
+    }
+
+    @Test fun metroBottom_dark() = capture("metro-bottom", true, beforeCapture = { assertMetroBottom() }) {
+        MetroPage(metroData.copy(updated = ""))
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroBottomNarrowLarge_light() = metroBottomNarrowLarge(false)
+
+    @Test
+    @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
+    fun metroBottomNarrowLarge_dark() = metroBottomNarrowLarge(true)
+
+    private fun metroBottomNarrowLarge(dark: Boolean) = capture(
+        "metro-bottom-narrow-large", dark, 1080, 2340, beforeCapture = { assertMetroBottom() }
+    ) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, 1.5f)) {
+            MetroPage(metroData.copy(updated = ""))
+        }
+    }
+
+    private fun assertMetroChrome() {
+        compose.onNodeWithText("列车位置").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回").assertDoesNotExist()
+        compose.onNodeWithContentDescription("重新定位").assertDoesNotExist()
+        compose.onNodeWithText(city.name).assertDoesNotExist()
+        compose.onNodeWithText("搜线路 / 站点").assertDoesNotExist()
+        val tabs = listOf("公交", "地铁", "收藏", "设置")
+        tabs.forEach { compose.onNode(hasText(it) and hasClickAction()).assertIsDisplayed() }
+        compose.onNode(hasText("地铁") and isSelected()).assertIsDisplayed()
+        val bounds = tabs.map { compose.onNode(hasText(it) and hasClickAction()).fetchSemanticsNode().boundsInRoot }
+        assertTrue("四个 Tab 从左到右保持既定顺序", bounds.zipWithNext().all { (left, right) -> left.right <= right.left })
+    }
+
+    private fun assertMetroBottom() {
+        val line = requireNotNull(metroData.orderedLine)
+        val list = compose.onNodeWithTag("metro-stations")
+        // 卡片、免责说明、站序标题占前三项；使用最后站的索引滚动到真实列表底端。
+        list.performScrollToIndex(line.stations.size + 2)
+        compose.waitForIdle()
+        val last = compose.onNode(
+            hasContentDescription(line.stations.last().name, substring = true) and
+                hasAnyAncestor(hasTestTag("metro-stations")) and hasClickAction()
+        ).assertIsDisplayed().fetchSemanticsNode()
+        val bottom = last.positionInRoot.y + last.size.height
+        val navigationTop = compose.onNode(hasText("公交") and hasClickAction()).fetchSemanticsNode().boundsInRoot.top
+        val density = ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        assertTrue("最后站完整行必须位于底栏上方，rowBottom=$bottom navTop=$navigationTop", bottom <= navigationTop - 4 * density + 1f)
+        val listBottom = list.fetchSemanticsNode().boundsInRoot.bottom
+        val rootBottom = compose.onRoot().fetchSemanticsNode().boundsInRoot.bottom
+        assertEquals("列表自身延伸到底部，不重复预留外层底栏空间", rootBottom, listBottom, 1f)
+    }
+
     /** 在线资料命中时头部多一个「在线」胶囊；探测失败时这张和上面完全一样。 */
     @Test fun metroOnline_light() = capture("metro-online", false) {
-        MetroContent(UiState.Success(metroData.copy(online = true)), {}, {})
+        MetroPage(metroData.copy(online = true))
     }
 
     /** 实时到站用官方真实响应：一号线高崎站，两个方向各三班车，含列车位置示意。 */
@@ -162,10 +230,10 @@ class ScreenshotTest {
     )
 
     @Test fun metroRealtime_light() = capture("metro-realtime", false) {
-        MetroContent(UiState.Success(metroRealtimeData), {}, {}, {}, {})
+        MetroPage(metroRealtimeData)
     }
     @Test fun metroRealtime_dark() = capture("metro-realtime", true) {
-        MetroContent(UiState.Success(metroRealtimeData), {}, {}, {}, {})
+        MetroPage(metroRealtimeData)
     }
 
     /**
@@ -182,10 +250,10 @@ class ScreenshotTest {
     }
 
     @Test fun metroOutOfService_light() = capture("metro-out-of-service", false) {
-        MetroContent(UiState.Success(metroOutOfServiceData), {}, {}, {}, {}, refresh = {})
+        MetroPage(metroOutOfServiceData)
     }
     @Test fun metroOutOfService_dark() = capture("metro-out-of-service", true) {
-        MetroContent(UiState.Success(metroOutOfServiceData), {}, {}, {}, {}, refresh = {})
+        MetroPage(metroOutOfServiceData)
     }
 
     /**
@@ -250,10 +318,10 @@ class ScreenshotTest {
 
     @Test fun metroRealtimeMerge_light() {
         assertMergedMarker()
-        capture("metro-realtime-merge", false) { MetroContent(UiState.Success(metroMergedData), {}, {}, {}, {}) }
+        capture("metro-realtime-merge", false) { MetroPage(metroMergedData) }
     }
     @Test fun metroRealtimeMerge_dark() = capture("metro-realtime-merge", true) {
-        MetroContent(UiState.Success(metroMergedData), {}, {}, {}, {})
+        MetroPage(metroMergedData)
     }
 
     /**
@@ -303,13 +371,13 @@ class ScreenshotTest {
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine2Xinan_light() = capture("metro-line2-xinan", false, 1080, 2340) {
-        MetroContent(UiState.Success(xinanData), {}, {}, {}, {}, refresh = {})
+        MetroPage(xinanData)
     }
 
     /** 同一场景的深色版：官方没有深色参考图，这张是我们自己那套配色的验图。 */
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine2Xinan_dark() = capture("metro-line2-xinan", true, 1080, 2340) {
-        MetroContent(UiState.Success(xinanData), {}, {}, {}, {}, refresh = {})
+        MetroPage(xinanData)
     }
 
     /**
@@ -351,7 +419,7 @@ class ScreenshotTest {
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine6_dark() = capture("metro-line6", true, 1080, 2340) {
-        MetroContent(UiState.Success(line6Data), {}, {}, {}, {}, refresh = {})
+        MetroPage(line6Data)
     }
 
     /**
@@ -401,10 +469,10 @@ class ScreenshotTest {
     }
 
     @Test fun metroTransfer_light() = capture("metro-transfer", false) {
-        MetroContent(UiState.Success(transferData), {}, {}, {}, {}, refresh = {})
+        MetroPage(transferData)
     }
     @Test fun metroTransfer_dark() = capture("metro-transfer", true) {
-        MetroContent(UiState.Success(transferData), {}, {}, {}, {}, refresh = {})
+        MetroPage(transferData)
     }
 
     /**
@@ -454,10 +522,10 @@ class ScreenshotTest {
     private val luocuoData: MetroData by lazy { stripTransferScene(metroLine1, "01080000") }
 
     @Test fun metroStripTransfer_light() = capture("metro-strip-transfer", false) {
-        MetroContent(UiState.Success(luocuoData), {}, {}, {}, {}, refresh = {})
+        MetroPage(luocuoData)
     }
     @Test fun metroStripTransfer_dark() = capture("metro-strip-transfer", true) {
-        MetroContent(UiState.Success(luocuoData), {}, {}, {}, {}, refresh = {})
+        MetroPage(luocuoData)
     }
 
     /**
@@ -477,12 +545,12 @@ class ScreenshotTest {
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine1Zhenhailu_light() = capture("metro-line1-zhenhailu", false, 1080, 2340) {
-        MetroContent(UiState.Success(zhenhaiData), {}, {}, {}, {}, refresh = {})
+        MetroPage(zhenhaiData)
     }
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine1Zhenhailu_dark() = capture("metro-line1-zhenhailu", true, 1080, 2340) {
-        MetroContent(UiState.Success(zhenhaiData), {}, {}, {}, {}, refresh = {})
+        MetroPage(zhenhaiData)
     }
 
     /**
@@ -493,19 +561,19 @@ class ScreenshotTest {
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine1Hubindonglu_light() = capture("metro-line1-hubindonglu", false, 1080, 2340) {
-        MetroContent(UiState.Success(hubindongluData), {}, {}, {}, {}, refresh = {})
+        MetroPage(hubindongluData)
     }
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroLine1Hubindonglu_dark() = capture("metro-line1-hubindonglu", true, 1080, 2340) {
-        MetroContent(UiState.Success(hubindongluData), {}, {}, {}, {}, refresh = {})
+        MetroPage(hubindongluData)
     }
 
     @Test fun metroStripTransfer6_light() = capture("metro-strip-transfer6", false) {
-        MetroContent(UiState.Success(malaunData), {}, {}, {}, {}, refresh = {})
+        MetroPage(malaunData)
     }
     @Test fun metroStripTransfer6_dark() = capture("metro-strip-transfer6", true) {
-        MetroContent(UiState.Success(malaunData), {}, {}, {}, {}, refresh = {})
+        MetroPage(malaunData)
     }
 
     /**
@@ -519,10 +587,10 @@ class ScreenshotTest {
     private val dingmeiData: MetroData by lazy { stripTransferScene(metroLine2, "02040000") }
 
     @Test fun metroBadgePair_light() = capture("metro-badge-pair", false) {
-        MetroContent(UiState.Success(dingmeiData), {}, {}, {}, {}, refresh = {})
+        MetroPage(dingmeiData)
     }
     @Test fun metroBadgePair_dark() = capture("metro-badge-pair", true) {
-        MetroContent(UiState.Success(dingmeiData), {}, {}, {}, {}, refresh = {})
+        MetroPage(dingmeiData)
     }
 
     /**
@@ -595,12 +663,12 @@ class ScreenshotTest {
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroRealtimeStack_light() = capture("metro-realtime-stack", false, 1080, 2340) {
-        MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
+        MetroPage(stackData)
     }
 
     @Test @Config(qualifiers = "zh-rCN-w360dp-h780dp-xxhdpi")
     fun metroRealtimeStack_dark() = capture("metro-realtime-stack", true, 1080, 2340) {
-        MetroContent(UiState.Success(stackData), {}, {}, {}, {}, refresh = {})
+        MetroPage(stackData)
     }
 
     /**
@@ -665,19 +733,19 @@ class ScreenshotTest {
     }
 
     @Test fun metroRealtimeMany_light() = capture("metro-realtime-many", false) {
-        MetroContent(UiState.Success(manyData), {}, {}, {}, {}, refresh = {})
+        MetroPage(manyData)
     }
     @Test fun metroRealtimeMany_dark() = capture("metro-realtime-many", true) {
-        MetroContent(UiState.Success(manyData), {}, {}, {}, {}, refresh = {})
+        MetroPage(manyData)
     }
 
     @Composable private fun SettingsTab(update: UpdateState = UpdateState()) = HomeContent(
-        UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, 2,
+        UiState.Success(HomeData(position = Position(24.48, 118.13), cityResolved = true)), city, true, HomeTab.SETTINGS,
         {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
         settingsContent = { SettingsBody(UiState.Success(SettingsData(city, update = update)), {}, {}) }
     )
 
-    @Composable private fun Home(state: UiState<HomeData>, segment: Int = 0, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
+    @Composable private fun Home(state: UiState<HomeData>, segment: Int = HomeTab.BUS, granted: Boolean = true) = HomeContent(state, city, granted, segment, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> })
     @Composable private fun Line(panel: Int, selected: Boolean = true) = LineContent(UiState.Success(LineData(lineRoute, if (selected) beijingStops[1] else null, live, if (selected) listOf(Arrival(remainingStations = 1, timeText = "约3分钟", name = "1路", direction = "1")) else emptyList())), beijing, panel, false, {}, {}, {}, {}, {}, { _, _ -> }, {}, {}, {}, {}, {})
 
     // Compose 1.7 的内置 captureToImage 在 Robolectric 等待窗口重绘时超时：
@@ -694,7 +762,7 @@ class ScreenshotTest {
         return bitmap.asImageBitmap()
     }
 
-    private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, ready: () -> Boolean = { true }, content: @Composable () -> Unit) {
+    private fun capture(name: String, dark: Boolean, expectedWidth: Int = 1233, expectedHeight: Int = 2673, ready: () -> Boolean = { true }, beforeCapture: () -> Unit = {}, content: @Composable () -> Unit) {
         org.robolectric.RuntimeEnvironment.setQualifiers(if (dark) "+night" else "+notnight")
         compose.setContent {
             MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
@@ -707,6 +775,9 @@ class ScreenshotTest {
             ready()
         }
         compose.waitForIdle()
+        beforeCapture()
+        compose.waitForIdle()
+        if (name.startsWith("metro") || name.startsWith("home-metro")) assertMetroChrome()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         assertEquals(expectedWidth, bitmap.width)
         assertEquals(expectedHeight, bitmap.height)
@@ -739,8 +810,8 @@ class ScreenshotTest {
     }
     @Test fun scene0_light() = capture("home-nearby", false) { Home(UiState.Success(home)) }
     @Test fun scene0_dark() = capture("home-nearby", true) { Home(UiState.Success(home)) }
-    @Test fun scene1_light() = capture("home-favorites", false) { Home(UiState.Success(home), segment = 1) }
-    @Test fun scene1_dark() = capture("home-favorites", true) { Home(UiState.Success(home), segment = 1) }
+    @Test fun scene1_light() = capture("home-favorites", false) { Home(UiState.Success(home), segment = HomeTab.FAVORITES) }
+    @Test fun scene1_dark() = capture("home-favorites", true) { Home(UiState.Success(home), segment = HomeTab.FAVORITES) }
     @Test fun scene2_light() = capture("home-permission", false) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
     @Test fun scene2_dark() = capture("home-permission", true) { Home(UiState.Success(HomeData(permissionDenied = true)), granted = false) }
     @Test fun scene3_light() = capture("search-results", false) { SearchContent(UiState.Success(SearchData("91路", SearchResults(listOf(LineSummary("91路", "1", route.from, route.to)), listOf(stop)))), {}, {}, {}, {}, {}, {}, {}, {}) }
@@ -787,15 +858,9 @@ class ScreenshotTest {
         )
     }
 
-    /** 首页有地铁资料时，顶栏刷新左侧出现地铁入口。 */
-    @Test fun homeMetro_light() = capture("home-metro", false) {
-        HomeContent(
-            UiState.Success(HomeData(stations = listOf(stop), position = Position(24.48, 118.13), cityResolved = true, hasMetro = true)),
-            city, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }, metro = {}
-        )
-    }
+    @Test fun homeMetro_light() = capture("home-metro", false) { MetroPage(metroData) }
 
-    /** 经过真实城市表、共享资料、ViewModel 和 HomeScreen，防止中间层漏传入口回调。 */
+    /** 经过真实城市表、共享资料、ViewModel 和 HomeScreen，检查地铁内容槽和四 Tab 接线。 */
     @Test fun homeViewModelMetro_light() {
         val graph = AppGraph(ApplicationProvider.getApplicationContext())
         val xiamen = kotlinx.coroutines.runBlocking { graph.cities.all().single { it.name == "厦门市" } }
@@ -803,8 +868,8 @@ class ScreenshotTest {
         val entry = PageEntry(Screen.Home)
         var homeVm: HomeViewModel? = null
         var settingsVm: SettingsViewModel? = null
-        var opened = false
-        var selectedLine: String? = "尚未点击"
+        var segment by mutableIntStateOf(HomeTab.METRO)
+        val selections = mutableListOf<Int>()
         try {
             capture("home-metro-viewmodel", false, ready = {
                 homeVm?.state?.value?.data?.hasMetro == true &&
@@ -815,21 +880,20 @@ class ScreenshotTest {
                     val settings = model(key = "settings-${xiamen.key}") { SettingsViewModel(graph, xiamen) }
                     homeVm = home
                     settingsVm = settings
-                    HomeScreen(home, settings, false, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }, metro = {
-                        opened = true
-                        selectedLine = it
-                    })
+                    HomeScreen(home, settings, false, segment,
+                        { segment = it; selections += it }, {}, {}, {}, { _, _, _ -> }, { _, _ -> },
+                        metroContent = { MetroContent(UiState.Success(metroData), {}) })
                 }
             }
             assertFalse("首页读取地铁资料不应进入错误态", homeVm!!.state.value is UiState.Error)
             assertFalse("设置读取同份资料不应进入错误态", settingsVm!!.state.value is UiState.Error)
-            val metro = compose.onNodeWithContentDescription("地铁")
-            metro.assertIsDisplayed().assertHasClickAction()
-            val refresh = compose.onNodeWithContentDescription("重新定位").assertIsDisplayed()
-            assertTrue("地铁入口应在刷新左边", metro.fetchSemanticsNode().boundsInRoot.right <= refresh.fetchSemanticsNode().boundsInRoot.left)
-            metro.performClick()
-            assertTrue("地铁按钮必须触发导航回调", opened)
-            assertNull("顶栏入口应打开地铁首页", selectedLine)
+            compose.onNodeWithText("公交").performClick()
+            compose.onNodeWithContentDescription("重新定位").assertIsDisplayed()
+            compose.onNodeWithContentDescription("地铁").assertDoesNotExist()
+            compose.onNodeWithText("地铁").performClick()
+            compose.waitForIdle()
+            assertMetroChrome()
+            assertEquals(listOf(HomeTab.BUS, HomeTab.METRO), selections)
         } finally {
             compose.runOnUiThread { entry.viewModelStore.clear() }
         }
@@ -869,8 +933,8 @@ class ScreenshotTest {
     @Test fun scene10_dark() = capture("home-loading", true) { Home(UiState.Loading(HomeData(position = Position(24.48, 118.13)))) }
     @Test fun scene11_light() = capture("home-error", false) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
     @Test fun scene11_dark() = capture("home-error", true) { Home(UiState.Error("公交查询失败，请检查网络后重试", home)) }
-    @Test fun scene12_light() = capture("favorites-empty", false) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
-    @Test fun scene12_dark() = capture("favorites-empty", true) { Home(UiState.Success(HomeData()), segment = 1, granted = false) }
+    @Test fun scene12_light() = capture("favorites-empty", false) { Home(UiState.Success(HomeData()), segment = HomeTab.FAVORITES, granted = false) }
+    @Test fun scene12_dark() = capture("favorites-empty", true) { Home(UiState.Success(HomeData()), segment = HomeTab.FAVORITES, granted = false) }
     @Test fun longStation_light() = capture("home-long-station", false) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
     @Test fun longStation_dark() = capture("home-long-station", true) { HomeContent(UiState.Success(HomeData(stations = listOf(longStop), position = Position(39.907, 116.401), cityResolved = true)), beijing, true, 0, {}, {}, {}, {}, { _, _, _ -> }, { _, _ -> }) }
 

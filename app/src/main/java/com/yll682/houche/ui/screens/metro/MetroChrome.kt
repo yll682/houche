@@ -73,7 +73,8 @@ internal fun MetroLineTabs(lines: List<MetroLine>, selected: String, select: (St
         labels = lines.map { it.name },
         selected = lines.indexOfFirst { it.id == selected }.coerceAtLeast(0),
         select = { select(lines[it].id) },
-        tints = lines.map { officialLineColor(it) }
+        tints = lines.map { officialLineColor(it) },
+        longPressDrag = true
     )
 }
 

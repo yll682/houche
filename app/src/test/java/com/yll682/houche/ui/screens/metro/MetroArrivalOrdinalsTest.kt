@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.test.core.app.ApplicationProvider
 import com.yll682.houche.core.MetroDirection
+import com.yll682.houche.core.City
 import com.yll682.houche.core.MetroEtaState
 import com.yll682.houche.core.MetroFixtures
 import com.yll682.houche.core.MetroLine
@@ -27,6 +28,9 @@ import com.yll682.houche.core.MetroTrain
 import com.yll682.houche.core.mergeMetroRealtime
 import com.yll682.houche.core.minutesUntil
 import com.yll682.houche.ui.UiState
+import com.yll682.houche.ui.HomeTab
+import com.yll682.houche.ui.screens.home.HomeContent
+import com.yll682.houche.ui.screens.home.HomeData
 import com.yll682.houche.ui.theme.HoucheShapes
 import com.yll682.houche.ui.theme.HoucheTypography
 import com.yll682.houche.ui.theme.LightColors
@@ -102,7 +106,16 @@ class MetroArrivalOrdinalsTest {
     private fun Metro(content: @Composable () -> Unit) {
         compose.setContent {
             MaterialTheme(colorScheme = LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
-                Surface(Modifier.fillMaxSize()) { content() }
+                Surface(Modifier.fillMaxSize()) {
+                    HomeContent(
+                        state = UiState.Success(HomeData(hasMetro = true)),
+                        city = City("11", "厦门市"), granted = false,
+                        segment = HomeTab.METRO, selectSegment = {},
+                        locate = {}, search = {}, cities = {},
+                        line = { _, _, _ -> }, station = { _, _ -> },
+                        metroContent = content
+                    )
+                }
             }
         }
     }
@@ -158,7 +171,7 @@ class MetroArrivalOrdinalsTest {
         // 车标动画身份仍用 core 的全线进度序（只做 compose key，不显示）。
         assertEquals("车标 key 仍取 core 的全线进度序", 1, numbered.single { it.ordinal == 1 }.markerKey)
 
-        Metro { MetroContent(UiState.Success(realData), {}, {}) }
+        Metro { MetroContent(UiState.Success(realData), {}) }
         compose.waitForIdle()
 
         // 位置条：第 1 班离本站最近（同一 anchor 下 x 最大），第 2 班在它左边，班号不许跳。
@@ -229,7 +242,7 @@ class MetroArrivalOrdinalsTest {
         )
         assertTrue("三行到站行仍在", data.etaState is MetroEtaState.Ready)
 
-        Metro { MetroContent(UiState.Success(data), {}, {}) }
+        Metro { MetroContent(UiState.Success(data), {}) }
         compose.waitForIdle()
 
         // 五个未到站的身份各自编号，不截断到三班；其中 1..3 对应本站 ETA。
@@ -255,7 +268,7 @@ class MetroArrivalOrdinalsTest {
         assertEquals("三个班号加一个「已过」", 3, ordinals.maxOrdinal)
         assertEquals(1, ordinals.passedCount)
 
-        Metro { MetroContent(UiState.Success(realData), {}, {}) }
+        Metro { MetroContent(UiState.Success(realData), {}) }
         compose.waitForIdle()
 
         val passedNodes = compose.onAllNodesWithContentDescription("已过").fetchSemanticsNodes()
@@ -269,12 +282,14 @@ class MetroArrivalOrdinalsTest {
         marker("第1班").assertIsDisplayed()
         for (n in 2..3) marker("第${n}班").assertExists()
 
-        // 真去数像素：已过车标的图标区必须画着靛蓝渐变（和 第 1 班 那枚同一张图），
-        // 证明「车标仍在」不是只画了一行小字。
+        // 2.0.x 车标使用当前线路纯色及白色列车图形；只统计语义节点顶部的图标区域。
         val bitmap = screenshot()
-        val passedInk = indigoPixels(bitmap, box)
-        val leadInk = indigoPixels(bitmap, bounds("第1班"))
-        assertTrue("已过车标的图标必须画出来，实际靛蓝像素 $passedInk", passedInk > 300)
+        val passedInk = lineColorPixels(bitmap, box)
+        val leadInk = lineColorPixels(bitmap, bounds("第1班"))
+        assertTrue("已过车标必须画出二号线色块，实际像素 $passedInk", passedInk > 300)
+        assertTrue("第 1 班车标必须画出二号线色块，实际像素 $leadInk", leadInk > 300)
+        assertTrue("已过车标的色块内必须保留白色列车图形", trainGlyphPixels(bitmap, box) > 80)
+        assertTrue("第 1 班车标的色块内必须保留白色列车图形", trainGlyphPixels(bitmap, bounds("第1班")) > 80)
         val ratio = passedInk.toFloat() / leadInk.toFloat()
         assertTrue("已过车标的图标应与第 1 班那枚一样大，实际比例 $ratio", ratio in .6f..1.4f)
     }
@@ -310,7 +325,7 @@ class MetroArrivalOrdinalsTest {
         assertNull("已过站的车不许有本站行序", passed.presentation.arrivalRowOrder)
         assertNull(ordinals.ordinalOfRow(4))
 
-        Metro { MetroContent(UiState.Success(realData), {}, {}) }
+        Metro { MetroContent(UiState.Success(realData), {}) }
         compose.waitForIdle()
 
         // UI 侧同一件事：ETA 第 k 格的班号 = 位置条第 k 班，且分钟数来自本站第 k 行。
@@ -337,9 +352,10 @@ class MetroArrivalOrdinalsTest {
         return bitmap
     }
 
-    /** 车标图标区的靛蓝像素数：渐变 `#383095 → #3648AE`，蓝通道明显高于红绿通道。 */
-    private fun indigoPixels(bitmap: Bitmap, bounds: androidx.compose.ui.geometry.Rect): Int {
+    /** 车标语义节点上半部的线路色像素，排除下方标签及更低处的轨道。 */
+    private fun lineColorPixels(bitmap: Bitmap, bounds: androidx.compose.ui.geometry.Rect): Int {
         var count = 0
+        val expected = android.graphics.Color.parseColor(line2.color)
         val left = bounds.left.toInt().coerceAtLeast(0)
         val right = (bounds.left + bounds.width).toInt().coerceAtMost(bitmap.width)
         val top = bounds.top.toInt().coerceAtLeast(0)
@@ -351,9 +367,29 @@ class MetroArrivalOrdinalsTest {
                 val red = (p shr 16) and 255
                 val green = (p shr 8) and 255
                 val blue = p and 255
-                if (blue > 120 && blue - red > 60 && blue - green > 60) count++
+                if (kotlin.math.abs(red - android.graphics.Color.red(expected)) <= 10 &&
+                    kotlin.math.abs(green - android.graphics.Color.green(expected)) <= 10 &&
+                    kotlin.math.abs(blue - android.graphics.Color.blue(expected)) <= 10) count++
             }
         }
         return count
+    }
+
+    private fun trainGlyphPixels(bitmap: Bitmap, bounds: androidx.compose.ui.geometry.Rect): Int {
+        val density = ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        val size = StripTrainSize.value * density
+        val inset = 2 * density
+        val left = (bounds.center.x - size / 2 + inset).toInt().coerceAtLeast(0)
+        val right = (bounds.center.x + size / 2 - inset).toInt().coerceAtMost(bitmap.width)
+        val top = (bounds.top + inset).toInt().coerceAtLeast(0)
+        val bottom = (bounds.top + size - inset).toInt().coerceAtMost(bitmap.height)
+        var white = 0
+        for (y in top until bottom) for (x in left until right) {
+            val pixel = bitmap.getPixel(x, y)
+            if (android.graphics.Color.red(pixel) > 230 &&
+                android.graphics.Color.green(pixel) > 230 &&
+                android.graphics.Color.blue(pixel) > 230) white++
+        }
+        return white
     }
 }

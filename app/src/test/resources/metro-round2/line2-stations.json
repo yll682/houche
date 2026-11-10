@@ -1,0 +1,264 @@
+{
+ "lineCode": "02000000",
+ "lineName": "二号线",
+ "source": "pub/station/allStation",
+ "fetchedCST": "2026-11-08T09:52:21+08:00",
+ "stations": [
+  {
+   "stationCode": "02010000",
+   "name": "天竺山",
+   "englishName": "Tianzhushan",
+   "distance": 1801,
+   "timeCost": 3,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02020000",
+   "name": "东孚",
+   "englishName": "Dongfu",
+   "distance": 2489,
+   "timeCost": 3,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02030000",
+   "name": "东瑶",
+   "englishName": "Dongyao",
+   "distance": 1411,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02040000",
+   "name": "鼎美",
+   "englishName": "Dingmei",
+   "distance": 1311,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02050000",
+   "name": "马銮中心",
+   "englishName": "Maluan Center",
+   "distance": 1556,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02060000",
+   "name": "新阳大道",
+   "englishName": "Xinyang Ave",
+   "distance": 1545,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02070000",
+   "name": "新垵",
+   "englishName": "XinAn",
+   "distance": 1158,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02080000",
+   "name": "翁角路",
+   "englishName": "Wengjiao Rd",
+   "distance": 3996,
+   "timeCost": 5,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02090000",
+   "name": "马青路",
+   "englishName": "Maqing Rd",
+   "distance": 840,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02100000",
+   "name": "海沧行政中心",
+   "englishName": "Haicang Administrative Center",
+   "distance": 1069,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02110000",
+   "name": "海沧商务中心",
+   "englishName": "Haicang Business Center",
+   "distance": 1413,
+   "timeCost": 2,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02120000",
+   "name": "海沧湾公园",
+   "englishName": "Haicang Bay Park",
+   "distance": 2906,
+   "timeCost": 4,
+   "district": "350205"
+  },
+  {
+   "stationCode": "02130000",
+   "name": "邮轮中心",
+   "englishName": "Cruise Center",
+   "distance": 1173,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02140000",
+   "name": "建业路",
+   "englishName": "Jianye Rd",
+   "distance": 1198,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02150000",
+   "name": "湖滨中路",
+   "englishName": "Hubin Middle Rd",
+   "distance": 1193,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02160000",
+   "name": "体育中心",
+   "englishName": "Sports Center",
+   "distance": 875,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02170000",
+   "name": "育秀东路",
+   "englishName": "Yuxiu East Rd",
+   "distance": 1388,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02180000",
+   "name": "吕厝",
+   "englishName": "Lücuo",
+   "distance": 1161,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02190000",
+   "name": "江头",
+   "englishName": "Jiangtou",
+   "distance": 830,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02200000",
+   "name": "后埔",
+   "englishName": "Houpu",
+   "distance": 864,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02210000",
+   "name": "蔡塘",
+   "englishName": "Caitang",
+   "distance": 1052,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02220000",
+   "name": "古地石",
+   "englishName": "Gudishi",
+   "distance": 1064,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02230000",
+   "name": "岭兜",
+   "englishName": "Lingdou",
+   "distance": 1196,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02240000",
+   "name": "软件园二期",
+   "englishName": "Software Park Phase Ⅱ",
+   "distance": 1154,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02250000",
+   "name": "何厝",
+   "englishName": "Hecuo",
+   "distance": 889,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02260000",
+   "name": "观音山",
+   "englishName": "Guanyinshan",
+   "distance": 677,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02270000",
+   "name": "东宅",
+   "englishName": "Dongzhai",
+   "distance": 681,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02280000",
+   "name": "两岸金融中心",
+   "englishName": "Cross-Strait Financial Center",
+   "distance": 900,
+   "timeCost": 2,
+   "district": "350203"
+  },
+  {
+   "stationCode": "02290000",
+   "name": "五通",
+   "englishName": "Wutong",
+   "distance": 898,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02300000",
+   "name": "湿地公园",
+   "englishName": "Wetland Park",
+   "distance": 1325,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02310000",
+   "name": "钟宅",
+   "englishName": "Zhongzhai",
+   "distance": 1057,
+   "timeCost": 2,
+   "district": "350206"
+  },
+  {
+   "stationCode": "02320000",
+   "name": "五缘湾",
+   "englishName": "Wuyuanwan",
+   "distance": 0,
+   "timeCost": 0,
+   "district": "350206"
+  }
+ ]
+}

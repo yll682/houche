@@ -25,7 +25,11 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.roundToInt
 import androidx.compose.ui.*
@@ -61,7 +65,11 @@ import com.yll682.houche.ui.theme.HeaderBottom
 import com.yll682.houche.ui.theme.HeaderBottomDark
 import com.yll682.houche.ui.theme.HeaderTop
 import com.yll682.houche.ui.theme.HeaderTopDark
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 /** 触控区不小于 48dp，并补上无障碍标签。 */
 fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { contentDescription = label }
@@ -320,12 +328,13 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
  * 位置按 200ms CubicBezier(0.23,1,0.32,1) 滑动；选中字色 200ms 渐变。
  *
  * [tints] 为空时指示块与选中字取 App 主题色；传入时按下标取色（地铁顶部线路切换用线路官方色）。
- * 标签放不下时可横向滚动，选中项自动滚到可见位置。
+ * 标签放不下时可横向滚动，选中项自动滚到可见位置；[longPressDrag] 可启用长按拖动选择。
  */
 @Composable fun CapsuleTabs(
     labels: List<String>, selected: Int, select: (Int) -> Unit,
     modifier: Modifier = Modifier, tints: List<Color>? = null,
-    padding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+    padding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    longPressDrag: Boolean = false
 ) {
     if (labels.isEmpty()) return
     val labelStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
@@ -361,7 +370,9 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
             label = "标签指示器"
         )
         val indicator = tints?.getOrNull(shown) ?: MaterialTheme.colorScheme.primary
-        LaunchedEffect(index, cell) {
+        val draggingOverflow = !fits && longPressDrag && dragPos != null
+        LaunchedEffect(index, cell, draggingOverflow) {
+            if (draggingOverflow) return@LaunchedEffect
             val targetPx = with(density) { (cell * index).roundToPx() }
             val viewport = with(density) { maxWidth.roundToPx() }
             scroll.animateScrollTo((targetPx - (viewport - with(density) { cell.roundToPx() }) / 2).coerceAtLeast(0))
@@ -389,6 +400,65 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
                     if (nearest != last) { last = nearest; haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove) }
                 }
             )
+        } else if (!fits && longPressDrag && labels.size > 1) Modifier.pointerInput(labels.size, cellPx, fits, longPressDrag) {
+            coroutineScope {
+                awaitEachGesture {
+                    // 长按前只观察，不消费事件，让普通横拖仍由 horizontalScroll 处理。
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val start = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
+                    var fingerX = start.position.x
+                    var last = latestIndex
+                    fun updateDrag() {
+                        // pointerInput 位于 horizontalScroll 外，x 是视口坐标；
+                        // dragPos 沿用指示块左端坐标，减半格使指示块中心跟手。
+                        val next = (fingerX + scroll.value - cellPx / 2).coerceIn(0f, maxPos)
+                        dragPos = next
+                        val nearest = (next / cellPx).roundToInt().coerceIn(0, labels.lastIndex)
+                        if (nearest != last) {
+                            last = nearest
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        }
+                    }
+                    updateDrag()
+                    val autoScroll = launch(start = CoroutineStart.UNDISPATCHED) {
+                        // 接管期间持有滚动，停止已有居中动画；即使手指静止，也逐帧重算目标。
+                        scroll.scroll(MutatePriority.UserInput) {
+                            val edge = minOf(cellPx / 2, size.width / 2f).coerceAtLeast(1f)
+                            var previousFrame = withFrameNanos { it }
+                            while (isActive) {
+                                val frame = withFrameNanos { it }
+                                val seconds = ((frame - previousFrame) / 1_000_000_000f).coerceIn(0f, .05f)
+                                previousFrame = frame
+                                val direction = when {
+                                    fingerX < edge -> ((fingerX - edge) / edge).coerceAtLeast(-1f)
+                                    fingerX > size.width - edge -> ((fingerX - size.width + edge) / edge).coerceAtMost(1f)
+                                    else -> 0f
+                                }
+                                scrollBy(direction * cellPx * 4f * seconds)
+                                updateDrag()
+                            }
+                        }
+                    }
+                    try {
+                        while (true) {
+                            // 长按成立后在子标签点击和滚动处理前消费，包括抬手，避免重复提交。
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val change = event.changes.firstOrNull { it.id == start.id } ?: break
+                            if (change.isConsumed) break
+                            fingerX = change.position.x
+                            updateDrag()
+                            change.consume()
+                            if (!change.pressed) {
+                                if (last != latestIndex) latestSelect(last)
+                                break
+                            }
+                        }
+                    } finally {
+                        autoScroll.cancel()
+                        dragPos = null
+                    }
+                }
+            }
         } else Modifier
         Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
             .then(drag).horizontalScroll(scroll, enabled = !fits)) {
