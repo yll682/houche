@@ -6,7 +6,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -129,11 +133,12 @@ internal fun StationRow(
         line.stations.firstOrNull { it.code.isNotBlank() && it.code == stationCode }?.transferTargets.orEmpty()
     }
     Row(
-        Modifier.fillMaxWidth().padding(start = 25.dp, end = 20.dp),
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             stationName.ifBlank { line.from },
+            Modifier.weight(1f, fill = false),
             style = type.StationName,
             maxLines = 1
         )
@@ -217,10 +222,11 @@ private fun RefreshButton(loading: Boolean, onRefresh: () -> Unit) {
             if (!refreshing) refreshing = true
             onRefresh()
         }.semantics { contentDescription = label }
-            .heightIn(min = 24.dp).padding(vertical = 2.dp),
+            .heightIn(min = 48.dp).padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MetroRefreshGlyph(angle = angle.value)
+        Icon(Icons.Outlined.Refresh, null, Modifier.size(20.dp).graphicsLayer { rotationZ = angle.value },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(4.7.dp))
         Text(label, style = type.RefreshLabel, maxLines = 1)
     }

@@ -1,15 +1,15 @@
 package com.yll682.houche.ui.screens.metro
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -25,8 +25,7 @@ import com.yll682.houche.core.minutesUntil
  * ETA 蓝块（规格 2.5）：`#ECF2FF`、300×73.7dp、圆角 4dp、无描边无阴影，
  * 三等分、每列「20sp 数字+分钟 / 11.5sp 第N班预计到达」。
  *
- * 两处**故意**照抄官方：①内容偏上（上内距 13dp、下内距 28.7dp，都是**墨迹**到块边），不居中；
- * ②列序反着排——最右一列是最前面那班（官方截图左 16分钟/中 9分钟/右 3分钟）。
+ * 2.0.x 样式：高度至少 96dp、圆角 12dp，三列等分、按原顺序排（第 1 班在最左）。
  *
  * **容器永远在**：绑定的是 [MetroEtaState]，不再是「trains 为空就整块 return」。
  * 切站瞬间整块不消失，只是换成占位文案；四种非 Ready 状态各自一句话，
@@ -49,67 +48,52 @@ internal fun MetroEtaBlock(
     val type = officialTypography()
     val title = stringResource(R.string.metro_position_eta_title)
     Row(
-        modifier.padding(horizontal = 20.dp).fillMaxWidth().height(73.7.dp)
+        modifier.padding(horizontal = 20.dp).fillMaxWidth().heightIn(min = 96.dp)
             .clip(OfficialEtaShape).background(palette.EtaBackground)
             .semantics { contentDescription = title },
         verticalAlignment = Alignment.CenterVertically
     ) {
         when (etaState) {
             is MetroEtaState.Ready -> {
+                // 2.0.x：按原顺序排，第 1 班在最左。
                 val rows = etaState.trains.take(3)
-                // 列序反排：最右一列是最前面那班。
-                rows.reversed().forEachIndexed { index, train ->
-                    val order = rows.size - index
+                rows.forEachIndexed { index, train ->
+                    val order = index + 1
                     // 全方向班序优先；没有唯一关联就退成不带数字的「预计到达」。
                     val ordinal = ordinalOfRow(order)
                     val minutes = minutesUntil(train.arriveSeconds)
                     val detail = ordinal?.let { stringResource(R.string.metro_position_eta, it) }
                         ?: stringResource(R.string.metro_position_eta_title)
-                    // 两行各自贴边：大数字 ink 顶距块顶 13dp，标签 ink 底距块底 28.7dp。
-                    // 不能让它们顺排——大数字的行盒比墨迹高 1.3dp，「第N班」会被顶低 1.7dp。
-                    Box(
-                        Modifier.weight(1f).fillMaxHeight().fillMaxWidth()
-                            .clearAndSetSemantics { contentDescription = "$minutes 分钟$detail" }
+                    Column(
+                        Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 16.dp)
+                            .clearAndSetSemantics { contentDescription = "$minutes 分钟$detail" },
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Row(Modifier.align(Alignment.TopCenter).padding(top = EtaNumberBoxTop)) {
+                        Row {
                             Text("$minutes", style = type.EtaNumber, maxLines = 1, modifier = Modifier.alignByBaseline())
                             Text(
                                 stringResource(R.string.metro_position_minutes),
                                 style = type.EtaUnit,
                                 maxLines = 1,
-                                modifier = Modifier.alignByBaseline()
+                                modifier = Modifier.alignByBaseline().padding(start = 2.dp)
                             )
                         }
                         Text(
                             detail,
-                            Modifier.align(Alignment.BottomCenter).padding(bottom = EtaLabelBoxBottom),
+                            Modifier.padding(top = 4.dp),
                             style = type.EtaLabel,
-                            maxLines = 1
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
                         )
                     }
                 }
             }
-            // 官方非 Ready：图标跟随首行，文字列内居中；容器与 Ready 几何不变。
             else -> Row(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Canvas(Modifier.size(16.dp).clearAndSetSemantics {}) {
-                    drawCircle(palette.TabIndicator)
-                    drawLine(
-                        color = palette.OnBrand,
-                        start = Offset(size.width / 2f, size.height * .25f),
-                        end = Offset(size.width / 2f, size.height * .55f),
-                        strokeWidth = size.width * .1f,
-                        cap = StrokeCap.Round
-                    )
-                    drawCircle(
-                        color = palette.OnBrand,
-                        radius = size.width * .05f,
-                        center = Offset(size.width / 2f, size.height * .75f)
-                    )
-                }
+                Icon(Icons.Outlined.Info, null, Modifier.size(20.dp).clearAndSetSemantics {}, tint = palette.TabIndicator)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     requireNotNull(metroEtaMessage(etaState)),
@@ -125,24 +109,3 @@ internal fun MetroEtaBlock(
         }
     }
 }
-
-/**
- * 规格 2.5 的两个内距量的都是**墨迹**到块边的距离：上 39px＝13dp（大数字 ink 顶）、
- * 下 86px＝28.7dp（「第N班预计到达」ink 底）。行盒里 ink 上下还各留一段空白，
- * 落版时要把它们换回 padding：数字 ink 距本行行盒顶 13px≈4.3dp，
- * 标签行盒底到 ink 底 9px＝3dp。
- */
-private val EtaInkTop = 13.dp
-private val EtaInkBottom = 28.7.dp
-
-/** 大数字行盒里 ink 顶偏移 13px ÷ 3。 */
-private val EtaNumberInkInset = 4.3.dp
-
-/** 标签行盒底到 ink 底 9px ÷ 3。 */
-private val EtaLabelInkInset = 3.dp
-
-/** 大数字行盒距块顶：13 − 4.3 ＝ 8.7dp（ink 顶正好落在 13dp）。 */
-private val EtaNumberBoxTop = EtaInkTop - EtaNumberInkInset
-
-/** 标签行盒距块底：28.7 − 3 ＝ 25.7dp（ink 底正好落在 28.7dp）。 */
-private val EtaLabelBoxBottom = EtaInkBottom - EtaLabelInkInset

@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsSubway
+import androidx.compose.material.icons.outlined.DirectionsSubway
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
@@ -301,7 +302,7 @@ internal fun MetroTrainStrip(
                                 .semantics { contentDescription = label },
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            TrainIcon(lead = ordinal == 1, palette = palette)
+                            TrainIcon(tint)
                             Text(
                                 label,
                                 Modifier.align(Alignment.TopCenter)
@@ -387,36 +388,14 @@ private fun rememberMarkerCenter(target: Dp, cell: Dp): Dp {
     return anim.value.dp
 }
 
-/** 官方车标：62×62px 圆角方块、靛蓝渐变 + 白色列车图形，「第1班」多一个右侧方向三角。 */
+/** 车标：圆角方块 + 白色列车图形，纯色 = 当前线路的官方色（没有方向三角，2.0.x 起如此）。 */
 @Composable
-private fun TrainIcon(lead: Boolean, palette: OfficialPalette) {
-    Box(Modifier.size(StripTrainSize)) {
-        Box(
-            Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.RoundedCornerShape(3.5.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(palette.TrainGradientStart, palette.TrainGradientEnd)
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Filled.DirectionsSubway, null,
-                Modifier.size(15.5.dp),
-                tint = palette.TrainGlyph.copy(alpha = .96f)
-            )
-        }
-        if (lead) {
-            Canvas(Modifier.align(Alignment.CenterEnd).offset(x = 4.dp).size(4.dp, 6.dp)) {
-                val path = Path().apply {
-                    moveTo(0f, 0f)
-                    lineTo(size.width, size.height / 2f)
-                    lineTo(0f, size.height)
-                    close()
-                }
-                drawPath(path, palette.TrainDirection)
-            }
-        }
+private fun TrainIcon(tint: Color) {
+    Box(
+        Modifier.size(StripTrainSize).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.5.dp)).background(tint),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Outlined.DirectionsSubway, null, Modifier.size(15.5.dp), tint = Color.White.copy(alpha = .96f))
     }
 }
 

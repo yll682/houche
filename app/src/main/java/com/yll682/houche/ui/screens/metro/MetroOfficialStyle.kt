@@ -232,7 +232,7 @@ internal fun listLineColor(tint: Color, palette: OfficialPalette): Color =
 internal val OfficialCardShape = RoundedCornerShape(16.dp)
 
 /** ETA 蓝块圆角 13px≈4.3dp。 */
-internal val OfficialEtaShape = RoundedCornerShape(4.dp)
+internal val OfficialEtaShape = RoundedCornerShape(12.dp)
 
 /**
  * 行高按实测给，且不裁剪首末行——否则「主线中心到站名首字 ink 顶 48px」这类
@@ -286,19 +286,19 @@ internal class OfficialTypography(palette: OfficialPalette) {
     val SwapLabel = official(11.3.sp, palette.SubInk, 15.sp)
 
     /** 站名 14.3sp。 */
-    val StationName = official(14.3.sp, palette.Ink, 20.sp)
+    val StationName = official(18.sp, palette.Ink, 26.sp, FontWeight.Medium)
 
     /** 「刷新」文字 11.3sp。 */
-    val RefreshLabel = official(11.3.sp, palette.SubInk, 15.sp)
+    val RefreshLabel = official(14.sp, palette.SubInk, 20.sp)
 
     /** ETA 大数字 20sp，Regular 不加粗；行高取 20sp 让下方的「第N班预计到达」贴住实测位置。 */
-    val EtaNumber = official(20.sp, palette.EtaNumber, 16.sp)
+    val EtaNumber = official(28.sp, palette.EtaNumber, 34.sp, FontWeight.Medium)
 
     /** ETA「分钟」，与数字同基线。 */
-    val EtaUnit = official(13.7.sp, palette.EtaNumber, 16.sp)
+    val EtaUnit = official(14.sp, palette.EtaNumber, 22.sp)
 
     /** ETA「第N班预计到达」11.5sp。 */
-    val EtaLabel = official(11.5.sp, palette.EtaLabel, 15.sp)
+    val EtaLabel = official(13.sp, palette.EtaLabel, 18.sp)
 
     /** 竖排站名 14.3sp / 行距 61px＝20.3dp。 */
     val StripeName = official(14.3.sp, palette.SubInk, 20.3.sp)
