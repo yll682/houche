@@ -3,27 +3,26 @@
     <string name="vehicle_title">车辆</string>
     <string name="vehicle_to">开往 %1$s</string>
     <string name="vehicle_offline">车辆已不在线上</string>
-    <string name="vehicle_boarding">下车站</string>
+    <string name="vehicle_boarding">乘车站</string>
     <string name="vehicle_remaining">剩余站数</string>
     <string name="vehicle_stop_unit">站</string>
     <string name="vehicle_stops">%1$d 站</string>
     <string name="vehicle_stops_unknown">站数未知</string>
     <string name="vehicle_passed">已过站</string>
-    <string name="vehicle_tracking_start">跟踪</string>
-    <!-- 360dp 窄屏三按钮并排，「结束跟踪」会挤成两行，改用 2 字标签。 -->
-    <string name="vehicle_tracking_cancel">停止</string>
-    <string name="vehicle_notify">提醒</string>
+    <string name="vehicle_tracking_start">开启到站提醒</string>
+        <string name="vehicle_tracking_cancel">关闭到站提醒</string>
+    <string name="vehicle_notify">通知设置</string>
     <string name="vehicle_share">分享</string>
     <string name="vehicle_share_title">分享车辆</string>
     <string name="vehicle_share_text">%1$s · %2$s\n%3$s\n来自候车</string>
-    <string name="vehicle_list">本站车辆</string>
+    <string name="vehicle_list">本线车辆</string>
     <string name="vehicle_no_vehicles">暂无车辆</string>
     <string name="vehicle_refresh">刷新</string>
     <string name="vehicle_updated">更新 %1$s</string>
     <string name="vehicle_last_position">上次位置</string>
     <string name="vehicle_notification_channel">车辆跟踪</string>
-    <string name="vehicle_notify_title">车辆提醒</string>
-    <string name="vehicle_notify_test">测试提醒</string>
-    <string name="vehicle_notify_arrival">下车提醒</string>
+    <string name="vehicle_notify_arrival">车辆即将到站</string>
     <string name="vehicle_notify_stop">%1$s · %2$s</string>
+    <string name="vehicle_choose_boarding">在线路页选择乘车站后，可开启到站提醒</string>
+    <string name="vehicle_tracking_scope">此页打开时，车辆距离乘车站 1 站内提醒</string>
 </resources>

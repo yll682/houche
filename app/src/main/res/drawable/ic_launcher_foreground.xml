@@ -1,53 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  应用图标前景：侧视公交。
-  方正车厢、平直车顶、连续长窗（中间一根细柱）、前部双折门、两个露出的轮子。
-  侧视是公交最不容易被认成轨道交通的表达：动车没有双折门，也不会露出轮子。
-  车窗与车门用品牌蓝填成镂空；图形收在 35~75，圆遮罩下四周留白。
--->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!-- 车顶空调 -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M42,35 h24 a2,2 0 0 1 2,2 v3 h-28 v-3 a2,2 0 0 1 2,-2 z" />
-
-    <!-- 车身：方正车厢 -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M29,40 h50 a5,5 0 0 1 5,5 v18 a5,5 0 0 1 -5,5 h-50 a5,5 0 0 1 -5,-5 v-18 a5,5 0 0 1 5,-5 z" />
-
-    <!-- 连续车窗（中间一根细柱） -->
-    <path
-        android:fillColor="#FF1E6FF3"
-        android:pathData="M29,45 h15 a1.5,1.5 0 0 1 1.5,1.5 v7 a1.5,1.5 0 0 1 -1.5,1.5 h-15 a1.5,1.5 0 0 1 -1.5,-1.5 v-7 a1.5,1.5 0 0 1 1.5,-1.5 z
-            M49,45 h15 a1.5,1.5 0 0 1 1.5,1.5 v7 a1.5,1.5 0 0 1 -1.5,1.5 h-15 a1.5,1.5 0 0 1 -1.5,-1.5 v-7 a1.5,1.5 0 0 1 1.5,-1.5 z" />
-
-    <!-- 前部双折门 -->
-    <path
-        android:fillColor="#FF1E6FF3"
-        android:pathData="M69,45 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v16 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-16 a1.5,1.5 0 0 1 1.5,-1.5 z" />
-    <path
-        android:fillColor="#FF1E6FF3"
-        android:pathData="M76,45 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v16 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-16 a1.5,1.5 0 0 1 1.5,-1.5 z" />
-
-    <!-- 左轮 -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M36,68 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0" />
-    <path
-        android:fillColor="#FF1E6FF3"
-        android:pathData="M36,68 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0" />
-
-    <!-- 右轮 -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M71,68 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0" />
-    <path
-        android:fillColor="#FF1E6FF3"
-        android:pathData="M71,68 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0" />
+<vector android:height="108.0dip" android:width="108.0dip" android:viewportWidth="108.0" android:viewportHeight="108.0"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:scaleX="1.583333" android:scaleY="1.583333" android:translateX="35.0" android:translateY="35.0">
+        <path android:fillColor="#ffffffff" android:pathData="M12 2c-4.42 0-8 .5-8 4v10c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4zm5.66 2.99H6.34C6.89 4.46 8.31 4 12 4s5.11.46 5.66.99zm.34 2V10H6V6.99h12zm-.34 9.74l-.29.27H6.63l-.29-.27C6.21 16.62 6 16.37 6 16v-4h12v4c0 .37-.21.62-.34.73z M10,14.5a1.5,1.5 0,1 1,-3,0a1.5,1.5 0,1 1,3,0 M17,14.5a1.5,1.5 0,1 1,-3,0a1.5,1.5 0,1 1,3,0" />
+    </group>
 </vector>

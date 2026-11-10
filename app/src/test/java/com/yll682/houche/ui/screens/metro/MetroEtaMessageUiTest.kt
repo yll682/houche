@@ -67,7 +67,7 @@ class MetroEtaMessageUiTest {
         compose.setContent {
             MaterialTheme {
                 Box(Modifier.fillMaxSize()) {
-                    // 340dp 卡片 − 左右20dp = 官方 300dp 蓝块；density3 即900×221px。
+                    // 340dp 卡片 − 左右20dp = 300dp 蓝块；2.0.x 起高度至少 96dp，density3 即900×288px。
                     Box(Modifier.width(340.dp)) { MetroEtaBlock(state, ordinalOfRow = { it }) }
                 }
             }
@@ -75,7 +75,7 @@ class MetroEtaMessageUiTest {
         compose.waitForIdle()
         val ready = etaBounds()
         assertEquals(900f, ready.width, 0f)
-        assertEquals(221f, ready.height, 0f)
+        assertEquals(288f, ready.height, 0f)
         // 正常 ETA 列序、分钟和班号仍沿用原组件：左16/中9/右3，第1班在最右。
         val columns = listOf("16 分钟第3班预计到达", "9 分钟第2班预计到达", "3 分钟第1班预计到达")
             .map { description ->

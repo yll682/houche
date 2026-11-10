@@ -67,7 +67,7 @@ object VehicleTracker {
             appContext, NOTIFICATION_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = Notification.Builder(appContext, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_notification_bus)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(pendingIntent)

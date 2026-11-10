@@ -190,8 +190,12 @@ private fun VehicleActions(data: VehicleData, toggleTracking: () -> Unit, notify
     val shareTitle = stringResource(R.string.vehicle_share_title)
     val station = vehicleStation(data.vehicle) ?: stringResource(R.string.unknown_position)
     val shareText = stringResource(R.string.vehicle_share_text, data.plate, data.route.name, station)
-    // 360dp 窄屏三按钮并排：文案压到 2~3 字，单行不折行，字号统一 labelLarge。
+    // 三按钮并排，单行不折行，字号统一 labelLarge。
     val labelStyle = MaterialTheme.typography.labelLarge
+    Text(
+        stringResource(if (data.boarding == null) R.string.vehicle_choose_boarding else R.string.vehicle_tracking_scope),
+        Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilledTonalButton(toggleTracking, Modifier.weight(1f).touch(trackingLabel), shape = Capsule,
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)) {
