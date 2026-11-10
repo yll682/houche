@@ -90,12 +90,11 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
             .widthIn(max = if (large) 160.dp else 88.dp)
             .defaultMinSize(minWidth = if (large) 80.dp else 48.dp, minHeight = if (large) 72.dp else 48.dp)
             .clip(if (large) BadgeShape else MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.primaryContainer)
-
+            .background(MaterialTheme.colorScheme.primary)
             .padding(horizontal = if (large) 20.dp else 8.dp, vertical = if (large) 14.dp else 7.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(name, style = style, color = MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(name, style = style, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -366,7 +365,10 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 }
 
 fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, retry: () -> Unit) {
-    if (state is UiState.Loading || state is UiState.Error) item { StateFeedback(state, cards, retry) }
+    // 后台刷新失败但已有缓存结果时不再在列表顶部插入错误卡片（避免整页跳动）。
+    val retained = (state as? UiState.Error<*>)?.data
+    val hasContent = retained != null && !(retained is Collection<*> && retained.isEmpty())
+    if (state is UiState.Loading || (state is UiState.Error && !hasContent)) item { StateFeedback(state, cards, retry) }
 }
 
 @Composable fun HeaderSearchField(

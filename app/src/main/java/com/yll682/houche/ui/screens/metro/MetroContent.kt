@@ -8,7 +8,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.testTag
+import com.yll682.houche.ui.components.Page
+import com.yll682.houche.ui.components.TelegramSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -62,8 +74,14 @@ fun MetroContent(
     val heading = data.line
     val palette = officialPalette()
     val type = officialTypography()
-    Column(modifier.fillMaxSize().background(palette.Page)) {
-        MetroTopBar(stringResource(R.string.metro_realtime_position), back)
+    var sheetStation by rememberSaveable { mutableStateOf<String?>(null) }
+    // 换线后关掉面板。
+    LaunchedEffect(data.selected) { sheetStation = null }
+    val openSheet: (String) -> Unit = { code ->
+        if (code.isNotBlank() && line?.stations?.any { it.code == code } == true) sheetStation = code
+    }
+    Page(stringResource(R.string.metro_realtime_position), back, modifier) { _ ->
+      Column(Modifier.fillMaxSize()) {
         MetroLineTabs(data.lines, data.selected, select)
         if (line == null || heading == null) {
             Box(Modifier.fillMaxSize().padding(16.dp)) {
@@ -87,7 +105,7 @@ fun MetroContent(
                     directionIndex = data.directionIndex,
                     onDirection = selectDirection,
                     onRefresh = refresh,
-                    onSelectStation = selectStation,
+                    onSelectStation = openSheet,
                     onTransfer = selectTransfer,
                     modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp)
                 )
@@ -96,9 +114,9 @@ fun MetroContent(
                 // 免责说明在卡片外面，居中、珊瑚红——官方这页就是这样（规格 2.7）。
                 Text(
                     stringResource(R.string.metro_realtime_tip),
-                    Modifier.fillMaxWidth().padding(start = 30.dp, end = 30.dp, top = 15.3.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
                     style = type.Disclaimer,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Start
                 )
             }
             item {
@@ -110,7 +128,7 @@ fun MetroContent(
                         stringResource(R.string.group_count, stringResource(R.string.metro_stations), line.stations.size),
                         stringResource(R.string.metro_not_open).takeIf { pending }
                     ).joinToString("  "),
-                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 18.dp),
+                    Modifier.fillMaxWidth().padding(start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp),
                     style = type.SectionLabel
                 )
             }
@@ -122,7 +140,7 @@ fun MetroContent(
                     selected = stop.code.isNotBlank() && stop.code == data.realtimeStation,
                     // 换乘徽标把完整目标（目标线 id + 目标线自己的站码）交给数据层，一次提交、一次刷新。
                     onTransfer = { target: MetroTransferTarget -> selectTransfer(target.lineId, target.stationCode) }
-                ) { selectStation(stop.code) }
+                ) { openSheet(stop.code) }
             }
             if (data.updated.isNotBlank()) {
                 item {
@@ -133,6 +151,49 @@ fun MetroContent(
                     )
                 }
             }
+        }
+      }
+    }
+    sheetStation?.let { code ->
+        val stop = line?.stations?.firstOrNull { it.code == code }
+        if (stop != null && heading != null) {
+            MetroStationSheet(
+                stop = stop,
+                destination = data.realtime?.directions?.getOrNull(data.directionIndex)?.destination?.takeIf { it.isNotBlank() }
+                    ?: heading.to,
+                times = metroStationOperatingTimes(heading, stop),
+                isBoarding = code == data.realtimeStation,
+                onConfirm = { selectStation(code); sheetStation = null },
+                dismiss = { sheetStation = null }
+            )
+        }
+    }
+}
+
+/** 点站点弹出的底部面板：站名、开往、首末班，确认后才把它设为乘车站。 */
+@Composable
+private fun MetroStationSheet(
+    stop: MetroStation, destination: String, times: com.yll682.houche.core.MetroOperatingTimes,
+    isBoarding: Boolean, onConfirm: () -> Unit, dismiss: () -> Unit
+) {
+    TelegramSheet(dismiss = dismiss) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stop.name, style = MaterialTheme.typography.titleLarge)
+            if (destination.isNotBlank()) {
+                Text(stringResource(R.string.to, destination), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (times.first.isNotBlank() && times.last.isNotBlank()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Schedule, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.service_times, times.first, times.last), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Button(
+                onClick = onConfirm, enabled = !isBoarding, shape = Capsule,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("station-confirm")
+            ) { Text(stringResource(if (isBoarding) R.string.metro_station_selected else R.string.metro_station_select)) }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -193,7 +254,14 @@ fun MetroContent(
     // 否则 4/6 号线在近黑页底上只剩一团黑（位置条等官方版式元素不受影响）。
     val railTint = listLineColor(tint, palette)
     val track = railTint.copy(alpha = if (pending) palette.ListTrackAlphaPending else palette.ListTrackAlpha)
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 52.dp)
+    val cardShape = RoundedCornerShape(
+        topStart = if (first) 16.dp else 0.dp, topEnd = if (first) 16.dp else 0.dp,
+        bottomStart = if (last) 16.dp else 0.dp, bottomEnd = if (last) 16.dp else 0.dp
+    )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).clip(cardShape)
+        .background(MaterialTheme.colorScheme.surface).padding(horizontal = 12.dp)
+        .padding(top = if (first) 12.dp else 0.dp, bottom = if (last) 12.dp else 0.dp)
+        .height(IntrinsicSize.Min).heightIn(min = 64.dp)
         .clickable(enabled = stop.code.isNotBlank()) { onClick() }) {
         Column(Modifier.width(34.dp).fillMaxHeight().clearAndSetSemantics {}) {
             // 上段只画到圆点中心，下段由 weight 撑到底，圆点带底色盖住接缝 → 轨道是连的。
@@ -201,7 +269,7 @@ fun MetroContent(
             Box(
                 Modifier.align(Alignment.CenterHorizontally).padding(top = if (first) 8.dp else 0.dp)
                     .size(if (stop.transfer.isEmpty()) 10.dp else 13.dp).clip(Capsule)
-                    .background(palette.Page)
+                    .background(MaterialTheme.colorScheme.surface)
                     .border(2.dp, if (pending) railTint.copy(alpha = .45f) else railTint, Capsule)
             )
             if (!last) Box(Modifier.align(Alignment.CenterHorizontally).weight(1f).width(2.dp).background(track))

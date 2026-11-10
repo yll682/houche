@@ -132,7 +132,6 @@ fun TelegramNavigation(selected: Int, select: (Int)->Unit, modifier: Modifier=Mo
             val cell=(size.width-8.dp.toPx())/3f
             val cx=if(dragging)touchX else center
             drawRoundRect(colors.primary.copy(alpha=.11f+.035f*pressure),Offset(cx-cell/2,4.dp.toPx()),Size(cell,size.height-8.dp.toPx()),CornerRadius(28.dp.toPx()))
-            if(selectorHidden) drawRoundRect(colors.onSurface.copy(alpha=.10f*pressure),Offset(cx-cell/2,4.dp.toPx()),Size(cell,size.height-8.dp.toPx()),CornerRadius(28.dp.toPx()),style=Stroke(.75.dp.toPx()))
         }
         Row(Modifier.fillMaxWidth().padding(4.dp)) {
             labels.forEachIndexed { index,label ->

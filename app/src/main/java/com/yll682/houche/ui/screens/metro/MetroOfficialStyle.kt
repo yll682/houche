@@ -229,7 +229,7 @@ internal fun listLineColor(tint: Color, palette: OfficialPalette): Color =
     if (palette.IsDark) lerp(tint, Color.White, .35f) else tint
 
 /** 官方卡片 10dp 圆角、无描边无阴影；本页专用，不替换全局 `CardShape`。 */
-internal val OfficialCardShape = RoundedCornerShape(10.dp)
+internal val OfficialCardShape = RoundedCornerShape(16.dp)
 
 /** ETA 蓝块圆角 13px≈4.3dp。 */
 internal val OfficialEtaShape = RoundedCornerShape(4.dp)
@@ -320,13 +320,13 @@ internal class OfficialTypography(palette: OfficialPalette) {
     val Disclaimer = official(13.3.sp, palette.Disclaimer, 20.3.sp)
 
     /** 站序列表的小标题（官方这页没有这段，沿用原有信息层级）。 */
-    val SectionLabel = official(12.sp, palette.SubInk, 16.sp)
+    val SectionLabel = official(14.sp, palette.TabIndicator, 20.sp)
 
     /** 站序列表的次要信息。 */
-    val MetaLabel = official(11.sp, palette.SubInk, 15.sp)
+    val MetaLabel = official(13.sp, palette.SubInk, 18.sp)
 
     /** 站序列表的站名。 */
-    val StopName = official(15.sp, palette.Ink, 21.sp)
+    val StopName = official(16.sp, palette.Ink, 24.sp)
 }
 
 /** 当前调色板对应的字号档；调色板不变就不重建。 */

@@ -196,12 +196,10 @@ class MainActivity : ComponentActivity() {
                 }, transitionSpec = {
                     when {
                         gesturePop -> EnterTransition.None togetherWith ExitTransition.None
-                        targetState.screen is Screen.Search || initialState.screen is Screen.Search ->
-                            fadeIn(tween(150)) togetherWith fadeOut(tween(150))
                         targetState.order > initialState.order ->
                             slideInHorizontally(tween(200, easing = TelegramQuint)) { it } togetherWith
-                                (slideOutHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 } + fadeOut(tween(200), targetAlpha = .6f))
-                        else -> (slideInHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 } + fadeIn(tween(200))) togetherWith
+                                slideOutHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 }
+                        else -> slideInHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 } togetherWith
                             slideOutHorizontally(tween(200, easing = TelegramQuint)) { it }
                     }
                 }, label = "页面切换") { entry ->
