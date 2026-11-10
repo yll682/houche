@@ -126,6 +126,8 @@ class MainActivity : ComponentActivity() {
     val backX = remember { Animatable(0f) }
     var pageWidth by remember { mutableIntStateOf(1) }
     var gesturePop by remember { mutableStateOf(false) }
+    // 返回位移只属于发起手势的那一页；栈顶一换，新页面不能带着旧位移出现。
+    var backOwner by remember { mutableStateOf<Any?>(null) }
     var backGeneration by remember { mutableLongStateOf(0L) }
     var opening by remember { mutableStateOf(false) }
     var attached by remember { mutableStateOf(true) }
@@ -146,6 +148,7 @@ class MainActivity : ComponentActivity() {
         val token = ++backGeneration
         val backEntry = navigation.stack.last()
         var hasProgress = false
+        backOwner = backEntry
         try {
             events.collect { event ->
                 hasProgress = hasProgress || event.progress > 0f
@@ -189,9 +192,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
             AnimatedContent(navigation.stack.last(),
-                Modifier.fillMaxSize().testTag("page-container").graphicsLayer { translationX = backX.value }.drawWithContent {
+                Modifier.fillMaxSize().testTag("page-container").graphicsLayer { translationX = if (navigation.stack.last() === backOwner) backX.value else 0f }.drawWithContent {
                     if (drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
-                        pageLayer.record { this@drawWithContent.drawContent() }; drawLayer(pageLayer)
+                        // 仍录一份图层给「返回时露出的上一页」和导航栏取景，但屏幕上画的是实时内容，不是缓存帧。
+                        pageLayer.record { this@drawWithContent.drawContent() }; drawContent()
                     } else drawContent()
                 }, transitionSpec = {
                     when {

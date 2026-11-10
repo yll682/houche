@@ -42,7 +42,7 @@ class NavigationBackdrop(val layer: GraphicsLayer) {
 fun Modifier.navigationBackdrop(backdrop: NavigationBackdrop): Modifier = onGloballyPositioned { backdrop.origin=it.positionInRoot() }
     .drawWithContent {
         if (drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
-            backdrop.layer.record { this@drawWithContent.drawContent() }; drawLayer(backdrop.layer)
+            backdrop.layer.record { this@drawWithContent.drawContent() }; drawContent()
         } else drawContent()
     }
 

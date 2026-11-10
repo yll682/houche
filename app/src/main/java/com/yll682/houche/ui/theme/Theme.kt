@@ -7,5 +7,11 @@ import androidx.compose.runtime.Composable
 @Composable
 fun HoucheTheme(dynamicColor: Boolean = false, content: @Composable () -> Unit) {
     // 品牌配色固定，不使用动态壁纸色。
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes, content = content)
+    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors, typography = HoucheTypography, shapes = HoucheShapes) {
+        // 整块点按变色，取代 Material 的圆形涟漪（IconButton 等无界涟漪不受影响）。
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.foundation.LocalIndication provides rememberFlatPressIndication(),
+            content = content
+        )
+    }
 }
