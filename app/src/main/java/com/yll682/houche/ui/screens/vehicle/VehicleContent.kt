@@ -24,6 +24,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DirectionsBus
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.yll682.houche.ui.components.Hairline
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -162,7 +171,11 @@ private fun RemainingCard(data: VehicleData) {
             } else if (remaining <= 0) {
                 // 到站与过站用一句话说清，比让用户读「0 站」再自己推断更直接。
                 Text(
-                    stringResource(if (remaining == 0) R.string.arrived else R.string.vehicle_passed),
+                    stringResource(when {
+                        remaining < 0 -> R.string.vehicle_passed
+                        data.vehicle?.positionState == "between" -> R.string.arriving_soon
+                        else -> R.string.arrived
+                    }),
                     style = MaterialTheme.typography.headlineLarge,
                     color = color
                 )
@@ -190,25 +203,35 @@ private fun VehicleActions(data: VehicleData, toggleTracking: () -> Unit, notify
     val shareTitle = stringResource(R.string.vehicle_share_title)
     val station = vehicleStation(data.vehicle) ?: stringResource(R.string.unknown_position)
     val shareText = stringResource(R.string.vehicle_share_text, data.plate, data.route.name, station)
-    // 三按钮并排，单行不折行，字号统一 labelLarge。
-    val labelStyle = MaterialTheme.typography.labelLarge
+    val canTrack = data.boarding != null
+    CardSurface {
+        ActionRow(Icons.Outlined.NotificationsActive, trackingLabel, canTrack, toggleTracking,
+            if (data.tracking) Icons.Outlined.Check else Icons.Outlined.ChevronRight)
+        Hairline(Modifier.padding(start = 56.dp))
+        ActionRow(Icons.Outlined.Notifications, notifyLabel, true, notify, Icons.Outlined.ChevronRight)
+        Hairline(Modifier.padding(start = 56.dp))
+        ActionRow(Icons.Outlined.Share, shareLabel, true, { share(shareText, shareTitle) }, Icons.Outlined.ChevronRight)
+    }
     Text(
         stringResource(if (data.boarding == null) R.string.vehicle_choose_boarding else R.string.vehicle_tracking_scope),
-        Modifier.padding(bottom = 12.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+        Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
+        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilledTonalButton(toggleTracking, Modifier.weight(1f).touch(trackingLabel), shape = Capsule,
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)) {
-            Text(trackingLabel, style = labelStyle, maxLines = 1, softWrap = false)
-        }
-        OutlinedButton(notify, Modifier.weight(1f).touch(notifyLabel), shape = Capsule,
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)) {
-            Text(notifyLabel, style = labelStyle, maxLines = 1, softWrap = false)
-        }
-        OutlinedButton({ share(shareText, shareTitle) }, Modifier.weight(1f).touch(shareLabel), shape = Capsule,
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)) {
-            Text(shareLabel, style = labelStyle, maxLines = 1, softWrap = false)
-        }
+}
+
+@Composable
+private fun ActionRow(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit, trailing: ImageVector) {
+    val tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
+    Row(
+        Modifier.fillMaxWidth().touch(label).clickable(enabled = enabled, onClick = onClick)
+            .heightIn(min = 50.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, Modifier.size(24.dp), tint = tint)
+        Spacer(Modifier.width(16.dp))
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f))
+        Icon(trailing, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -243,6 +266,7 @@ private fun VehicleState(vehicle: Vehicle?, remaining: Int? = null) {
     val label = stringResource(when {
         // 0 站是「刚好到站」，负数才是「已经开过去」。
         remaining != null && remaining < 0 -> R.string.vehicle_passed
+        remaining == 0 && vehicle?.positionState == "between" -> R.string.arriving_soon
         remaining == 0 || vehicle?.positionState == "at-stop" -> R.string.arrived
         vehicle?.positionState == "between" -> R.string.running
         else -> R.string.unknown_position

@@ -137,8 +137,9 @@ class VehicleViewModel(
         tracked.plate == data.plate && tracked.boardingName == data.boarding?.name
 
     private fun notifyIfNeeded(vehicle: Vehicle?) {
-        val remaining = remainingStops(data.boarding, vehicle) ?: return
-        if (remaining > 1) {
+        val remaining = remainingStops(data.boarding, vehicle)
+        // 只在还差 0 或 1 站时提醒；已经开过去（负数）、站数未知、还差得远都只重置。
+        if (remaining == null || remaining < 0 || remaining > 1) {
             notifiedStop = null
             return
         }
