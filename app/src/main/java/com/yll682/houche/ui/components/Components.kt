@@ -25,6 +25,9 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.roundToInt
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
@@ -342,22 +345,61 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
     BoxWithConstraints(modifier.fillMaxWidth().padding(padding)) {
         val cell = maxOf(with(density) { widest.toDp() } + 32.dp, 72.dp, maxWidth / labels.size)
-        val indicatorX by androidx.compose.animation.core.animateDpAsState(cell * index + 4.dp, tween(200, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)), label = "标签指示器")
-        val indicator = tints?.getOrNull(index) ?: MaterialTheme.colorScheme.primary
+        val cellPx = with(density) { cell.toPx() }
+        val fits = cell * labels.size <= maxWidth + 0.5.dp
+        // 拖动选择（仿 Telegram 标签条）：手指在条上横拖，指示块跟手（不带动画）；
+        // 每跨过一个标签震一下（TextHandleMove）；松手选中最近的标签，取消则不切换。
+        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+        var dragPos by remember { mutableStateOf<Float?>(null) }
+        val maxPos = cellPx * (labels.size - 1)
+        val dragIndex = dragPos?.let { (it / cellPx).roundToInt().coerceIn(0, labels.lastIndex) }
+        val shown = dragIndex ?: index
+        val target = dragPos?.let { with(density) { it.toDp() } } ?: (cell * index)
+        val indicatorX by androidx.compose.animation.core.animateDpAsState(
+            target + 4.dp,
+            if (dragPos != null) androidx.compose.animation.core.snap() else tween(200, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)),
+            label = "标签指示器"
+        )
+        val indicator = tints?.getOrNull(shown) ?: MaterialTheme.colorScheme.primary
         LaunchedEffect(index, cell) {
-            val target = with(density) { (cell * index).roundToPx() }
+            val targetPx = with(density) { (cell * index).roundToPx() }
             val viewport = with(density) { maxWidth.roundToPx() }
-            scroll.animateScrollTo((target - (viewport - with(density) { cell.roundToPx() }) / 2).coerceAtLeast(0))
+            scroll.animateScrollTo((targetPx - (viewport - with(density) { cell.roundToPx() }) / 2).coerceAtLeast(0))
         }
+        val latestIndex by rememberUpdatedState(index)
+        val latestSelect by rememberUpdatedState(select)
+        val drag = if (fits && labels.size > 1) Modifier.pointerInput(labels.size, cellPx) {
+            var last = -1
+            detectHorizontalDragGestures(
+                onDragStart = { start ->
+                    dragPos = (start.x - cellPx / 2).coerceIn(0f, maxPos)
+                    last = latestIndex
+                },
+                onDragEnd = {
+                    val pick = dragPos?.let { (it / cellPx).roundToInt().coerceIn(0, labels.lastIndex) }
+                    dragPos = null
+                    if (pick != null && pick != latestIndex) latestSelect(pick)
+                },
+                onDragCancel = { dragPos = null },
+                onHorizontalDrag = { change, amount ->
+                    change.consume()
+                    val next = ((dragPos ?: 0f) + amount).coerceIn(0f, maxPos)
+                    dragPos = next
+                    val nearest = (next / cellPx).roundToInt().coerceIn(0, labels.lastIndex)
+                    if (nearest != last) { last = nearest; haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove) }
+                }
+            )
+        } else Modifier
         Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
-            .horizontalScroll(scroll)) {
+            .then(drag).horizontalScroll(scroll, enabled = !fits)) {
             Box(Modifier.offset(x = indicatorX, y = 4.dp).size(cell - 8.dp, 40.dp)
                 .clip(RoundedCornerShape(14.dp)).background(indicator.copy(alpha = 0.12f)))
             Row {
                 labels.forEachIndexed { i, label ->
                     val active = i == index
+                    val lit = i == shown
                     val color by animateColorAsState(
-                        if (active) textTint(i) else MaterialTheme.colorScheme.onSurfaceVariant, tween(200), label = "标签颜色"
+                        if (lit) textTint(i) else MaterialTheme.colorScheme.onSurfaceVariant, tween(200), label = "标签颜色"
                     )
                     Box(
                         Modifier.width(cell).height(48.dp).selectable(selected = active, role = Role.Tab) { select(i) }
