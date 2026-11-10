@@ -721,6 +721,22 @@ class ScreenshotTest {
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         assertTrue("单张 PNG 不超过 400KB：${file.length()}", file.length() <= 400 * 1024)
     }
+    @Test
+    @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun telegramNarrowLarge_light() = capture("telegram-narrow-large", false, 1080, 2400) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, 1.5f)) {
+            Home(UiState.Success(home))
+        }
+    }
+    @Test
+    @Config(qualifiers = "zh-rCN-w360dp-h800dp-xxhdpi")
+    fun telegramNarrowLarge_dark() = capture("telegram-narrow-large", true, 1080, 2400) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, 1.5f)) {
+            SettingsTab()
+        }
+    }
     @Test fun scene0_light() = capture("home-nearby", false) { Home(UiState.Success(home)) }
     @Test fun scene0_dark() = capture("home-nearby", true) { Home(UiState.Success(home)) }
     @Test fun scene1_light() = capture("home-favorites", false) { Home(UiState.Success(home), segment = 1) }

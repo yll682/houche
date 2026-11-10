@@ -73,8 +73,8 @@ import com.yll682.houche.ui.theme.*
         }
     }
     data.preview?.let { stop ->
-        ModalBottomSheet(onDismissRequest = closePreview, containerColor = MaterialTheme.colorScheme.surface) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding()) {
+        TelegramSheet(dismiss = closePreview) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Text(stop.name, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(12.dp))
                 when {

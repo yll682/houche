@@ -43,7 +43,7 @@ import com.yll682.houche.ui.theme.CardShape
             HeaderSurface {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     HeaderIcon(Icons.Default.Close, stringResource(R.string.close), dismiss)
-                    Text(stringResource(R.string.choose_city), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text(stringResource(R.string.choose_city), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                 }
                 HeaderSearchField(state.query, queryChange, stringResource(R.string.city_search), { queryChange("") },
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp))

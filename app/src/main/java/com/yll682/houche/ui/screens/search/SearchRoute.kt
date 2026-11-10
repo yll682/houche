@@ -1,6 +1,9 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.yll682.houche.ui.screens.search
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -20,6 +23,8 @@ import com.yll682.houche.ui.components.*
 ) {
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
-    SearchScreen(vm, back, line, station, metro, { keyboard?.hide() }, Modifier.focusRequester(focus))
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    BackHandler(imeVisible) { keyboard?.hide() }
+    LaunchedEffect(Unit) { delay(150); focus.requestFocus(); keyboard?.show() }
+    SearchScreen(vm, { keyboard?.hide(); back() }, line, station, metro, { keyboard?.hide() }, Modifier.focusRequester(focus))
 }

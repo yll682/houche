@@ -7,9 +7,9 @@ import androidx.compose.ui.unit.dp
 val Capsule = RoundedCornerShape(999.dp)
 
 // 参照官方 App：卡片 12dp、徽章 8dp、输入框 999dp（搜索框为胶囊）。
-val CardShape = RoundedCornerShape(12.dp)
+val CardShape = RoundedCornerShape(16.dp)
 val BadgeShape = RoundedCornerShape(8.dp)
-val FieldShape = RoundedCornerShape(999.dp)
+val FieldShape = RoundedCornerShape(10.dp)
 
 val HoucheShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),

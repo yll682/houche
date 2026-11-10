@@ -39,37 +39,40 @@ import com.yll682.houche.ui.theme.Capsule
             Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
                 HeaderSearchField(data.query, query, stringResource(R.string.search_hint), { query("") },
-                    inputModifier.weight(1f), KeyboardOptions(imeAction = ImeAction.Search), KeyboardActions(onSearch = { submit() }))
+                    inputModifier.weight(1f), KeyboardOptions(imeAction = ImeAction.Search), KeyboardActions(onSearch = { submit() }), loading = state is UiState.Loading)
                 TextButton(back, Modifier.touch(stringResource(R.string.cancel)), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                    Text(stringResource(R.string.cancel), style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    Text(stringResource(R.string.cancel), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
 
         LazyColumn(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize().imePadding().navigationBarsPadding(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(if (typed) 10.dp else 0.dp)
         ) {
             feedback(state) { submit() }
             if (!typed) {
                 if (data.history.isNotEmpty()) {
                     item {
-                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            data.history.forEach { keyword ->
-                                Surface(shape = Capsule, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                                    Row(Modifier.widthIn(max = 320.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(keyword, Modifier.weight(1f, fill = false).widthIn(min = 48.dp).touch(keyword).clickable { search(keyword) }.padding(start = 12.dp).wrapContentHeight(),
-                                            style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
-                                    }
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("最近搜索", Modifier.weight(1f).padding(start = 16.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            TextButton(clear) { Text(stringResource(R.string.clear)) }
+                        }
+                    }
+                    itemsIndexed(data.history, key = { _, keyword -> keyword }) { index, keyword ->
+                        val corners = androidx.compose.foundation.shape.RoundedCornerShape(
+                            topStart = if (index == 0) 16.dp else 0.dp, topEnd = if (index == 0) 16.dp else 0.dp,
+                            bottomStart = if (index == data.history.lastIndex) 16.dp else 0.dp, bottomEnd = if (index == data.history.lastIndex) 16.dp else 0.dp)
+                        SwipeHistoryRow(keyword, { remove(keyword) }, Modifier.animateItem(
+                            fadeInSpec = androidx.compose.animation.core.tween(180), placementSpec = androidx.compose.animation.core.tween(180), fadeOutSpec = androidx.compose.animation.core.tween(180)).clip(corners)) {
+                            Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
+                                if (index > 0) Hairline(Modifier.padding(start = 56.dp))
+                                Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable { search(keyword) }.padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.History, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(keyword, Modifier.weight(1f).padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
                                 }
-                            }
-                            // 「清空」与关键词 chip 同一形态，只是文字更轻，避免两种药丸挤在一行。
-                            Surface(onClick = clear, modifier = Modifier.touch(stringResource(R.string.clear)), shape = Capsule,
-                                color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                                Text(stringResource(R.string.clear), Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }

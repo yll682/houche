@@ -13,6 +13,8 @@ import java.util.UUID
 import android.util.Log
 
 private val Context.houcheDataStore by preferencesDataStore(name = "houche")
+data class SearchRemoval(val before: List<String>, val removed: Set<String>)
+
 class Prefs(context: Context) {
     private val store = context.applicationContext.houcheDataStore
     private val json = BusNetwork.json
@@ -54,6 +56,24 @@ class Prefs(context: Context) {
     }
     suspend fun removeSearch(keyword: String) = io { store.edit { it[historyKey] = json.encodeToString(decode<List<String>>(it[historyKey]).filterNot { text -> text == keyword }) }; Unit }
     suspend fun clearSearches() = io { store.edit { it.remove(historyKey) }; Unit }
+    suspend fun removeSearchesWithSnapshot(keyword: String? = null): SearchRemoval = io {
+        var snapshot = SearchRemoval(emptyList(), emptySet())
+        store.edit { prefs ->
+            val before = decode<List<String>>(prefs[historyKey])
+            val removed = before.filter { keyword == null || it == keyword }.toSet()
+            snapshot = SearchRemoval(before, removed)
+            prefs[historyKey] = json.encodeToString(before.filterNot { it in removed })
+        }
+        snapshot
+    }
+    suspend fun restoreSearches(snapshot: SearchRemoval) = io {
+        store.edit { prefs ->
+            val current = decode<List<String>>(prefs[historyKey])
+            val additions = current.filterNot { it in snapshot.before }
+            val restored = snapshot.before.filter { it in current || it in snapshot.removed }
+            prefs[historyKey] = json.encodeToString((additions + restored).distinct().take(10))
+        }; Unit
+    }
     private inline fun <reified T> decode(value: String?): T = try { json.decodeFromString(value ?: "[]") } catch (error: Exception) { throw wrap(error) }
     private fun stationKey(station: Station) = listOf(station.number ?: station.name, station.lat, station.lng)
     private suspend fun <T> io(block: suspend () -> T): T = withContext(Dispatchers.IO) { try { block() } catch (error: Exception) { throw wrap(error) } }

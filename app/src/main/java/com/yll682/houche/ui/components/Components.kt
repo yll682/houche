@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -51,35 +53,31 @@ import kotlinx.coroutines.delay
 /** 触控区不小于 48dp，并补上无障碍标签。 */
 fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { contentDescription = label }
 
-/** 顶栏渐变：与首页同一套蓝色，深色模式压暗一档，白色图标始终有足够对比。 */
-@Composable fun headerGradient(): Brush = Brush.verticalGradient(
-    if (isSystemInDarkTheme()) listOf(HeaderTopDark, HeaderBottomDark) else listOf(HeaderTop, HeaderBottom)
-)
+/** Opaque reading surfaces; translucent controls stay inside navigation chrome. */
+@Composable fun headerGradient(): Brush = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surface))
 
-/** 顶栏容器：蓝色渐变背景 + 状态栏留白，内容由调用方决定放标题行还是搜索框。 */
 @Composable fun HeaderSurface(content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().background(headerGradient()).statusBarsPadding(), content = content)
+    Column(Modifier.fillMaxWidth().background(if (isSystemInDarkTheme()) Color(0xFF242D39) else MaterialTheme.colorScheme.surface).statusBarsPadding(), content = content)
 }
 
-/** 顶栏里的白色图标按钮，只在渐变背景上使用。 */
 @Composable fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
-    IconButton(onClick, Modifier.size(48.dp), enabled = enabled) {
-        Icon(icon, label, tint = if (enabled) Color.White else Color.White.copy(alpha = .4f))
+    TelegramIconButton(onClick, label, enabled) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else .4f))
     }
 }
 
 @Composable fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true, tint: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    IconButton(onClick, Modifier.size(48.dp), enabled = enabled) { Icon(icon, label, tint = if (enabled) tint else tint.copy(alpha = .38f)) }
+    TelegramIconButton(onClick, label, enabled) { Icon(icon, label, tint = if (enabled) tint else tint.copy(alpha = .38f)) }
 }
 
-/** 1dp 发丝分隔线。 */
+/** One physical pixel, independent of logical density. */
 @Composable fun Hairline(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
+    Box(modifier.fillMaxWidth().height(with(LocalDensity.current) { 1f.toDp() }).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f)))
 }
 
-/** 本应用唯一的卡片容器：纯 surface + 细描边，不用阴影和灰色填充。 */
+/** Grouped 16dp surface, with no repeated outlines. */
 @Composable fun CardSurface(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
-    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val border: BorderStroke? = null
     if (onClick != null) Surface(onClick, modifier.fillMaxWidth(), shape = CardShape, color = MaterialTheme.colorScheme.surface, border = border) { Column(content = content) }
     else Surface(modifier.fillMaxWidth(), shape = CardShape, color = MaterialTheme.colorScheme.surface, border = border) { Column(content = content) }
 }
@@ -89,11 +87,12 @@ fun Modifier.touch(label: String) = this.heightIn(min = 48.dp).semantics { conte
     val style = if (large) MaterialTheme.typography.displayMedium else MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
     Box(
         Modifier
-            .defaultMinSize(minWidth = if (large) 88.dp else 54.dp, minHeight = if (large) 76.dp else 34.dp)
+            .widthIn(max = if (large) 160.dp else 88.dp)
+            .defaultMinSize(minWidth = if (large) 80.dp else 48.dp, minHeight = if (large) 72.dp else 48.dp)
             .clip(if (large) BadgeShape else MaterialTheme.shapes.extraSmall)
             .background(MaterialTheme.colorScheme.primaryContainer)
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .38f), if (large) BadgeShape else MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = if (large) 20.dp else 10.dp, vertical = if (large) 14.dp else 7.dp),
+
+            .padding(horizontal = if (large) 20.dp else 8.dp, vertical = if (large) 14.dp else 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(name, style = style, color = MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -153,15 +152,10 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     val (primary, secondary) = arrivalParts(arrival)
     val color = arrivalColor(arrival)
     Column(horizontalAlignment = Alignment.End) {
-        Text(
-            primary,
-            style = if (large) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleMedium,
-            color = color,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        TelegramText(primary, style = if (large) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleMedium,
+            color = color, duration = if (primary.any(Char::isDigit)) 150 else 320, amplitude = if (primary.any(Char::isDigit)) 1f else .3f)
         secondary?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TelegramText(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -264,8 +258,8 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     Text(
         text,
         Modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.primary
     )
 }
 
@@ -281,7 +275,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-/** 二级页面外壳：蓝色渐变顶栏 + 返回按钮 + 白色标题，与首页同一种家族感。 */
+/** Shared 56dp semantic title bar and system inset handling. */
 @Composable fun Page(title: String, back: () -> Unit, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}, content: @Composable (PaddingValues) -> Unit) {
     Scaffold(
         modifier = modifier,
@@ -297,7 +291,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
                         title,
                         Modifier.weight(1f).padding(start = 2.dp),
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -378,22 +372,21 @@ fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, retry: () -> Unit)
 @Composable fun HeaderSearchField(
     value: String, change: (String) -> Unit, hint: String, clear: () -> Unit,
     modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default
+    keyboardActions: KeyboardActions = KeyboardActions.Default, loading: Boolean = false
 ) {
     Box(modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
-        Surface(shape = FieldShape, color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().height(44.dp)) {}
+        Surface(shape = FieldShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().height(40.dp)) {}
         Row(Modifier.fillMaxWidth().height(48.dp).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(8.dp))
             BasicTextField(value, change, Modifier.weight(1f).height(48.dp).wrapContentHeight()
                 .semantics { contentDescription = hint }, singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), keyboardOptions = keyboardOptions, keyboardActions = keyboardActions,
                 decorationBox = { field ->
-                    Box { if (value.isEmpty()) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); field() }
+                    Box { if (value.isEmpty()) Text(hint, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant); field() }
                 })
-            if (value.isNotEmpty()) ActionIcon(Icons.Default.Close, stringResource(R.string.clear), clear)
-            else Spacer(Modifier.width(12.dp))
+            TelegramClearButton(value.isNotEmpty() || loading, loading, clear)
         }
     }
 }

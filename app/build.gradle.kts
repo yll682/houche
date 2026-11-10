@@ -20,8 +20,8 @@ android {
         applicationId = "com.yll682.houche"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "1.7.10"
+        versionCode = 23
+        versionName = "1.9.0"
         resourceConfigurations += listOf("zh", "en")
     }
 
@@ -104,6 +104,10 @@ android.testOptions.unitTests.all { test ->
         classpath += bundledTestTools
         systemProperty("screenshots.dir", rootProject.file("docs/screenshots").absolutePath)
         systemProperty("live", System.getProperty("live", "false"))
+        listOf("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort", "javax.net.ssl.trustStore").forEach { key ->
+            System.getProperty(key)?.let { value -> systemProperty(key, value) }
+        }
+        systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
         // 默认带 @Ignore；显式联网时运行忽略用例，普通测试仍完全离线。
         testLogging { showStandardStreams = true }
         outputs.upToDateWhen { System.getProperty("live") != "true" }

@@ -3,13 +3,17 @@ package com.yll682.houche.ui.screens.home
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -25,11 +29,7 @@ import com.yll682.houche.ui.theme.Capsule
 import com.yll682.houche.ui.theme.HeaderBottom
 import com.yll682.houche.ui.theme.HeaderTop
 
-/**
- * 首页版式参照厦门公交官方 App：蓝色渐变顶栏 + 胶囊搜索框 + 站点卡片。
- * 到站信息按官方配色分级：即将到站橙红、有站数蓝色、等待发车灰色。
- * 搜索只有一个入口（顶栏胶囊框），宫格与底部导航不重复承载同一动作。
- */
+/** Telegram-style shared chrome, compact transport rows, and persistent primary destinations. */
 @Composable fun HomeContent(
     state: UiState<HomeData>, city: City, granted: Boolean, segment: Int, selectSegment: (Int) -> Unit,
     locate: () -> Unit, search: () -> Unit, cities: () -> Unit,
@@ -40,27 +40,44 @@ import com.yll682.houche.ui.theme.HeaderTop
 ) {
     val data = state.data ?: HomeData()
     val loading = state is UiState.Loading
+    val nearbyScroll = rememberLazyListState()
+    val favoriteScroll = rememberLazyListState()
+    val tabStates = rememberSaveableStateHolder()
+    val backdropLayer = rememberGraphicsLayer()
+    val backdrop = remember { NavigationBackdrop(backdropLayer) }
+    val scope = rememberCoroutineScope()
+    var settingsTop by remember { mutableIntStateOf(0) }
+    val currentSegment = rememberUpdatedState(segment)
+    val changeSegment = rememberUpdatedState(selectSegment)
+    fun destination(index: Int) {
+        if (index == currentSegment.value) scope.launch {
+            when(index) { 0 -> nearbyScroll.animateScrollToItem(0); 1 -> favoriteScroll.animateScrollToItem(0); else -> settingsTop++ }
+        } else changeSegment.value(index)
+    }
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { HomeHeader(city, cities, locate, search, searchable = segment != 2, refreshable = segment != 2,
-            metro = if (data.hasMetro && segment == 0) metro else null) },
-        bottomBar = { HomeBottomBar(segment, selectSegment) }
+            metro = if (data.hasMetro && segment == 0) metro else null, segment = segment) }
     ) { padding ->
+      Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+       Box(Modifier.fillMaxSize().navigationBackdrop(backdrop)) {
         if (segment == 2) {
-            Box(Modifier.fillMaxSize().padding(padding)) { settingsContent() }
-            return@Scaffold
-        }
+            Box(Modifier.fillMaxSize().padding(bottom = 80.dp).navigationBarsPadding()) {
+                CompositionLocalProvider(LocalSettingsReselect provides settingsTop) { tabStates.SaveableStateProvider("settings") { settingsContent() } }
+            }
+        } else {
         PullToRefresh(loading, { locate() }) {
             LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.fillMaxSize(),
+                state = if (segment == 0) nearbyScroll else favoriteScroll,
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 112.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (segment == 0) {
                     item {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.NotificationsNone, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.tertiary)
+                            Icon(Icons.Default.NearMe, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(6.dp))
                             // 定位结论只给一句：正在定位 / 已定位 / 已按定位城市查询 / 未识别回退。
                             val status = when {
@@ -95,7 +112,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                     if (data.stations.isEmpty() && state is UiState.Empty) {
                         item { EmptyState(stringResource(R.string.no_stations), action = stringResource(R.string.search_action), onClick = search) }
                     }
-                    itemsIndexed(data.stations, key = { index, stop -> "$index-${stop.name}" }) { index, stop ->
+                    itemsIndexed(data.stations, key = { _, stop -> "${stop.number}-${stop.name}-${stop.lat}-${stop.lng}" }) { index, stop ->
                         StationCard(
                             station = stop,
                             arrivals = data.arrivals[index].orEmpty(),
@@ -155,113 +172,44 @@ import com.yll682.houche.ui.theme.HeaderTop
                 }
             }
         }
+        }
+       }
+       Box(Modifier.align(Alignment.BottomCenter)) { HomeBottomBar(segment, ::destination, backdrop) }
+      }
     }
 }
 
-/** 蓝色渐变顶栏：城市选择 + 居中标题 + 刷新，下方是白色胶囊搜索框。 */
-@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true, metro: ((String?) -> Unit)? = null) {
-    Column(
-        Modifier.fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(HeaderTop, HeaderBottom)))
-            .statusBarsPadding()
-    ) {
-        Row(
-            Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                onClick = cities,
-                modifier = Modifier.height(32.dp).touch(stringResource(R.string.choose_city)),
-                shape = Capsule,
-                color = Color.White.copy(alpha = .18f)
-            ) {
-                Row(Modifier.padding(start = 12.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(city.name, style = MaterialTheme.typography.labelLarge, color = Color.White)
-                    Icon(Icons.Default.ExpandMore, null, Modifier.size(16.dp), tint = Color.White)
+@Composable private fun HomeHeader(city: City, cities: () -> Unit, locate: () -> Unit, search: () -> Unit, searchable: Boolean = true, refreshable: Boolean = true, metro: ((String?) -> Unit)? = null, segment: Int = 0) {
+    HeaderSurface {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 20.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(when (segment) { 1 -> R.string.favorites; 2 -> R.string.settings; else -> R.string.app_name }),
+                Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Surface(onClick = cities, modifier = Modifier.widthIn(max = 144.dp), shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Row(Modifier.heightIn(min = 40.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(city.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DirectionsBus, null, Modifier.size(20.dp), tint = Color.White)
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White, letterSpacing = 1.sp)
-            }
-            // 地铁是一个独立入口：只在当前城市有地铁资料时出现，不与搜索框重复。
-            if (metro != null) {
-                IconButton({ metro(null) }, Modifier.size(48.dp)) {
-                    Icon(Icons.Default.Subway, stringResource(R.string.metro), tint = Color.White)
-                }
-            }
-            if (refreshable) {
-                IconButton(locate, Modifier.size(48.dp)) { Icon(Icons.Default.Refresh, stringResource(R.string.refresh), tint = Color.White) }
-            } else {
-                Spacer(Modifier.width(12.dp))
-            }
+            if (metro != null) HeaderIcon(Icons.Default.Subway, stringResource(R.string.metro), { metro(null) })
+            if (refreshable) HeaderIcon(Icons.Default.MyLocation, stringResource(R.string.refresh), locate)
         }
-        // 搜索框只在能搜索的两个 Tab 出现：设置页放一个搜不到东西的框只会误导。
         if (searchable) {
-            Spacer(Modifier.height(0.dp))
-            Surface(
-                onClick = search,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp).height(44.dp)
-                    .touch(stringResource(R.string.search_hint)),
-                shape = Capsule,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Search, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        stringResource(R.string.search_hint),
-                        Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Surface(onClick = search, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 10.dp).height(40.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Search, null, Modifier.size(21.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.search_hint), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-        } else {
-            Spacer(Modifier.height(12.dp))
         }
     }
 }
 
-/** 底部导航：首页 / 收藏 / 设置，搜索由顶栏胶囊框承担，不在这里重复。 */
-@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit) {
-    Column {
-        Hairline()
-        NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-            NavigationBarItem(
-                selected = segment == 0,
-                onClick = { selectSegment(0) },
-                icon = { Icon(Icons.Default.Home, null) },
-                label = { Text(stringResource(R.string.home)) },
-                colors = flatNavColors()
-            )
-            NavigationBarItem(
-                selected = segment == 1,
-                onClick = { selectSegment(1) },
-                icon = { Icon(Icons.Default.Star, null) },
-                label = { Text(stringResource(R.string.favorites)) },
-                colors = flatNavColors()
-            )
-            NavigationBarItem(
-                selected = segment == 2,
-                onClick = { selectSegment(2) },
-                icon = { Icon(Icons.Default.Settings, null) },
-                label = { Text(stringResource(R.string.settings)) },
-                colors = flatNavColors()
-            )
-        }
+@Composable private fun HomeBottomBar(segment: Int, selectSegment: (Int) -> Unit, backdrop: NavigationBackdrop) {
+    Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
+        TelegramNavigation(segment, selectSegment, backdrop = backdrop)
     }
 }
-
-@Composable private fun flatNavColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = MaterialTheme.colorScheme.primary,
-    selectedTextColor = MaterialTheme.colorScheme.primary,
-    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    indicatorColor = Color.Transparent
-)
 
 @Composable private fun LocationCard(denied: Boolean, locate: () -> Unit) {
     CardSurface {
@@ -338,36 +286,20 @@ import com.yll682.houche.ui.theme.HeaderTop
 @Composable private fun StationLineRow(line: LineSummary, arrival: Arrival?, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().touch(line.name).clickable(onClick = onClick)
-            .padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            .heightIn(min = 70.dp).padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 官方样式：第一行「线路号 + 开往终点」，第二行只补充起点，避免终点被说两遍。
+        LineBadge(line.name)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(line.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.to, line.to),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(stringResource(R.string.to, line.to), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (line.from.isNotBlank() && line.from != line.to) {
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    stringResource(R.string.from_stop, line.from),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Text(stringResource(R.string.from_stop, line.from), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         Spacer(Modifier.width(8.dp))
         ArrivalText(arrival)
-        Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
     }
 }
 

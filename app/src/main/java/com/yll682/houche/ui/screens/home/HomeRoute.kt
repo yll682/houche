@@ -26,8 +26,8 @@ import com.yll682.houche.ui.components.*
     val state by vm.state.collectAsStateWithLifecycle()
     val data = state.data ?: HomeData()
     val context = LocalContext.current
-    var granted by remember { mutableStateOf(false) }
     fun permission() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    var granted by remember(context) { mutableStateOf(permission()) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         granted = result.values.any { it }
         if (granted) vm.locate() else vm.denied()
@@ -45,5 +45,5 @@ import com.yll682.houche.ui.components.*
         else launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
     PollEvery20Seconds(data.stations.isNotEmpty()) { vm.refreshLive() }
-    HomeScreen(vm, settingsVm, granted, segment, selectSegment, ::locate, search, cities, line, station, metro)
+    HomeScreen(vm, settingsVm, permission(), segment, selectSegment, ::locate, search, cities, line, station, metro)
 }

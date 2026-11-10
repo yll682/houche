@@ -34,6 +34,7 @@ class AppGraph(
         cities.all()
         BusRepository(XmbusClient(prefs.deviceId()))
     }
+    fun restoreSearches(snapshot: SearchRemoval): Deferred<Unit> = scope.async { prefs.restoreSearches(snapshot) }
     suspend fun repository(): BusRepository = pending.await()
     fun retryInitialization() { if (pending.isCancelled) pending = initialize() }
 }

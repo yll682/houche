@@ -3,6 +3,10 @@ package com.yll682.houche.ui.screens.metro
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -33,91 +37,34 @@ import com.yll682.houche.ui.components.HeaderIcon
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * 顶栏：候车 1.7.2 及之前的设计——品牌蓝渐变底 + 白色返回箭头 + 居中标题。
- *
- * 1.7.3 照官方换成白底 `#6157EB` 细 chevron 后用户明确要求换回来，所以这里的结构逐条复用
- * 1.7.2 的 `Page` 顶栏（`ui/components/Components.kt`）：`HeaderSurface` 那层同款蓝渐变、
- * 56dp 行高、`statusBarsPadding()`，返回键直接用当时那个 `HeaderIcon`——它就是
- * 48dp 触控区 + 24dp 白色 `Icons.AutoMirrored.Filled.ArrowBack` + `R.string.back` 的
- * contentDescription，无障碍标签和点击区都不用重写。
- *
- * 只有标题位置按本次要求居中（1.7.2 的 `Page` 是 `weight(1f)` 左对齐贴箭头），文案沿用
- * 现在的「列车位置」；渐变取色走 [OfficialPalette]，深色模式自动换成压暗一档的品牌蓝，
- * 白箭头白标题在两套模式上都是 4.5:1 以上。
- */
+/** Shared title bar; transit graphics retain their data colors. */
 @Composable
 internal fun MetroTopBar(title: String, back: () -> Unit) {
-    val backLabel = stringResource(R.string.back)
-    val palette = officialPalette()
-    val type = officialTypography()
-    Column(
-        Modifier.fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(palette.BrandTop, palette.BrandBottom)))
-            .statusBarsPadding()
-    ) {
-        // 1.7.2 的顶栏行：56dp、左 2dp / 右 6dp 内边距、垂直居中。
-        Box(Modifier.fillMaxWidth().height(56.dp)) {
-            // 返回键＝1.7.2 的 HeaderIcon：48dp 触控区、24dp 白色 ArrowBack、无障碍标签。
-            Box(Modifier.align(Alignment.CenterStart).padding(start = 2.dp, end = 6.dp)) {
-                HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, backLabel, back)
-            }
-            Text(
-                title,
-                Modifier.align(Alignment.Center).padding(horizontal = 56.dp),
-                style = type.BrandTitle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
+    com.yll682.houche.ui.components.HeaderSurface {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+            Text(title, Modifier.padding(start = 8.dp), style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
-/**
- * 线路切换条（规格 2.2）：白底 53dp、96×96px 圆角色块徽标、中心距 130dp、
- * 选中态用底部 120×12px 方角下划线（`#304097`）表达，而不是给徽标加底色。
- *
- * 中心距 130dp 是官方实测值；线路多于三条时按同一节奏横向滚动，能塞下就整体居中。
- */
+/** Text tabs preserve route color as a small, meaningful identifier. */
 @Composable
 internal fun MetroLineTabs(lines: List<MetroLine>, selected: String, select: (String) -> Unit) {
     if (lines.isEmpty()) return
-    val scroll = rememberScrollState()
-    val palette = officialPalette()
-    BoxWithConstraints(Modifier.fillMaxWidth().height(53.dp).background(palette.Card)) {
-        // 官方三条线时中心距 130dp（列宽 40dp + 间隔 90dp）。候车内置 5 条线（1/2/3/4/6），
-        // 130dp 节奏在 360/411dp 屏上放不下：能按官方节奏放下就照抄，放不下才压缩间隔保全部可见。
-        val fit = if (lines.size > 1)
-            (maxWidth - 40.dp * lines.size - 16.dp) / (lines.size - 1) else 90.dp
-        val gap = minOf(90.dp, fit.coerceAtLeast(24.dp))
-        val content = 40.dp * lines.size + gap * (lines.size - 1).coerceAtLeast(0)
-        val pad = ((maxWidth - content) / 2).coerceAtLeast(0.dp)
-        Row(
-            Modifier.fillMaxSize().horizontalScroll(scroll).padding(start = pad, end = pad),
-            verticalAlignment = Alignment.Top
-        ) {
-            lines.forEachIndexed { index, line ->
-                if (index > 0) Spacer(Modifier.width(gap))
-                LineTab(line, line.id == selected) { select(line.id) }
+    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+        lines.forEach { line ->
+            val active = line.id == selected
+            val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            Column(Modifier.widthIn(min = 72.dp).selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab, onClick = { select(line.id) }), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(Modifier.heightIn(min = 48.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).clip(RoundedCornerShape(3.dp)).background(officialLineColor(line)))
+                    Text(line.name, Modifier.padding(start = 6.dp), style = MaterialTheme.typography.labelLarge, color = tint)
+                }
+                Box(Modifier.width(38.dp).height(3.dp).clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)).background(if (active) tint else Color.Transparent))
             }
         }
-    }
-}
-
-/** 单个线路 tab：色块 + 选中下划线；整体 40dp 宽以便下划线比色块左右各宽 12px。 */
-@Composable
-private fun LineTab(line: MetroLine, active: Boolean, onClick: () -> Unit) {
-    val palette = officialPalette()
-    Column(Modifier.width(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(12.7.dp))
-        LineBadge(line, Modifier.clickable { onClick() }.semantics { contentDescription = line.name })
-        Spacer(Modifier.height(4.dp))
-        // 选中下划线：120×12px 方角，贴条底部（下划线底 = tab 条底）。
-        Box(
-            Modifier.width(40.dp).height(4.dp)
-                .background(if (active) palette.TabIndicator else Color.Transparent)
-        )
     }
 }
 

@@ -11,6 +11,10 @@ import androidx.compose.ui.*
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.yll682.houche.ui.theme.Capsule
 import com.yll682.houche.R
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
@@ -27,10 +31,21 @@ import com.yll682.houche.ui.components.*
     val data = state.data ?: return
     val update = data.update
     val release = update.release
+    val scroll = rememberScrollState()
+    val reselect = LocalSettingsReselect.current
+    LaunchedEffect(reselect) { if (reselect > 0) scroll.animateScrollTo(0) }
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(72.dp).clip(Capsule).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.DirectionsBus, null, Modifier.size(38.dp), tint = Color.White)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(R.string.version, data.versionName, data.versionCode), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         CardSurface {
             SettingRow(
                 icon = Icons.Default.LocationCity,
@@ -45,7 +60,8 @@ import com.yll682.houche.ui.components.*
                 value = if (data.cleared) stringResource(R.string.cache_cleared) else null,
                 onClick = clearCache
             )
-            Hairline()
+        }
+        CardSurface {
             SettingRow(
                 icon = Icons.Default.SystemUpdate,
                 title = stringResource(R.string.update_check),
@@ -56,13 +72,13 @@ import com.yll682.houche.ui.components.*
                     release != null && update.hasUpdate -> release.versionName
                     else -> stringResource(R.string.update_up_to_date)
                 },
-                onClick = { if (!update.checking) checkUpdate() }
+                onClick = { if (!update.checking) checkUpdate() }, loading = update.checking
             )
             if (update.hasUpdate && release != null) UpdateDetail(release = release, download = download)
         }
         CardSurface {
             Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.about), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (data.metroNote.isNotBlank()) {
@@ -81,12 +97,6 @@ import com.yll682.houche.ui.components.*
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.version, data.versionName, data.versionCode),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
             }
         }
     }
@@ -116,18 +126,22 @@ import com.yll682.houche.ui.components.*
     }
 }
 
-@Composable private fun SettingRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String?, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().height(56.dp).touch(title).clickable(onClick = onClick).padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.width(12.dp))
+@Composable private fun SettingRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String?, onClick: () -> Unit, loading: Boolean = false) {
+    val iconColor = when (icon) {
+        Icons.Default.LocationCity -> Color(0xFF54A5DB)
+        Icons.Default.CleaningServices -> Color(0xFF9B73DB)
+        else -> Color(0xFF65B76C)
+    }
+    Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable(onClick = onClick).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(28.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).background(iconColor), contentAlignment = Alignment.Center) {
+            Icon(icon, null, Modifier.size(21.dp), tint = Color.White)
+        }
+        Spacer(Modifier.width(14.dp))
         Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         value?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(Modifier.widthIn(max = 140.dp)) { TelegramSettingValue(it, loading) }
             Spacer(Modifier.width(6.dp))
         }
-        Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+        Icon(Icons.Default.ChevronRight, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f))
     }
 }

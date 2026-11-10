@@ -72,7 +72,7 @@ fun MetroContent(
             }
             return@Column
         }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+        LazyColumn(Modifier.fillMaxSize().navigationBarsPadding(), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
                 MetroRealtimeCard(
                     direction = data.direction,
@@ -89,7 +89,7 @@ fun MetroContent(
                     onRefresh = refresh,
                     onSelectStation = selectStation,
                     onTransfer = selectTransfer,
-                    modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+                    modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp)
                 )
             }
             item {

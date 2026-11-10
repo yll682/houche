@@ -8,10 +8,22 @@ import androidx.activity.*
 import androidx.activity.compose.*
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -45,6 +57,9 @@ sealed interface Screen {
     data class Metro(val city: City, val line: String? = null) : Screen
 }
 class PageEntry(val screen: Screen) : ViewModelStoreOwner {
+    val stateKey = java.util.UUID.randomUUID().toString()
+    val order = System.nanoTime()
+    var preview: ImageBitmap? = null
     override val viewModelStore = ViewModelStore()
 }
 class NavigationState : ViewModel() {
@@ -102,11 +117,59 @@ class MainActivity : ComponentActivity() {
     val data = state.data ?: RootData()
     val city = data.city
     val navigation: NavigationState = viewModel()
+    val pageStates = rememberSaveableStateHolder()
     val context = LocalContext.current
-    val shift = with(androidx.compose.ui.platform.LocalDensity.current) { 8.dp.roundToPx() }
+    val density = LocalDensity.current
+    val pageLayer = rememberGraphicsLayer()
+    val scope = rememberCoroutineScope()
+    val bulletin = remember { BulletinCenter() }
+    val backX = remember { Animatable(0f) }
+    var pageWidth by remember { mutableIntStateOf(1) }
+    var gesturePop by remember { mutableStateOf(false) }
+    var backGeneration by remember { mutableLongStateOf(0L) }
+    var opening by remember { mutableStateOf(false) }
+    var attached by remember { mutableStateOf(true) }
+    val pageLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(Unit) { onDispose { attached = false; backGeneration++ } }
+    val imeVisible = WindowInsets.ime.getBottom(density) > 0
+    fun open(screen: Screen) {
+        if (opening) return
+        opening = true
+        scope.launch {
+            try {
+                navigation.stack.last().preview = if (pageLayer.size.width > 0 && pageLayer.size.height > 0) runCatching { pageLayer.toImageBitmap() }.getOrNull() else null
+                navigation.push(screen)
+            } finally { opening = false }
+        }
+    }
+    PredictiveBackHandler(navigation.stack.size > 1 && !navigation.cityVisible && !imeVisible) { events ->
+        val token = ++backGeneration
+        val backEntry = navigation.stack.last()
+        var hasProgress = false
+        try {
+            events.collect { event ->
+                hasProgress = hasProgress || event.progress > 0f
+                backX.snapTo(with(density) { 56.dp.toPx() } * CubicBezierEasing(0f,0f,0f,1f).transform(event.progress))
+            }
+            if (token != backGeneration || navigation.stack.last() != backEntry) return@PredictiveBackHandler
+            if (hasProgress) {
+                backX.animateTo(pageWidth + with(density) { 56.dp.toPx() }, tween(380, easing = TelegramQuint))
+                gesturePop = true
+            }
+            if (token == backGeneration && navigation.stack.last() == backEntry) navigation.pop()
+        } catch (cancel: CancellationException) {
+            withContext(NonCancellable) { if (token == backGeneration && attached && pageLifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) backX.animateTo(0f, tween(320, easing = TelegramQuint)) }
+        } finally {
+            if (!gesturePop && token == backGeneration) withContext(NonCancellable) { backX.snapTo(0f) }
+        }
+    }
+    LaunchedEffect(navigation.stack.last()) {
+        backGeneration++
+        if (gesturePop) { backX.snapTo(0f); gesturePop = false }
+    }
     val exitMessage = stringResource(R.string.exit_again)
     var lastBack by remember { mutableLongStateOf(0L) }
-    BackHandler(!navigation.cityVisible) {
+    BackHandler(!navigation.cityVisible && navigation.stack.size == 1) {
         if (navigation.stack.size > 1) navigation.pop()
         else if (navigation.segment != 0) navigation.segment = 0
         else {
@@ -115,38 +178,62 @@ class MainActivity : ComponentActivity() {
             else { lastBack = now; Toast.makeText(context, exitMessage, Toast.LENGTH_SHORT).show() }
         }
     }
+    CompositionLocalProvider(LocalBulletinCenter provides bulletin) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+      Box(Modifier.fillMaxSize().onSizeChanged { pageWidth = it.width }) {
         if (city == null) Column(Modifier.safeDrawingPadding().padding(16.dp)) { StateFeedback(state) { root.load() } }
         else {
-            AnimatedContent(navigation.stack.last(), transitionSpec = { (fadeIn(tween(180)) + slideInVertically(tween(180)) { shift }) togetherWith fadeOut(tween(180)) }, label = "页面切换") { entry ->
+            if (backX.value > 0f && navigation.stack.size > 1) {
+                navigation.stack[navigation.stack.lastIndex - 1].preview?.let { snapshot ->
+                    Image(snapshot, null, Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
+                }
+            }
+            AnimatedContent(navigation.stack.last(),
+                Modifier.fillMaxSize().testTag("page-container").graphicsLayer { translationX = backX.value }.drawWithContent {
+                    if (drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
+                        pageLayer.record { this@drawWithContent.drawContent() }; drawLayer(pageLayer)
+                    } else drawContent()
+                }, transitionSpec = {
+                    when {
+                        gesturePop -> EnterTransition.None togetherWith ExitTransition.None
+                        targetState.screen is Screen.Search || initialState.screen is Screen.Search ->
+                            fadeIn(tween(150)) togetherWith fadeOut(tween(150))
+                        targetState.order > initialState.order ->
+                            slideInHorizontally(tween(200, easing = TelegramQuint)) { it } togetherWith
+                                (slideOutHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 } + fadeOut(tween(200), targetAlpha = .6f))
+                        else -> (slideInHorizontally(tween(200, easing = TelegramQuint)) { -it / 3 } + fadeIn(tween(200))) togetherWith
+                            slideOutHorizontally(tween(200, easing = TelegramQuint)) { it }
+                    }
+                }, label = "页面切换") { entry ->
                 DisposableEffect(entry) { onDispose { navigation.release(entry) } }
+                pageStates.SaveableStateProvider(entry.stateKey) {
                 CompositionLocalProvider(LocalViewModelStoreOwner provides entry) {
                     when (val screen = entry.screen) {
                         Screen.Home -> HomeRoute(
                             model(key = city.key) { HomeViewModel(graph, city) },
                             model(key = "settings-${city.key}") { com.yll682.houche.ui.screens.settings.SettingsViewModel(graph, city) },
                             navigation.segment, { navigation.segment = it },
-                            { navigation.push(Screen.Search(city)) }, { navigation.cityVisible = true },
-                            { c, l, s -> navigation.push(Screen.Line(c, l, s)) }, { c, s -> navigation.push(Screen.Stop(c, s)) },
-                            { line -> navigation.push(Screen.Metro(city, line)) }
+                            { open(Screen.Search(city)) }, { navigation.cityVisible = true },
+                            { c, l, s -> open(Screen.Line(c, l, s)) }, { c, s -> open(Screen.Stop(c, s)) },
+                            { line -> open(Screen.Metro(city, line)) }
                         )
                         is Screen.Search -> SearchRoute(
                             model { SearchViewModel(graph, screen.city) }, navigation::pop,
-                            { navigation.push(Screen.Line(screen.city, it)) },
-                            { navigation.push(Screen.Stop(screen.city, it)) },
-                            { lineId -> navigation.push(Screen.Metro(screen.city, lineId)) }
+                            { open(Screen.Line(screen.city, it)) },
+                            { open(Screen.Stop(screen.city, it)) },
+                            { lineId -> open(Screen.Metro(screen.city, lineId)) }
                         )
                         is Screen.Line -> LineRoute(
                             model { LineViewModel(graph, screen.city, screen.line, screen.station) },
                             navigation::pop,
-                            { navigation.push(Screen.Times(screen.city, it)) },
-                            { route, plate, boarding -> navigation.push(Screen.Vehicle(screen.city, route, plate, boarding)) }
+                            { open(Screen.Times(screen.city, it)) },
+                            { route, plate, boarding -> open(Screen.Vehicle(screen.city, route, plate, boarding)) }
                         )
                         is Screen.Stop -> StationRoute(
                             model { StationViewModel(graph, screen.city, screen.station) },
                             navigation::pop,
-                            { line, stop -> navigation.push(Screen.Line(screen.city, line, stop)) },
-                            { lineId -> navigation.push(Screen.Metro(screen.city, lineId)) }
+                            { line, stop -> open(Screen.Line(screen.city, line, stop)) },
+                            { lineId -> open(Screen.Metro(screen.city, lineId)) }
                         )
                         is Screen.Times -> TimetableRoute(model { TimetableViewModel(graph, screen.city, screen.route) }, navigation::pop)
                         is Screen.Metro -> MetroRoute(model { MetroViewModel(graph, screen.city, screen.line) }, navigation::pop)
@@ -158,8 +245,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            }
             if (state is UiState.Error && !navigation.cityVisible) Box(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) { ErrorCard((state as UiState.Error).message) { root.load() } }
             if (navigation.cityVisible) CityRoute(data.cities, located, { navigation.cityVisible = false }, error = (state as? UiState.Error)?.message, failed = state is UiState.Error, retry = { root.load() }) { chosen -> root.city(chosen) { navigation.cityVisible = false; navigation.home() } }
         }
+        BulletinHost(bulletin, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding().padding(horizontal = 12.dp, vertical = 12.dp))
+      }
+    }
     }
 }
