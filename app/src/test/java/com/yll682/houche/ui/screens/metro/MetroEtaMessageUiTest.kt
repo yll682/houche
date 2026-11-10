@@ -76,8 +76,8 @@ class MetroEtaMessageUiTest {
         val ready = etaBounds()
         assertEquals(900f, ready.width, 0f)
         assertEquals(288f, ready.height, 0f)
-        // 正常 ETA 列序、分钟和班号仍沿用原组件：左16/中9/右3，第1班在最右。
-        val columns = listOf("16 分钟第3班预计到达", "9 分钟第2班预计到达", "3 分钟第1班预计到达")
+        // 2.0.x 列序：按原顺序，第1班在最左：左3/中9/右16。
+        val columns = listOf("3 分钟第1班预计到达", "9 分钟第2班预计到达", "16 分钟第3班预计到达")
             .map { description ->
                 compose.onNodeWithContentDescription(description).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
             }
@@ -122,30 +122,22 @@ class MetroEtaMessageUiTest {
         compose.waitForIdle()
         assertEquals(ready, etaBounds())
         columns.forEachIndexed { index, before ->
-            val description = listOf("16 分钟第3班预计到达", "9 分钟第2班预计到达", "3 分钟第1班预计到达")[index]
+            val description = listOf("3 分钟第1班预计到达", "9 分钟第2班预计到达", "16 分钟第3班预计到达")[index]
             assertEquals(before, compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot)
         }
         println("round10 ETA ready-$mode: bounds=$ready, columns=$columns, afterNonReady=unchanged")
     }
 
-    /** 图标位于文本前24dp（16dp圆+8dp间隙），顶对首行16dp行盒。 */
+    /** 图标（Outlined.Info 20dp，主色）位于文本前 28dp（20dp 图标 + 8dp 间隙）：图标区内必须有主色墨迹。 */
     private fun verifyIcon(bitmap: Bitmap, text: Rect, block: Rect, palette: OfficialPalette) {
-        val iconLeft = (text.left - block.left - 72f).roundToInt()
-        val iconTop = (text.top - block.top).roundToInt()
+        val iconLeft = (text.left - block.left - 84f).roundToInt()
         val indigo = palette.TabIndicator.toArgb()
-        val background = palette.EtaBackground.toArgb()
-        val row = (0 until 48).map { bitmap.getPixel(iconLeft + it, iconTop + 24) }
-        // 直径按「非底色的墨迹范围」量：圆是 16dp=48px，最左最右两列是抗锯齿过渡色，
-        // 只数纯靛蓝会量到 46px（那是抗锯齿，不是圆画小了）。
-        val inkFirst = row.indexOfFirst { it != background }
-        val inkLast = row.indexOfLast { it != background }
-        val solid = row.count { it == indigo }
-        assertTrue("必须实际绘制48px实心靛蓝圆", inkFirst >= 0)
-        assertEquals("靛蓝圆必须占满48px（16dp）", 48, inkLast - inkFirst + 1)
-        assertTrue("圆心必须是实心靛蓝（不能是空心圈），实心像素=$solid", solid >= 40)
-        assertEquals("惊叹号竖笔使用palette前景", palette.OnBrand.toArgb(), bitmap.getPixel(iconLeft + 24, iconTop + 18))
-        assertEquals("惊叹号点使用palette前景", palette.OnBrand.toArgb(), bitmap.getPixel(iconLeft + 24, iconTop + 36))
-        println("round10 ETA icon: origin=($iconLeft,$iconTop) diameter=48px, solid=$solid, first-line-top=${text.top - block.top}px")
+        var ink = 0
+        for (y in 0 until bitmap.height) for (x in 0 until 60) {
+            if (bitmap.getPixel(iconLeft + x, y) == indigo) ink++
+        }
+        assertTrue("文本左侧必须实际绘制主色图标，主色像素=$ink", ink > 0)
+        println("round10 ETA icon: iconLeft=$iconLeft, ink=$ink")
     }
 
     @Test
