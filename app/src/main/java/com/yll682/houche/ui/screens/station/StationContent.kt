@@ -48,15 +48,20 @@ import com.yll682.houche.ui.theme.Capsule
                 item {
                     // 站名独占一行，距离与站台数并排放在下面，右侧不再竖着堆两块信息。
                     CardSurface {
-                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                            Text(stop.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Spacer(Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                DistanceChip(stop.distance)
-                                val platforms = data.platforms.size
-                                if (platforms > 1) {
-                                    Spacer(Modifier.width(10.dp))
-                                    MetaPill(stringResource(R.string.platform_count, platforms))
+                        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.Top) {
+                            Box(Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Outlined.Place, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text(stop.name, style = MaterialTheme.typography.titleLarge, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                                Spacer(Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    DistanceChip(stop.distance)
+                                    val platforms = data.platforms.size
+                                    if (platforms > 1) {
+                                        Spacer(Modifier.width(10.dp))
+                                        MetaPill(stringResource(R.string.platform_count, platforms))
+                                    }
                                 }
                             }
                         }
