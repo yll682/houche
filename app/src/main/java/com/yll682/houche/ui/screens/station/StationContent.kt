@@ -67,7 +67,7 @@ import com.yll682.houche.ui.theme.Capsule
                         }
                     }
                 }
-                feedback(state) { refresh() }
+                feedback(state, hasContent = true) { refresh() }
                 if (data.liveState is StationLiveState.Partial && data.liveState.message != null) {
                     item { Text(data.liveState.message.orEmpty(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                 }

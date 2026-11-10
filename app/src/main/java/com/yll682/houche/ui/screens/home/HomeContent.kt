@@ -108,7 +108,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                     if (!granted || data.permissionDenied || (data.position == null && !loading)) {
                         item { LocationCard(data.permissionDenied, locate) }
                     }
-                    feedback(state, cards = 5) { locate() }
+                    feedback(state, cards = 5, hasContent = data.stations.isNotEmpty()) { locate() }
                     if (data.stations.isEmpty() && state is UiState.Empty) {
                         item { EmptyState(stringResource(R.string.no_stations), action = stringResource(R.string.search_action), onClick = search) }
                     }
@@ -123,7 +123,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                         )
                     }
                 } else {
-                    feedback(state, cards = 4) { locate() }
+                    feedback(state, cards = 4, hasContent = data.favoriteLines.isNotEmpty() || data.favoriteStations.isNotEmpty()) { locate() }
                     if (data.favoriteLines.isEmpty() && data.favoriteStations.isEmpty()) {
                         item { EmptyState(stringResource(R.string.no_favorites), action = stringResource(R.string.search_action), onClick = search) }
                     }

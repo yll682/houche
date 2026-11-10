@@ -63,7 +63,7 @@ fun VehicleContent(
     toggleTracking: () -> Unit,
     notify: () -> Unit,
     refresh: () -> Unit,
-    selectVehicle: (String) -> Unit,
+    selectVehicle: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val data = state.data
@@ -89,7 +89,7 @@ fun VehicleContent(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                feedback(state) { refresh() }
+                feedback(state, hasContent = true) { refresh() }
                 if (data != null) {
                     item { VehicleHeader(data) }
                     if (data.boarding != null) item { RemainingCard(data) }

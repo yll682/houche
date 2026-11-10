@@ -41,7 +41,7 @@ import com.yll682.houche.ui.theme.Capsule
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            feedback(state) { retry() }
+            feedback(state, hasContent = data.groups.isNotEmpty()) { retry() }
             item {
                 CardSurface {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {

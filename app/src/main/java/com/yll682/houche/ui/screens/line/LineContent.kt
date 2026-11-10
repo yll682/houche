@@ -54,7 +54,7 @@ import com.yll682.houche.ui.theme.*
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                feedback(state) { retry() }
+                feedback(state, hasContent = route != null) { retry() }
                 if (route != null) {
                     item { RouteHeaderCard(route, data.live?.nextDeparture, loading, fare, toggleFare, timetable, reverse) }
                     item { LiveCard(route, data, vehicles, previewStation) }

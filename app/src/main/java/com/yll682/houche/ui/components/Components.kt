@@ -460,11 +460,13 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, retry: () -> Unit) {
-    // 后台刷新失败但已有缓存结果时不再在列表顶部插入错误卡片（避免整页跳动）。
-    val retained = (state as? UiState.Error<*>)?.data
-    val hasContent = retained != null && !(retained is Collection<*> && retained.isEmpty())
-    if (state is UiState.Loading || (state is UiState.Error && !hasContent)) item { StateFeedback(state, cards, retry) }
+/**
+ * 加载/出错提示项。[hasContent] = 当前已经有内容可看：
+ * 后台刷新时不再插骨架屏（会把已有内容往下挤、造成闪动），刷新失败也不插错误卡片；
+ * 只有首次加载（还没有内容）才显示骨架屏，只有没有内容时出错才显示错误卡片。
+ */
+fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, hasContent: Boolean = false, retry: () -> Unit) {
+    if (!hasContent && (state is UiState.Loading || state is UiState.Error)) item { StateFeedback(state, cards, retry) }
 }
 
 @Composable fun HeaderSearchField(

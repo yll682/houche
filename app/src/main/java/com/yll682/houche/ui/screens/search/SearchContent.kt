@@ -51,7 +51,7 @@ import com.yll682.houche.ui.theme.Capsule
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(if (typed) 10.dp else 0.dp)
         ) {
-            feedback(state) { submit() }
+            feedback(state, hasContent = data.result.lines.isNotEmpty() || data.result.stations.isNotEmpty() || data.metro.isNotEmpty()) { submit() }
             if (!typed) {
                 if (data.history.isNotEmpty()) {
                     item {
