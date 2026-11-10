@@ -124,25 +124,5 @@ internal fun stationLineRows(lines: List<LineSummary>, arrivals: List<Arrival>):
 
 /** 同名站台用「站台 1 / 站台 2」表示，不把上游内部编号暴露给用户。 */
 @Composable private fun PlatformSelector(count: Int, selectedPlatform: Int, platform: (Int) -> Unit) {
-    Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-        Box(Modifier.height(48.dp).width(IntrinsicSize.Max), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxWidth().height(36.dp).clip(Capsule).background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, Capsule))
-            Row {
-                repeat(count) { index ->
-                    val active = index == selectedPlatform
-                    val label = stringResource(R.string.platform_index, index + 1)
-                    Box(Modifier.height(48.dp).clickable(role = Role.Tab) { platform(index) }
-                        .semantics { contentDescription = label; selected = active }, contentAlignment = Alignment.Center) {
-                        Box(Modifier.padding(horizontal = 3.dp).height(30.dp).clip(Capsule)
-                            .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else Color.Transparent)
-                            .padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
-                            Text(label, style = MaterialTheme.typography.labelLarge,
-                                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    CapsuleTabs(List(count) { stringResource(R.string.platform_index, it + 1) }, selectedPlatform, platform, padding = PaddingValues(0.dp))
 }

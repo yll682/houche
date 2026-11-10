@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yll682.houche.R
 import com.yll682.houche.core.MetroLine
+import com.yll682.houche.ui.components.CapsuleTabs
 import com.yll682.houche.ui.components.HeaderIcon
 import kotlin.math.cos
 import kotlin.math.sin
@@ -62,63 +63,18 @@ internal fun MetroTopBar(title: String, back: () -> Unit) {
 }
 
 /**
- * 顶部线路切换：滑动胶囊（2.0.x 样式）。容器 16dp 圆角、白底、高 48dp；选中指示块 40dp 高、
- * 圆角 14dp、四周内缩 4dp，位置用 200ms CubicBezier(0.23,1,0.32,1) 滑动。
- *
- * 与 2.0.8 的唯一区别：指示块底色与选中字色取**当前线路的官方色**，不再是 App 主题蓝。
- * 指示块 = 线路色 12% 透明度；选中字 = 线路色（浅色线路在白底上自动压深一档，保证可读）。
+ * 顶部线路切换：共享滑动胶囊（[CapsuleTabs]），指示块与选中字色取**当前线路的官方色**。
+ * （2.0.x 里这里取的是主题蓝，导致每条线长得一样。）
  */
 @Composable
 internal fun MetroLineTabs(lines: List<MetroLine>, selected: String, select: (String) -> Unit) {
     if (lines.isEmpty()) return
-    val labelStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val widest = remember(lines, labelStyle) {
-        lines.maxOf { measurer.measure(AnnotatedString(it.name), labelStyle, maxLines = 1).size.width }
-    }
-    val scroll = rememberScrollState()
-    val selectedIndex = lines.indexOfFirst { it.id == selected }.coerceAtLeast(0)
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        val cell = maxOf(with(density) { widest.toDp() } + 32.dp, 72.dp, maxWidth / lines.size)
-        val indicatorX by animateDpAsState(cell * selectedIndex + 4.dp, tween(200, easing = TabEasing), label = "标签指示器")
-        val tint = officialLineColor(lines[selectedIndex])
-        LaunchedEffect(selectedIndex, cell) {
-            val target = with(density) { (cell * selectedIndex).roundToPx() }
-            val viewport = with(density) { maxWidth.roundToPx() }
-            scroll.animateScrollTo((target - (viewport - with(density) { cell.roundToPx() }) / 2).coerceAtLeast(0))
-        }
-        Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
-            .horizontalScroll(scroll)) {
-            Box(Modifier.offset(x = indicatorX, y = 4.dp).size(cell - 8.dp, 40.dp)
-                .clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.12f)))
-            Row {
-                lines.forEach { line ->
-                    val active = line.id == selected
-                    val textColor by animateColorAsState(
-                        if (active) readableOnSurface(officialLineColor(line)) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        tween(200), label = "标签颜色"
-                    )
-                    Box(
-                        Modifier.width(cell).height(48.dp)
-                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab, onClick = { select(line.id) }),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(line.name, style = labelStyle, color = textColor, maxLines = 1)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private val TabEasing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
-
-/** 线路色用作文字时：浅色线路（亮度 > 0.25）在亮色主题的白底上压深 25%，深色主题不动。 */
-@Composable
-private fun readableOnSurface(line: Color): Color {
-    val darkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    return if (!darkTheme && line.luminance() > 0.25f) lerp(line, Color.Black, 0.25f) else line
+    CapsuleTabs(
+        labels = lines.map { it.name },
+        selected = lines.indexOfFirst { it.id == selected }.coerceAtLeast(0),
+        select = { select(lines[it].id) },
+        tints = lines.map { officialLineColor(it) }
+    )
 }
 
 /**

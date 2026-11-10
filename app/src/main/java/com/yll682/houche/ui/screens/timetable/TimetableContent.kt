@@ -82,7 +82,7 @@ import com.yll682.houche.ui.theme.Capsule
     val rotation by animateFloatAsState(if (open) 180f else 0f, label = "折叠箭头")
     CardSurface {
         Row(
-            Modifier.fillMaxWidth().touch(group.name).clickable(onClick = onToggle).padding(16.dp),
+            Modifier.fillMaxWidth().touch(group.name).clickable(onClick = onToggle).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (group.current) {
@@ -105,7 +105,7 @@ import com.yll682.houche.ui.theme.Capsule
         }
         if (open) {
             Hairline()
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(start = 12.dp, top = 0.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 group.times.chunked(4).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { departure ->

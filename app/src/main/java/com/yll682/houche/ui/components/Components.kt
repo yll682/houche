@@ -1,7 +1,17 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.yll682.houche.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -302,23 +312,66 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     )
 }
 
-@Composable fun Segments(labels: List<String>, selected: Int, select: (Int) -> Unit) {
-    Box(Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxWidth().height(36.dp).clip(Capsule).background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, Capsule))
-        Row(Modifier.fillMaxWidth()) {
-            labels.forEachIndexed { index, label ->
-                val active = index == selected
-                Box(Modifier.weight(1f).height(48.dp).clickable(role = Role.Tab) { select(index) }
-                    .semantics { contentDescription = label; this.selected = active }, contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxWidth().padding(horizontal = 3.dp).height(30.dp).clip(Capsule)
-                        .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = .10f) else Color.Transparent), contentAlignment = Alignment.Center) {
-                        Text(label, style = MaterialTheme.typography.labelLarge, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+/**
+ * 滑动胶囊标签：白底 16dp 圆角容器、高 48dp；选中指示块 40dp 高、14dp 圆角、四周内缩 4dp，
+ * 位置按 200ms CubicBezier(0.23,1,0.32,1) 滑动；选中字色 200ms 渐变。
+ *
+ * [tints] 为空时指示块与选中字取 App 主题色；传入时按下标取色（地铁顶部线路切换用线路官方色）。
+ * 标签放不下时可横向滚动，选中项自动滚到可见位置。
+ */
+@Composable fun CapsuleTabs(
+    labels: List<String>, selected: Int, select: (Int) -> Unit,
+    modifier: Modifier = Modifier, tints: List<Color>? = null,
+    padding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+) {
+    if (labels.isEmpty()) return
+    val labelStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = LocalDensity.current
+    val widest = remember(labels, labelStyle) {
+        labels.maxOf { measurer.measure(androidx.compose.ui.text.AnnotatedString(it), labelStyle, maxLines = 1).size.width }
+    }
+    val scroll = rememberScrollState()
+    val index = selected.coerceIn(0, labels.lastIndex)
+    val primary = MaterialTheme.colorScheme.primary
+    val darkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    // 线路色当文字：浅色线路（亮度 > 0.25）在亮色主题的白底上压深 25%，保证可读。
+    fun textTint(i: Int): Color {
+        val base = tints?.getOrNull(i) ?: return primary
+        return if (!darkTheme && base.luminance() > 0.25f) lerp(base, Color.Black, 0.25f) else base
+    }
+    BoxWithConstraints(modifier.fillMaxWidth().padding(padding)) {
+        val cell = maxOf(with(density) { widest.toDp() } + 32.dp, 72.dp, maxWidth / labels.size)
+        val indicatorX by androidx.compose.animation.core.animateDpAsState(cell * index + 4.dp, tween(200, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)), label = "标签指示器")
+        val indicator = tints?.getOrNull(index) ?: MaterialTheme.colorScheme.primary
+        LaunchedEffect(index, cell) {
+            val target = with(density) { (cell * index).roundToPx() }
+            val viewport = with(density) { maxWidth.roundToPx() }
+            scroll.animateScrollTo((target - (viewport - with(density) { cell.roundToPx() }) / 2).coerceAtLeast(0))
+        }
+        Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
+            .horizontalScroll(scroll)) {
+            Box(Modifier.offset(x = indicatorX, y = 4.dp).size(cell - 8.dp, 40.dp)
+                .clip(RoundedCornerShape(14.dp)).background(indicator.copy(alpha = 0.12f)))
+            Row {
+                labels.forEachIndexed { i, label ->
+                    val active = i == index
+                    val color by animateColorAsState(
+                        if (active) textTint(i) else MaterialTheme.colorScheme.onSurfaceVariant, tween(200), label = "标签颜色"
+                    )
+                    Box(
+                        Modifier.width(cell).height(48.dp).selectable(selected = active, role = Role.Tab) { select(i) }
+                            .semantics(mergeDescendants = true) { contentDescription = label },
+                        contentAlignment = Alignment.Center
+                    ) { Text(label, style = labelStyle, color = color, maxLines = 1) }
                 }
             }
         }
     }
+}
+
+@Composable fun Segments(labels: List<String>, selected: Int, select: (Int) -> Unit) {
+    CapsuleTabs(labels, selected, select, padding = PaddingValues(0.dp))
 }
 
 /** 线路行：徽章 + 开往方向 + 起点终点 + 右侧到站，行间由调用方补发丝线。 */
