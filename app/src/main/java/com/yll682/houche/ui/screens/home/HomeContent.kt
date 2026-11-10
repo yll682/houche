@@ -261,15 +261,6 @@ import com.yll682.houche.ui.theme.HeaderTop
                 if (index > 0) Hairline()
                 StationLineRow(summary, arrivals.firstOrNull { it.name == summary.name && it.direction == summary.direction }) { onLine(summary) }
             }
-            if (collapsed) {
-                Hairline()
-                TextButton(
-                    onOpen,
-                    Modifier.fillMaxWidth().touch(stringResource(R.string.passing_lines)),
-                    shape = MaterialTheme.shapes.large,
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) { Text(stringResource(R.string.passing_lines), style = MaterialTheme.typography.labelLarge) }
-            }
         }
         station.linesError?.let {
             Hairline()
