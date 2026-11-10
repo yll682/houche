@@ -1,5 +1,11 @@
 package com.yll682.houche.ui.components
 
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Settings
 import android.os.Build
 import android.graphics.Shader
 import androidx.compose.animation.core.*
@@ -150,31 +156,12 @@ fun TelegramNavigation(selected: Int, select: (Int)->Unit, modifier: Modifier=Mo
 
 @Composable
 internal fun NavigationGlyph(index:Int, progress:Float, color:Color) {
-    Canvas(Modifier.size(23.dp)) {
-        scale(size.width/24f,size.height/24f,pivot=Offset.Zero) {
-            val path=Path().apply { fillType=PathFillType.EvenOdd }
-            fun polygon(points:List<Offset>) { path.moveTo(points[0].x,points[0].y);points.drop(1).forEach { path.lineTo(it.x,it.y) };path.close() }
-            fun hole(points:List<Offset>, center:Offset, shrink:Float) { polygon(points.map { center+(it-center)*shrink }) }
-            when(index) {
-                0 -> {
-                    val outer=listOf(Offset(2,10),Offset(12,2),Offset(22,10),Offset(20,10),Offset(20,22),Offset(4,22),Offset(4,10))
-                    polygon(outer)
-                    hole(listOf(Offset(6,11),Offset(12,6),Offset(18,11),Offset(18,20),Offset(6,20)),Offset(12,13),1f-progress)
-                    if(progress>.01f) path.addRect(Rect(10f,16f,14f,22f))
-                }
-                1 -> {
-                    val outer=(0 until 10).map { i -> val a=-PI/2+i*PI/5;val r=if(i%2==0)10f else 4.6f;Offset(12f+cos(a).toFloat()*r,12f+sin(a).toFloat()*r) }
-                    polygon(outer);hole(outer,Offset(12f,12f),(.70f*(1f-progress)))
-                }
-                else -> {
-                    val outer=(0 until 32).map { i -> val a=i*PI/16;val r=if(i%4 in 1..2)10.5f else 8.3f;Offset(12f+cos(a).toFloat()*r,12f+sin(a).toFloat()*r) }
-                    polygon(outer)
-                    val radius=6.4f-3.1f*progress
-                    path.addOval(Rect(12-radius,12-radius,12+radius,12+radius))
-                }
-            }
-            drawPath(path,color)
-        }
+    // 2.0.x：Material 轮廓图标；选中过程中同一时长里交叉渐变成实心图标。
+    val outlined=when(index){0->androidx.compose.material.icons.Icons.Outlined.Home;1->androidx.compose.material.icons.Icons.Outlined.StarBorder;else->androidx.compose.material.icons.Icons.Outlined.Settings}
+    val filled=when(index){0->androidx.compose.material.icons.Icons.Filled.Home;1->androidx.compose.material.icons.Icons.Filled.Star;else->androidx.compose.material.icons.Icons.Filled.Settings}
+    Box(Modifier.size(24.dp)) {
+        androidx.compose.material3.Icon(outlined,null,Modifier.matchParentSize().graphicsLayer { alpha=1f-progress },tint=color)
+        androidx.compose.material3.Icon(filled,null,Modifier.matchParentSize().graphicsLayer { alpha=progress },tint=color)
     }
 }
 private fun Offset(x:Int,y:Int)=Offset(x.toFloat(),y.toFloat())

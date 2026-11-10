@@ -155,4 +155,5 @@
     <string name="refresh_interval">自动刷新间隔</string>
     <string name="refresh_interval_title">自动刷新间隔</string>
     <string name="refresh_interval_current">当前</string>
+    <string name="relocate">重新定位</string>
 </resources>

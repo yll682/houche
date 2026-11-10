@@ -191,7 +191,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                 }
             }
             if (metro != null) HeaderIcon(Icons.Outlined.Subway, stringResource(R.string.metro), { metro(null) })
-            if (refreshable) HeaderIcon(Icons.Outlined.MyLocation, stringResource(R.string.refresh), locate)
+            if (refreshable) HeaderIcon(Icons.Outlined.MyLocation, stringResource(R.string.relocate), locate)
         }
         if (searchable) {
             Surface(onClick = search, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 10.dp).height(40.dp),

@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 package com.yll682.houche.ui.components
 
+import androidx.compose.material.icons.outlined.Close
 import android.provider.Settings
 import android.view.animation.OvershootInterpolator
 import androidx.compose.animation.core.*
@@ -114,7 +115,12 @@ fun TelegramClearButton(visible: Boolean, loading: Boolean, clear: () -> Unit) {
     if (!visible && show <= .001f) { Spacer(Modifier.size(48.dp)); return }
     TelegramIconButton(clear,"清空",visible) {
         Box(Modifier.graphicsLayer { alpha=show;scaleX=show;scaleY=show;rotationZ=45f*(1f-show) }) {
-            CrossProgress(loading)
+            // 2.0.x：叉号与进度圈 150ms 交叉淡入淡出（原来是一个会收缩成圆弧的自绘图形）。
+            androidx.compose.animation.Crossfade(loading,animationSpec=tween(150),label="clear-loading") { busy ->
+                if(busy) Box(Modifier.size(24.dp).padding(4.dp)) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.onSurfaceVariant,strokeWidth=2.dp)
+                } else androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Close,null,Modifier.size(24.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
