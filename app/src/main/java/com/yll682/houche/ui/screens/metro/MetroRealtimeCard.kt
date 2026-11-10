@@ -135,20 +135,22 @@ internal fun StationRow(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            stationName.ifBlank { line.from },
-            Modifier.weight(1f, fill = false),
-            style = type.StationName,
-            maxLines = 1
-        )
-        Spacer(Modifier.width(8.dp))
-        // 本站线路号：与右边那枚换乘徽标同一个共享组件、同一档尺寸。
-        MetroLineBadge(SmallBadgeSize, line.id, officialLineColor(line))
-        if (targets.isNotEmpty()) {
-            Spacer(Modifier.width(6.dp))
-            TransferBadges(targets, onSelect = { onTransfer(it.lineId, it.stationCode) })
+        // 左边一整块（站名 + 线路号 + 换乘）占满剩余宽度，「刷新」才会贴到右边缘。
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stationName.ifBlank { line.from },
+                Modifier.weight(1f, fill = false),
+                style = type.StationName,
+                maxLines = 1
+            )
+            Spacer(Modifier.width(8.dp))
+            // 本站线路号：与右边那枚换乘徽标同一个共享组件、同一档尺寸。
+            MetroLineBadge(SmallBadgeSize, line.id, officialLineColor(line))
+            if (targets.isNotEmpty()) {
+                Spacer(Modifier.width(6.dp))
+                TransferBadges(targets, onSelect = { onTransfer(it.lineId, it.stationCode) })
+            }
         }
-        Spacer(Modifier.weight(1f))
         RefreshButton(loading, onRefresh)
     }
 }
