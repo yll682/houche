@@ -181,7 +181,8 @@ class MainActivity : ComponentActivity() {
             else { lastBack = now; Toast.makeText(context, exitMessage, Toast.LENGTH_SHORT).show() }
         }
     }
-    CompositionLocalProvider(LocalBulletinCenter provides bulletin) {
+    val sheetHost = remember { SheetHost() }
+    CompositionLocalProvider(LocalBulletinCenter provides bulletin, LocalSheetHost provides sheetHost) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
       Box(Modifier.fillMaxSize().onSizeChanged { pageWidth = it.width }) {
         if (city == null) Column(Modifier.safeDrawingPadding().padding(16.dp)) { StateFeedback(state) { root.load() } }
@@ -251,6 +252,7 @@ class MainActivity : ComponentActivity() {
             if (state is UiState.Error && !navigation.cityVisible) Box(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) { ErrorCard((state as UiState.Error).message) { root.load() } }
             if (navigation.cityVisible) CityRoute(data.cities, located, { navigation.cityVisible = false }, error = (state as? UiState.Error)?.message, failed = state is UiState.Error, retry = { root.load() }) { chosen -> root.city(chosen) { navigation.cityVisible = false; navigation.home() } }
         }
+        SheetHostLayer(sheetHost)
         BulletinHost(bulletin, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding().padding(horizontal = 12.dp, vertical = 12.dp))
       }
     }

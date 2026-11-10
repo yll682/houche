@@ -128,7 +128,7 @@ internal fun MetroTrainStrip(
     // 竖排站名自己的高度（字数 × 该站行距）：换乘标注要贴着**本列**最后一字往下排，
     // 所以按站算，不能只留一个「本方向最长站名」的全局值。
     fun nameHeightOf(code: String): Dp {
-        val chars = (names[code]?.length ?: 0).coerceIn(1, 8)
+        val chars = (names[code]?.codePointCount(0, names[code]!!.length) ?: 0).coerceIn(1, 8)
         val lineHeight = if (code == stationCode) StripNameLineSelected else StripNameLine
         return lineHeight * chars
     }
@@ -177,18 +177,23 @@ internal fun MetroTrainStrip(
                 ) {
                     val cy = size.height / 2f
                     val track = StripTrack.toPx()
-                    drawRect(tint, topLeft = Offset(0f, cy - track / 2f), size = androidx.compose.ui.geometry.Size(size.width, track))
+                    // 线只画在首站圆心到末站圆心之间，不再往两头多出半格。
+                    val trackStart = cell.toPx() * .5f
+                    val trackEnd = cell.toPx() * (cells.size - .5f)
+                    drawRect(tint, topLeft = Offset(trackStart, cy - track / 2f), size = androidx.compose.ui.geometry.Size((trackEnd - trackStart).coerceAtLeast(0f), track))
                     if (edge) {
                         val w = StripLineEdge.toPx()
                         drawRect(
                             palette.LineEdge,
-                            topLeft = Offset(0f, cy - track / 2f - w / 2f),
-                            size = androidx.compose.ui.geometry.Size(size.width, track + w),
+                            topLeft = Offset(trackStart, cy - track / 2f - w / 2f),
+                            size = androidx.compose.ui.geometry.Size((trackEnd - trackStart).coerceAtLeast(0f), track + w),
                             style = Stroke(width = w)
                         )
                     }
                     val arrowColor = cutout
                     cells.forEachIndexed { index, _ ->
+                        // 首发站和终点站不画箭头（箭头只出现在站与站之间的行驶方向上）。
+                        if (index == 0 || index == cells.lastIndex) return@forEachIndexed
                         val x = cell.toPx() * (index + .5f)
                         // 箭杆 21×5px，箭头实心三角 9×18px（基准图实测），尖朝行驶方向。
                         val rodHalf = StripArrowRod.toPx() / 2f
@@ -249,13 +254,19 @@ internal fun MetroTrainStrip(
                                 selected = active
                             }
                     ) {
-                        Text(
-                            name.chunked(1).joinToString("\n"),
+                        Row(
                             Modifier.offset(y = stackRoom + namesTop - hitTop).width(cell),
-                            style = if (active) type.StripeNameSelected else type.StripeName,
-                            textAlign = TextAlign.Center,
-                            maxLines = 8
-                        )
+                            horizontalArrangement = Arrangement.spacedBy(StripNameColumnGap, Alignment.CenterHorizontally)
+                        ) {
+                            verticalNameColumns(name).forEach { column ->
+                                Text(
+                                    column,
+                                    style = if (active) type.StripeNameSelected else type.StripeName,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 8
+                                )
+                            }
+                        }
                         // 换乘徽标：一行一枚，竖排逐行排在站名下方（官方基准图就是这个位置）。
                         // 色块底色＝该线路的官方色；块内「数字 ＋ 竖排线字」与 tab 徽标、
                         // 列表里的线路号/换乘徽标是**同一个共享组件**（[MetroLineBadge]），

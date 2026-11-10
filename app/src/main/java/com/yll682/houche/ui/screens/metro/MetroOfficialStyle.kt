@@ -386,7 +386,8 @@ internal fun rememberStripCell(line: MetroLine): Dp {
             .sortedBy { station -> station.first }
     }
     return remember(measurer, table, type.StripeName, type.StripeNameSelected, density) {
-        val widest = table.maxOfOrNull { (_, name) -> measuredVerticalWidth(measurer, name, type) } ?: 0
+        val gapPx = with(density) { StripNameColumnGap.roundToPx() }
+        val widest = table.maxOfOrNull { (_, name) -> measuredVerticalWidth(measurer, name, type, gapPx) } ?: 0
         with(density) {
             val measured = widest + (StripNameInset * 2).roundToPx()
             val floor = maxOf(measured, StripMinTapWidth.roundToPx(), StripMarkerBox.roundToPx())
@@ -395,20 +396,30 @@ internal fun rememberStripCell(line: MetroLine): Dp {
     }
 }
 
-/** 一个站名竖排后（普通 + 选中 Bold）的墨迹宽度上限，单位 px。 */
+/** 站名竖排：按码点拆开，每 8 个字一列，列内一字一行（超长站名换到下一列，不再截断）。 */
+internal fun verticalNameColumns(name: String): List<String> =
+    name.codePoints().toArray().toList().chunked(StripNameMaxLines)
+        .map { cps -> cps.joinToString("\n") { String(Character.toChars(it)) } }
+
+/** 多列站名之间的列距。 */
+internal val StripNameColumnGap = 3.dp
+
+/** 一个站名竖排后（普通 + 选中 Bold）的墨迹宽度上限，单位 px（多列时是各列宽度之和加列距）。 */
 private fun measuredVerticalWidth(
     measurer: TextMeasurer,
     name: String,
-    type: OfficialTypography
+    type: OfficialTypography,
+    gapPx: Int
 ): Int {
-    val vertical = name.chunked(1).joinToString("\n")
-    if (vertical.isEmpty()) return 0
-    return maxOf(
-        measurer.measure(AnnotatedString(vertical), style = type.StripeName, maxLines = StripNameMaxLines).size.width,
-        measurer.measure(
-            AnnotatedString(vertical), style = type.StripeNameSelected, maxLines = StripNameMaxLines
-        ).size.width
-    )
+    val columns = verticalNameColumns(name)
+    if (columns.isEmpty()) return 0
+    val widths = columns.map { vertical ->
+        maxOf(
+            measurer.measure(AnnotatedString(vertical), style = type.StripeName, maxLines = StripNameMaxLines).size.width,
+            measurer.measure(AnnotatedString(vertical), style = type.StripeNameSelected, maxLines = StripNameMaxLines).size.width
+        )
+    }
+    return widths.sum() + gapPx * (columns.size - 1)
 }
 
 /** 主线粗 21px，实色、方角。 */

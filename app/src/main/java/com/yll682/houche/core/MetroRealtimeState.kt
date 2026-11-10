@@ -112,7 +112,7 @@ data class MetroRealtimeState(
                 source == null || source.referenceStationCode == stationCode
             }
 
-    fun positionsAt(nowElapsedMillis: Long): MetroPositionState {
+    fun positionsAt(nowElapsedMillis: Long, staleAfterMillis: Long = METRO_REALTIME_WINDOW_MILLIS): MetroPositionState {
         val sampledAt = lastSuccessAt
         val age = sampledAt?.receivedAtElapsedMillis?.let { received ->
             (nowElapsedMillis - received).takeIf { it >= 0 }
@@ -121,7 +121,7 @@ data class MetroRealtimeState(
             frame = displayFrame,
             lastSuccessAt = sampledAt,
             ageMillis = age,
-            isStale = outOfService || unavailableNote != null || age == null || age >= METRO_REALTIME_WINDOW_MILLIS
+            isStale = outOfService || unavailableNote != null || age == null || age >= staleAfterMillis
         )
     }
 

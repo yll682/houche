@@ -16,9 +16,21 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.window.*
 import kotlinx.coroutines.*
 import kotlin.math.*
+
+/** 弹层承载层：应用根部的全屏图层。弹层把界面交给它画，遮罩才能盖住状态栏、按钮才能避开系统栏。 */
+class SheetHost {
+    var content by mutableStateOf<(@Composable () -> Unit)?>(null)
+        private set
+    private var owner: Any? = null
+    fun show(token: Any, ui: @Composable () -> Unit) { owner = token; content = ui }
+    fun hide(token: Any) { if (owner === token) { owner = null; content = null } }
+}
+val LocalSheetHost = staticCompositionLocalOf<SheetHost?> { null }
+@Composable fun SheetHostLayer(host: SheetHost) { host.content?.invoke() }
 
 internal fun sheetShouldReturn(y:Float,distance:Float,vy:Float,vx:Float=0f)=
     (y<distance && (vy<3500f || abs(vy)<abs(vx))) || (vy<0f && abs(vy)>=3500f)
@@ -61,14 +73,16 @@ internal fun sheetShouldReturn(y:Float,distance:Float,vy:Float,vx:Float=0f)=
             override suspend fun onPreFling(available:Velocity):Velocity { if(dragging) { settle(available.y);return available };return Velocity.Zero }
         }
     }
-    Dialog(onDismissRequest={ close() },properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)) {
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
-        Box(Modifier.fillMaxSize().imePadding()) {
+    val ui: @Composable () -> Unit = {
+        androidx.activity.compose.BackHandler { close() }
+        BoxWithConstraints(Modifier.fillMaxSize().imePadding()) {
+            // 窗口铺满整屏（含状态栏）：面板最高到状态栏下方再留 16dp。
+            val maxPanel = (maxHeight - WindowInsets.statusBars.asPaddingValues().calculateTopPadding() - 16.dp).coerceAtLeast(48.dp)
             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha=.32f*(1f-y/max(height,1f)).coerceIn(0f,1f)))
                 .clickable(interactionSource=remember { androidx.compose.foundation.interaction.MutableInteractionSource() },indication=null) { close() })
-            Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max=LocalConfiguration.current.screenHeightDp.dp*.9f)
-                .offset { IntOffset(0,y.roundToInt()) }.onSizeChanged { height=it.height.toFloat() }.nestedScroll(nested),
+            Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max=maxPanel)
+                .offset { IntOffset(0,y.roundToInt()) }.onSizeChanged { height=it.height.toFloat() }.nestedScroll(nested)
+                .testTag("sheet-panel"),
                 shape=RoundedCornerShape(topStart=16.dp,topEnd=16.dp),color=MaterialTheme.colorScheme.surface) {
                 Column {
                     Box(Modifier.fillMaxWidth().height(32.dp).semantics { contentDescription = "拖动面板" }.pointerInput(Unit) {
@@ -80,9 +94,22 @@ internal fun sheetShouldReturn(y:Float,distance:Float,vy:Float,vx:Float=0f)=
                         Box(Modifier.size(36.dp,4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.3f),RoundedCornerShape(2.dp)))
                     }
                     Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) { content() }
+                    // 底部确认按钮等内容固定在系统导航栏（手势条/三键）上方。
                     Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
                 }
             }
+        }
+    }
+    val host = LocalSheetHost.current
+    if (host != null) {
+        val token = remember { Any() }
+        SideEffect { host.show(token, ui) }
+        DisposableEffect(token) { onDispose { host.hide(token) } }
+    } else {
+        Dialog(onDismissRequest={ close() },properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)) {
+            val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+            SideEffect { window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
+            ui()
         }
     }
 }

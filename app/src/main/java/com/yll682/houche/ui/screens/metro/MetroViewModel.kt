@@ -488,7 +488,7 @@ class MetroViewModel(
         if (!syncOperatingHours()) return
         if (positionsLine != request.lineCode) cancelRealtimePositions()
         val now = elapsedRealtimeMillis()
-        if (positionsJob?.isActive == true || positionsStartedAt?.let { now - it in 0 until METRO_REALTIME_WINDOW_MILLIS } == true) return
+        if (positionsJob?.isActive == true || positionsStartedAt?.let { now - it in 0 until minOf(METRO_REALTIME_WINDOW_MILLIS, com.yll682.houche.data.RefreshPolicy.millis()) } == true) return
         positionsLine = request.lineCode
         positionsStartedAt = now
         val generation = ++positionsGeneration

@@ -144,7 +144,7 @@ fun TelegramNavigation(selected: Int, select: (Int)->Unit, modifier: Modifier=Mo
                 val active=index==(if(dragging)preview else selected)
                 val p by animateFloatAsState(if(active)1f else 0f,tween(320,easing=TelegramDecelerate),label="tab-contour-$index")
                 val color=lerp(colors.onSurfaceVariant,colors.primary,p)
-                Column(Modifier.weight(1f).heightIn(min=48.dp).selectable(active,role=Role.Tab,onClick={latestSelect.value(index)})
+                Column(Modifier.weight(1f).heightIn(min=48.dp).selectable(active,interactionSource=remember { androidx.compose.foundation.interaction.MutableInteractionSource() },indication=null,role=Role.Tab,onClick={latestSelect.value(index)})
                     .padding(vertical=4.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                     NavigationGlyph(index,p,color)
                     Text(label,style=MaterialTheme.typography.labelSmall.copy(fontSize=11.sp,fontWeight=if(active)FontWeight.ExtraBold else FontWeight.Bold),color=color)

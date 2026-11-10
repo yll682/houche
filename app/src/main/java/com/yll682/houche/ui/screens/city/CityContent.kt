@@ -49,7 +49,7 @@ import com.yll682.houche.ui.theme.CardShape
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp))
             }
 
-            LazyColumn(Modifier.fillMaxSize().weight(1f), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(Modifier.fillMaxSize().weight(1f), contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (state.error != null) item { ErrorCard(state.error, retry) }
                 if (keyword.isBlank() && state.province == null && state.located != null) {
                     item {

@@ -3,6 +3,7 @@ package com.yll682.houche.ui.screens.home
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yll682.houche.core.*
@@ -13,8 +14,10 @@ import com.yll682.houche.ui.screens.settings.SettingsViewModel
     val state by vm.state.collectAsStateWithLifecycle()
     val settingsState by settingsVm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     HomeContent(state, vm.city, granted, segment, selectSegment, locate, search, cities, line, station,
         metro = metro,
+        refresh = { scope.launch { vm.refreshLive() } },
         settingsContent = {
             SettingsBody(
                 settingsState,

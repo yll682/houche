@@ -42,7 +42,7 @@ import com.yll682.houche.ui.components.*
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(72.dp).clip(Capsule).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(72.dp).clip(Capsule).background(Color(0xFF298ACF)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(38.dp), tint = Color.White)
             }
             Spacer(Modifier.height(12.dp))

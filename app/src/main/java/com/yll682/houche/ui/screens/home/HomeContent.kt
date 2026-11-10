@@ -36,7 +36,8 @@ import com.yll682.houche.ui.theme.HeaderTop
     line: (City, LineSummary, Station?) -> Unit, station: (City, Station) -> Unit,
     modifier: Modifier = Modifier,
     metro: ((String?) -> Unit)? = null,
-    settingsContent: @Composable () -> Unit = {}
+    settingsContent: @Composable () -> Unit = {},
+    refresh: () -> Unit = locate
 ) {
     val data = state.data ?: HomeData()
     val loading = state is UiState.Loading
@@ -67,11 +68,11 @@ import com.yll682.houche.ui.theme.HeaderTop
                 CompositionLocalProvider(LocalSettingsReselect provides settingsTop) { tabStates.SaveableStateProvider("settings") { settingsContent() } }
             }
         } else {
-        PullToRefresh(loading, { locate() }) {
+        PullToRefresh(loading, { if (data.stations.isNotEmpty()) refresh() else locate() }) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 state = if (segment == 0) nearbyScroll else favoriteScroll,
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 112.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (segment == 0) {

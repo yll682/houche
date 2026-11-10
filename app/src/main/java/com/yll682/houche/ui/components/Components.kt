@@ -402,7 +402,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
                         if (lit) textTint(i) else MaterialTheme.colorScheme.onSurfaceVariant, tween(200), label = "标签颜色"
                     )
                     Box(
-                        Modifier.width(cell).height(48.dp).selectable(selected = active, role = Role.Tab) { select(i) }
+                        Modifier.width(cell).height(48.dp).selectable(selected = active, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null, role = Role.Tab) { select(i) }
                             .semantics(mergeDescendants = true) { contentDescription = label },
                         contentAlignment = Alignment.Center
                     ) { Text(label, style = labelStyle, color = color, maxLines = 1) }

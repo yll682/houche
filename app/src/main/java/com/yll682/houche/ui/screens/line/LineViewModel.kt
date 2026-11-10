@@ -29,7 +29,10 @@ class LineViewModel(private val graph: AppGraph, val city: City, private val sum
         job = action {
             mutable.value = UiState.Loading(data)
             val route = graph.repository().lineDetail(city, summary.name, direction)
-            val selected = if (reverse) null else (data.selected?.let { old -> route.stations.firstOrNull { it.name == old.name } } ?: route.stations.firstOrNull { it.name == boarding?.name } ?: route.stations.firstOrNull { it.order == summary.stationOrder })
+            // 换方向时也按站名保留乘车站：新方向里还有这个站就继续选着，没有才清空。
+            val previous = data.selected
+            val selected = previous?.let { old -> route.stations.firstOrNull { it.name == old.name } }
+                ?: if (reverse) null else (route.stations.firstOrNull { it.name == boarding?.name } ?: route.stations.firstOrNull { it.order == summary.stationOrder })
             update(LineData(route = route, selected = selected, favorite = graph.prefs.favoriteLines.first().any { it.city.key == city.key && it.line.name == summary.name && it.line.direction == direction }), route.stations.isEmpty())
             // 进页即取车辆：先选站才看车会让「车在哪」这件事多一步。
             refreshLive()
