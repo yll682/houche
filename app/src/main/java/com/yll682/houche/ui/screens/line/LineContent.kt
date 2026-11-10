@@ -52,13 +52,13 @@ import com.yll682.houche.ui.theme.*
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 feedback(state, hasContent = route != null) { retry() }
                 if (route != null) {
-                    item { RouteHeaderCard(route, data.live?.nextDeparture, loading, fare, toggleFare, timetable, reverse) }
-                    item { LiveCard(route, data, vehicles, previewStation) }
-                    item { Segments(listOf(stringResource(R.string.stops), stringResource(R.string.vehicles)), panel, selectPanel) }
+                    item { Box(Modifier.padding(bottom = 12.dp)) { RouteHeaderCard(route, data.live?.nextDeparture, loading, fare, toggleFare, timetable, reverse) } }
+                    item { Box(Modifier.padding(bottom = 12.dp)) { LiveCard(route, data, vehicles, previewStation) } }
+                    item { Box(Modifier.padding(bottom = 12.dp)) { Segments(listOf(stringResource(R.string.stops), stringResource(R.string.vehicles)), panel, selectPanel) } }
                     if (panel == 0) {
                         if (route.stations.isEmpty()) item { EmptyState(stringResource(R.string.no_route_stops)) }
                         itemsIndexed(route.stations, key = { index, stop -> "${stop.order}-${stop.name}-$index" }) { index, stop ->
@@ -117,6 +117,7 @@ import com.yll682.houche.ui.theme.*
     route: Route, nextDeparture: String?, loading: Boolean, fare: Boolean, toggleFare: () -> Unit,
     timetable: (Route) -> Unit, reverse: () -> Unit
 ) {
+    val fareLabel = stringResource(R.string.fare)
     CardSurface {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             LineBadge(route.name)
@@ -130,8 +131,8 @@ import com.yll682.houche.ui.theme.*
                 Icon(Icons.Outlined.SwapHoriz, stringResource(R.string.reverse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
-        Hairline(Modifier.padding(horizontal = 16.dp))
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Hairline(Modifier.padding(start = 16.dp))
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 0.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.foundation.layout.FlowRow(
                 Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -146,15 +147,15 @@ import com.yll682.houche.ui.theme.*
         }
         if (route.fareDescription.isNotBlank()) {
             Text(route.fareDescription,
-                Modifier.fillMaxWidth().touch(stringResource(R.string.fare)).clickable(onClick = toggleFare)
-                    .animateContentSize(tween(200, easing = TelegramQuint)).padding(start = 16.dp, top = 4.dp, end = 16.dp),
+                Modifier.fillMaxWidth().semantics { contentDescription = fareLabel }.clickable(onClick = toggleFare)
+                    .animateContentSize(tween(200, easing = TelegramQuint)).padding(start = 16.dp, top = 0.dp, end = 16.dp),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = if (fare) 8 else 1, overflow = TextOverflow.Ellipsis)
         }
         if (!nextDeparture.isNullOrBlank()) {
             Text(stringResource(R.string.origin_departure, nextDeparture), Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        } else Spacer(Modifier.height(if (route.fareDescription.isNotBlank()) 12.dp else 0.dp))
+        } else Spacer(Modifier.height(if (route.fareDescription.isNotBlank()) 12.dp else 8.dp))
     }
 }
 
@@ -169,7 +170,7 @@ import com.yll682.houche.ui.theme.*
                     val arrival = data.arrivals.firstOrNull()
                     val (hero, sub) = arrivalParts(arrival)
                     Row {
-                        Text(hero, Modifier.alignByBaseline(), style = MaterialTheme.typography.displayMedium, color = arrivalColor(arrival), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(hero, Modifier.alignByBaseline(), style = MaterialTheme.typography.headlineLarge, color = arrivalColor(arrival), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (sub != null) Text(sub, Modifier.padding(start = 10.dp).alignByBaseline(), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 } else {
@@ -198,9 +199,8 @@ import com.yll682.houche.ui.theme.*
 @Composable private fun RouteStrip(route: Route, selected: RouteStation?, vehicles: List<Vehicle>, preview: (RouteStation) -> Unit) {
     val primary = MaterialTheme.colorScheme.primary
     val listState = rememberLazyListState()
-    // 列宽只保证最长站名竖排不折行：基础 44dp、每多一字加 5dp，站密时一屏能看更多站。
-    val longest = route.stations.maxOfOrNull { it.name.length } ?: 3
-    val column = (44 + (longest - 3).coerceAtLeast(0) * 5).coerceAtMost(72).dp
+    // 列宽固定 48dp（一屏约 7 站）；超过 8 个字的站名拆成多列竖排，不再截断。
+    val column = 48.dp
     LaunchedEffect(route.name, route.direction) {
         val target = selected ?: vehicles.firstOrNull()?.order?.let { order -> route.stations.firstOrNull { it.order == order } }
         // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图形。
@@ -241,9 +241,14 @@ import com.yll682.houche.ui.theme.*
                     }
                 }
                 // 竖排一字一行，行高收紧；上限 8 行覆盖常见长站名，再长才省略。
-                Text(stop.name.chunked(1).joinToString("\n"), Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 14.sp), textAlign = TextAlign.Center,
-                    maxLines = 8, overflow = TextOverflow.Ellipsis, fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (active) primary else if (passed) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
+                val nameColor = if (active) primary else if (passed) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                val columns = remember(stop.name) { stop.name.codePoints().toArray().toList().chunked(8).map { cps -> cps.joinToString("\n") { String(Character.toChars(it)) } } }
+                Row(Modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    columns.forEach { text ->
+                        Text(text, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 18.sp), textAlign = TextAlign.Center,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal, color = nameColor)
+                    }
+                }
             }
         }
     }
@@ -254,10 +259,16 @@ import com.yll682.houche.ui.theme.*
     val passed = selected?.order?.let { (stop.order ?: it) < it } == true
     val description = if (active) stringResource(R.string.selected_stop_accessibility, stop.name) else stop.name
     val vehicleDescription = if (vehicles.isNotEmpty()) stringResource(R.string.stop_vehicles_accessibility, description, vehicles.size) else description
-    Box(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onClick)
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(
+        topStart = if (first) 16.dp else 0.dp, topEnd = if (first) 16.dp else 0.dp,
+        bottomStart = if (last) 16.dp else 0.dp, bottomEnd = if (last) 16.dp else 0.dp
+    )
+    Box(Modifier.fillMaxWidth().clip(shape).background(MaterialTheme.colorScheme.surface).heightIn(min = 56.dp)
+        .clickable(role = Role.Button, onClick = onClick)
+        .padding(top = if (first) 8.dp else 0.dp, bottom = if (last) 8.dp else 0.dp)
         .semantics(mergeDescendants = true) { contentDescription = vehicleDescription }) {
         Box(Modifier.matchParentSize().clearAndSetSemantics {}) {
-            Box(Modifier.width(40.dp).fillMaxHeight()) {
+            Box(Modifier.padding(start = 16.dp).width(40.dp).fillMaxHeight()) {
                 Box(Modifier.align(Alignment.Center).width(1.5.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
                 Box(Modifier.align(Alignment.TopCenter).padding(top = 8.dp).size(22.dp).clip(Capsule)
                     .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
@@ -266,7 +277,9 @@ import com.yll682.houche.ui.theme.*
                 }
             }
         }
-        Column(Modifier.fillMaxWidth().padding(start = 40.dp, top = 6.dp, bottom = 8.dp, end = 4.dp)) {
+        if (!last) Box(Modifier.align(Alignment.BottomEnd).fillMaxWidth().padding(start = 56.dp).height(0.5.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f)))
+        Column(Modifier.fillMaxWidth().padding(start = 56.dp, top = 6.dp, bottom = 8.dp, end = 16.dp)) {
             Text(stop.name, style = if (active) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
                 color = if (active) MaterialTheme.colorScheme.primary else if (passed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
