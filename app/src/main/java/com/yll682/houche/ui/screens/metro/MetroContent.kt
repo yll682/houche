@@ -80,8 +80,8 @@ fun MetroContent(
     val openSheet: (String) -> Unit = { code ->
         if (code.isNotBlank() && line?.stations?.any { it.code == code } == true) sheetStation = code
     }
-    Page(stringResource(R.string.metro_realtime_position), back, modifier) { _ ->
-      Column(Modifier.fillMaxSize()) {
+    Page(stringResource(R.string.metro_realtime_position), back, modifier) { padding ->
+      Column(Modifier.fillMaxSize().padding(padding)) {
         MetroLineTabs(data.lines, data.selected, select)
         if (line == null || heading == null) {
             Box(Modifier.fillMaxSize().padding(16.dp)) {

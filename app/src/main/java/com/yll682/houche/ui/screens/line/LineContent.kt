@@ -269,7 +269,14 @@ import com.yll682.houche.ui.theme.*
         .semantics(mergeDescendants = true) { contentDescription = vehicleDescription }) {
         Box(Modifier.matchParentSize().clearAndSetSemantics {}) {
             Box(Modifier.padding(start = 16.dp).width(40.dp).fillMaxHeight()) {
-                Box(Modifier.align(Alignment.Center).width(1.5.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
+                // 竖线只画在首站圆心到末站圆心之间：首站从圆心往下，末站只到圆心，不再出头。
+                val rail = MaterialTheme.colorScheme.outlineVariant
+                when {
+                    first && last -> Unit
+                    first -> Box(Modifier.align(Alignment.TopCenter).padding(top = 19.dp).width(1.5.dp).fillMaxHeight().background(rail))
+                    last -> Box(Modifier.align(Alignment.TopCenter).width(1.5.dp).height(19.dp).background(rail))
+                    else -> Box(Modifier.align(Alignment.Center).width(1.5.dp).fillMaxHeight().background(rail))
+                }
                 Box(Modifier.align(Alignment.TopCenter).padding(top = 8.dp).size(22.dp).clip(Capsule)
                     .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
                     .border(1.5.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, Capsule), contentAlignment = Alignment.Center) {
