@@ -61,13 +61,17 @@ import com.yll682.houche.ui.theme.*
                     item { Segments(listOf(stringResource(R.string.stops), stringResource(R.string.vehicles)), panel, selectPanel) }
                     if (panel == 0) {
                         if (route.stations.isEmpty()) item { EmptyState(stringResource(R.string.no_route_stops)) }
-                        itemsIndexed(route.stations, key = { index, stop -> "${stop.order}-${stop.name}-$index" }) { _, stop ->
-                            StopRow(stop, data.selected, vehicles.filter { it.order != null && it.order == stop.order }) { previewStation(stop) }
+                        itemsIndexed(route.stations, key = { index, stop -> "${stop.order}-${stop.name}-$index" }) { index, stop ->
+                            val first = index == 0
+                            val last = index == route.stations.lastIndex
+                            StopRow(stop, data.selected, vehicles.filter { it.order != null && it.order == stop.order }, first, last) { previewStation(stop) }
                         }
                     } else {
                         if (vehicles.isEmpty()) item { EmptyState(stringResource(R.string.no_vehicles)) }
-                        itemsIndexed(vehicles, key = { index, vehicle -> "${vehicle.plate}-$index" }) { _, vehicle ->
-                            VehicleCard(vehicle, data.selected) { openVehicle(vehicle) }
+                        itemsIndexed(vehicles, key = { index, vehicle -> "${vehicle.plate}-$index" }) { index, vehicle ->
+                            val first = index == 0
+                            val last = index == vehicles.lastIndex
+                            VehicleCard(vehicle, data.selected, first, last) { openVehicle(vehicle) }
                         }
                     }
                 }
@@ -245,7 +249,7 @@ import com.yll682.houche.ui.theme.*
     }
 }
 
-@Composable private fun StopRow(stop: RouteStation, selected: RouteStation?, vehicles: List<Vehicle>, onClick: () -> Unit) {
+@Composable private fun StopRow(stop: RouteStation, selected: RouteStation?, vehicles: List<Vehicle>, first: Boolean, last: Boolean, onClick: () -> Unit) {
     val active = stop == selected
     val passed = selected?.order?.let { (stop.order ?: it) < it } == true
     val description = if (active) stringResource(R.string.selected_stop_accessibility, stop.name) else stop.name
@@ -285,8 +289,12 @@ import com.yll682.houche.ui.theme.*
     MetaPill(label, vehicle.positionState == "at-stop", color)
 }
 
-@Composable private fun VehicleCard(vehicle: Vehicle, selected: RouteStation?, onClick: () -> Unit) {
-    CardSurface(onClick = onClick) {
+@Composable private fun VehicleCard(vehicle: Vehicle, selected: RouteStation?, first: Boolean, last: Boolean, onClick: () -> Unit) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(
+        topStart = if (first) 16.dp else 0.dp, topEnd = if (first) 16.dp else 0.dp,
+        bottomStart = if (last) 16.dp else 0.dp, bottomEnd = if (last) 16.dp else 0.dp
+    )
+    androidx.compose.material3.Surface(Modifier.fillMaxWidth().clip(shape).clickable(onClick = onClick), color = MaterialTheme.colorScheme.surface, shape = shape) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
