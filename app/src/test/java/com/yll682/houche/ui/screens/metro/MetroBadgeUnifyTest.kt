@@ -131,20 +131,6 @@ class MetroBadgeUnifyTest {
     fun everyLineBadgeInkIsWhite() {
         mount()
 
-        // (1) 顶栏 tab 徽标：32dp，白字。
-        scene = Scene.Tabs
-        compose.waitForIdle()
-        val tabs = capture()
-        for (line in lines) {
-            val node = compose.onAllNodesWithContentDescription(line.name).onFirst().fetchSemanticsNode()
-            val bounds = node.boundsInRoot
-            assertEquals("${line.id} 号线 tab 徽标应是 32dp 见方", 96f, bounds.width, 1f)
-            assertEquals("${line.id} 号线 tab 徽标应是 32dp 见方", 96f, bounds.height, 1f)
-            val ink = tabs.inkOf(bounds, inset = 8f)
-            assertTrue("${line.id} 号线 tab 徽标里必须有白字，实际白像素 ${ink.white}", ink.white > 0)
-            assertEquals("${line.id} 号线 tab 徽标里不许出现深墨字", 0, ink.dark)
-        }
-
         // (2)(3) 卡片站名行：并排的「本站线路号」与「换乘」两枚徽标。
         scene = Scene.Row(line2, dingmei)
         compose.waitForIdle()

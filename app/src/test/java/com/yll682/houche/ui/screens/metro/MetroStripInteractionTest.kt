@@ -18,6 +18,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
@@ -161,8 +162,12 @@ class MetroStripInteractionTest {
 
         stripStation(targetName).performClick()
         compose.waitForIdle()
+        // 点站先弹底部面板，面板里点「设为乘车站」才真正切换。
+        assertTrue("点站名只开面板，不能直接切换，实际回调 $picks", picks.isEmpty())
+        compose.onNodeWithTag("station-confirm").performClick()
+        compose.waitForIdle()
 
-        assertEquals("点站名必须把站码透给 selectStation", listOf(target), picks)
+        assertEquals("确认后必须把站码透给 selectStation", listOf(target), picks)
         assertEquals("选中项应换成刚点的站", target, data.realtimeStation)
         stripStation(targetName).assertIsSelected()
         stripStation(oldName).assertIsNotSelected()
