@@ -4,7 +4,7 @@ package com.yll682.houche.ui.screens.settings
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -40,7 +40,7 @@ import com.yll682.houche.ui.components.*
     ) {
         Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(72.dp).clip(Capsule).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.DirectionsBus, null, Modifier.size(38.dp), tint = Color.White)
+                Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(38.dp), tint = Color.White)
             }
             Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge)
@@ -48,14 +48,14 @@ import com.yll682.houche.ui.components.*
         }
         CardSurface {
             SettingRow(
-                icon = Icons.Default.LocationCity,
+                icon = Icons.Outlined.LocationCity,
                 title = stringResource(R.string.default_city),
                 value = data.city.name,
                 onClick = chooseCity
             )
             Hairline()
             SettingRow(
-                icon = Icons.Default.CleaningServices,
+                icon = Icons.Outlined.CleaningServices,
                 title = stringResource(R.string.clear_cache),
                 value = if (data.cleared) stringResource(R.string.cache_cleared) else null,
                 onClick = clearCache
@@ -63,7 +63,7 @@ import com.yll682.houche.ui.components.*
         }
         CardSurface {
             SettingRow(
-                icon = Icons.Default.SystemUpdate,
+                icon = Icons.Outlined.SystemUpdate,
                 title = stringResource(R.string.update_check),
                 value = when {
                     update.checking -> stringResource(R.string.update_checking)
@@ -128,8 +128,8 @@ import com.yll682.houche.ui.components.*
 
 @Composable private fun SettingRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String?, onClick: () -> Unit, loading: Boolean = false) {
     val iconColor = when (icon) {
-        Icons.Default.LocationCity -> Color(0xFF54A5DB)
-        Icons.Default.CleaningServices -> Color(0xFF9B73DB)
+        Icons.Outlined.LocationCity -> Color(0xFF54A5DB)
+        Icons.Outlined.CleaningServices -> Color(0xFF9B73DB)
         else -> Color(0xFF65B76C)
     }
     Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable(onClick = onClick).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -142,6 +142,6 @@ import com.yll682.houche.ui.components.*
             Box(Modifier.widthIn(max = 140.dp)) { TelegramSettingValue(it, loading) }
             Spacer(Modifier.width(6.dp))
         }
-        Icon(Icons.Default.ChevronRight, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f))
+        Icon(Icons.Outlined.ChevronRight, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f))
     }
 }

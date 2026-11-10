@@ -6,7 +6,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -34,7 +34,7 @@ import com.yll682.houche.ui.theme.Capsule
     val stop = data.station
     Page(stringResource(R.string.stations), back, modifier, actions = {
         HeaderIcon(
-            if (data.favorite) Icons.Default.Star else Icons.Default.StarBorder,
+            if (data.favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
             stringResource(if (data.favorite) R.string.unfavorite else R.string.favorite),
             favorite
         )
@@ -85,7 +85,7 @@ import com.yll682.houche.ui.theme.Capsule
                                     Text(calling.line.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                                     Text(stringResource(R.string.to, calling.line.to), style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
                                 }
                             }
                         }

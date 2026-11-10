@@ -6,7 +6,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -101,7 +101,7 @@ import com.yll682.houche.ui.theme.Capsule
             }
             Text(stringResource(R.string.departures, group.times.size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ExpandMore, stringResource(R.string.expand_group), Modifier.size(20.dp).rotate(rotation), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Outlined.ExpandMore, stringResource(R.string.expand_group), Modifier.size(20.dp).rotate(rotation), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (open) {
             Hairline()

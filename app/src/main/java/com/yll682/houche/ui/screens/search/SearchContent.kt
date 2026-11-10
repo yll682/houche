@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -37,7 +37,7 @@ import com.yll682.houche.ui.theme.Capsule
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         HeaderSurface {
             Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+                HeaderIcon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back), back)
                 HeaderSearchField(data.query, query, stringResource(R.string.search_hint), { query("") },
                     inputModifier.weight(1f), KeyboardOptions(imeAction = ImeAction.Search), KeyboardActions(onSearch = { submit() }), loading = state is UiState.Loading)
                 TextButton(back, Modifier.touch(stringResource(R.string.cancel)), contentPadding = PaddingValues(horizontal = 8.dp)) {
@@ -69,9 +69,9 @@ import com.yll682.houche.ui.theme.Capsule
                             Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
                                 if (index > 0) Hairline(Modifier.padding(start = 56.dp))
                                 Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable { search(keyword) }.padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.History, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(Icons.Outlined.History, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(keyword, Modifier.weight(1f).padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    ActionIcon(Icons.Default.Close, stringResource(R.string.delete_search), { remove(keyword) })
+                                    ActionIcon(Icons.Outlined.Close, stringResource(R.string.delete_search), { remove(keyword) })
                                 }
                             }
                         }
@@ -118,7 +118,7 @@ import com.yll682.houche.ui.theme.Capsule
                                     Box(
                                         Modifier.size(34.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
                                         contentAlignment = Alignment.Center
-                                    ) { Icon(Icons.Default.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
+                                    ) { Icon(Icons.Outlined.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(stop.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -126,7 +126,7 @@ import com.yll682.houche.ui.theme.Capsule
                                             Text(stringResource(R.string.station_count, stop.lines.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
-                                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
                                 }
                             }
                         }
@@ -161,6 +161,6 @@ import com.yll682.houche.ui.theme.Capsule
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+        Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
     }
 }

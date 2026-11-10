@@ -22,8 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +69,7 @@ fun VehicleContent(
     )
     Page(data?.plate ?: stringResource(R.string.vehicle_title), back, modifier, actions = {
         Box(Modifier.touch(refreshLabel)) {
-            HeaderIcon(Icons.Default.Refresh, refreshLabel, refresh)
+            HeaderIcon(Icons.Outlined.Refresh, refreshLabel, refresh)
         }
     }) { padding ->
         PullToRefresh(state is UiState.Loading, refresh) {
@@ -123,7 +123,7 @@ private fun VehicleHeader(data: VehicleData) {
             val current = data.vehicle
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (current != null) {
-                    Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp),
+                    Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(18.dp),
                         tint = if (current.positionState == "at-stop") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                 }
                 VehicleState(current)
@@ -222,7 +222,7 @@ private fun VehicleRow(vehicle: Vehicle, boarding: RouteStation?, selected: Bool
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // 当前这辆车靠左侧 3dp 竖条识别：小字号下只换字重看不出来。
             if (selected) Box(Modifier.width(3.dp).height(20.dp).background(MaterialTheme.colorScheme.primary))
-            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = tint)
+            Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(18.dp), tint = tint)
             Text(vehicle.plate.ifBlank { stringResource(R.string.no_plate) }, Modifier.weight(1f),
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)

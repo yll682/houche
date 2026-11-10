@@ -20,8 +20,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -231,7 +231,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
 @Composable fun ErrorCard(message: String?, retry: () -> Unit) {
     Surface(shape = CardShape, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = .35f))) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.ErrorOutline, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
+            Icon(Icons.Outlined.ErrorOutline, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
             Spacer(Modifier.width(10.dp))
             Text(
                 stringResource(R.string.error_generic),
@@ -249,7 +249,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         Box(
             Modifier.size(64.dp).clip(Capsule).background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
-        ) { Icon(Icons.Default.DirectionsBus, title, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        ) { Icon(Icons.Outlined.DirectionsBus, title, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         action?.let {
@@ -295,7 +295,7 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
                     Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp, end = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+                    HeaderIcon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back), back)
                     Text(
                         title,
                         Modifier.weight(1f).padding(start = 2.dp),
@@ -432,7 +432,7 @@ fun LazyListScope.feedback(state: UiState<*>, cards: Int = 3, retry: () -> Unit)
     Box(modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
         Surface(shape = FieldShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().height(40.dp)) {}
         Row(Modifier.fillMaxWidth().height(48.dp).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Outlined.Search, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(8.dp))
             BasicTextField(value, change, Modifier.weight(1f).height(48.dp).wrapContentHeight()
                 .semantics { contentDescription = hint }, singleLine = true,

@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.ArrowRightAlt
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -40,11 +40,11 @@ import com.yll682.houche.ui.theme.*
     // 顺序由仓库给：按离乘车站从近到远，不要在这里按序号重排，否则「谁先到」会被打乱。
     val vehicles = data.live?.vehicles.orEmpty()
     Page(route?.name ?: stringResource(R.string.lines), back, modifier, actions = {
-        HeaderIcon(if (data.favorite) Icons.Default.Star else Icons.Default.StarBorder,
+        HeaderIcon(if (data.favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
             stringResource(if (data.favorite) R.string.unfavorite else R.string.favorite), favorite)
         val text = route?.let { stringResource(R.string.share_text, city.name, it.name, it.to, it.first, it.last) }
         val shareTitle = stringResource(R.string.share)
-        HeaderIcon(Icons.Default.Share, shareTitle, { if (text != null) share(text, shareTitle) })
+        HeaderIcon(Icons.Outlined.Share, shareTitle, { if (text != null) share(text, shareTitle) })
     }) { padding ->
         PullToRefresh(loading, retry) {
             LazyColumn(
@@ -115,11 +115,11 @@ import com.yll682.houche.ui.theme.*
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Text(route.from, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Icon(Icons.AutoMirrored.Filled.ArrowRightAlt, null, Modifier.padding(horizontal = 8.dp).size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowRightAlt, null, Modifier.padding(horizontal = 8.dp).size(18.dp), tint = MaterialTheme.colorScheme.outline)
                     Text(route.to, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 IconButton(reverse, Modifier.size(48.dp)) {
-                    Icon(Icons.Default.SwapHoriz, stringResource(R.string.reverse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.SwapHoriz, stringResource(R.string.reverse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -129,7 +129,7 @@ import com.yll682.houche.ui.theme.*
                 Spacer(Modifier.weight(1f))
                 if (route.showTimetable) {
                     TextButton({ timetable(route) }, Modifier.touch(stringResource(R.string.timetable)), enabled = !loading, contentPadding = PaddingValues(start = 6.dp)) {
-                        Icon(Icons.Default.Schedule, null, Modifier.size(16.dp))
+                        Icon(Icons.Outlined.Schedule, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.timetable), style = MaterialTheme.typography.labelLarge)
                     }
@@ -226,7 +226,7 @@ import com.yll682.houche.ui.theme.*
                             Modifier.align(Alignment.Center).offset(x = if (running) -(column / 2f) else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
+                            Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
                             if (buses.size > 1) {
                                 Text(buses.size.toString(), Modifier.padding(start = 1.dp),
                                     style = MaterialTheme.typography.labelSmall, color = primary)

@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -77,7 +77,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                 if (segment == 0) {
                     item {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.NearMe, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Outlined.NearMe, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(6.dp))
                             // 定位结论只给一句：正在定位 / 已定位 / 已按定位城市查询 / 未识别回退。
                             val status = when {
@@ -157,7 +157,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                                             .padding(horizontal = 16.dp, vertical = 14.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(Icons.Default.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Outlined.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                         Spacer(Modifier.width(10.dp))
                                         Column(Modifier.weight(1f)) {
                                             Text(saved.station.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -187,17 +187,17 @@ import com.yll682.houche.ui.theme.HeaderTop
             Surface(onClick = cities, modifier = Modifier.widthIn(max = 144.dp), shape = Capsule, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Row(Modifier.heightIn(min = 40.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(city.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.ExpandMore, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            if (metro != null) HeaderIcon(Icons.Default.Subway, stringResource(R.string.metro), { metro(null) })
-            if (refreshable) HeaderIcon(Icons.Default.MyLocation, stringResource(R.string.refresh), locate)
+            if (metro != null) HeaderIcon(Icons.Outlined.Subway, stringResource(R.string.metro), { metro(null) })
+            if (refreshable) HeaderIcon(Icons.Outlined.MyLocation, stringResource(R.string.refresh), locate)
         }
         if (searchable) {
             Surface(onClick = search, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 10.dp).height(40.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Search, null, Modifier.size(21.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Outlined.Search, null, Modifier.size(21.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.search_hint), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -218,7 +218,7 @@ import com.yll682.houche.ui.theme.HeaderTop
                 Box(
                     Modifier.size(36.dp).clip(Capsule).background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.Default.MyLocation, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
+                ) { Icon(Icons.Outlined.MyLocation, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
                 Spacer(Modifier.width(10.dp))
                 Text(stringResource(R.string.location_title), style = MaterialTheme.typography.titleMedium)
             }
@@ -241,7 +241,7 @@ import com.yll682.houche.ui.theme.HeaderTop
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 站点是站牌，公交图标留给车辆本身，别在站名旁画一辆车。
-            Icon(Icons.Default.Signpost, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Outlined.Signpost, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Text(station.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -252,7 +252,7 @@ import com.yll682.houche.ui.theme.HeaderTop
             }
             Spacer(Modifier.width(8.dp))
             DistanceChip(station.distance)
-            Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+            Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
         }
         if (station.lines.isNotEmpty()) {
             Hairline()

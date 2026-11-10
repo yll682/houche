@@ -5,8 +5,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -42,7 +42,7 @@ import com.yll682.houche.ui.theme.CardShape
         Column(Modifier.fillMaxSize()) {
             HeaderSurface {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    HeaderIcon(Icons.Default.Close, stringResource(R.string.close), dismiss)
+                    HeaderIcon(Icons.Outlined.Close, stringResource(R.string.close), dismiss)
                     Text(stringResource(R.string.choose_city), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                 }
                 HeaderSearchField(state.query, queryChange, stringResource(R.string.city_search), { queryChange("") },
@@ -56,10 +56,10 @@ import com.yll682.houche.ui.theme.CardShape
                         Surface(onClick = { choose(state.located) }, modifier = Modifier.fillMaxWidth().touch(state.located.name),
                             shape = CardShape, color = MaterialTheme.colorScheme.primaryContainer) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.MyLocation, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Outlined.MyLocation, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(Modifier.width(10.dp))
                                 Text(state.located.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                                Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
                             }
                         }
                     }
@@ -98,7 +98,7 @@ import com.yll682.houche.ui.theme.CardShape
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                     Spacer(Modifier.width(6.dp))
-                                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
                                 }
                             }
                         }
@@ -109,7 +109,7 @@ import com.yll682.houche.ui.theme.CardShape
                             Modifier.fillMaxWidth().height(48.dp).touch(stringResource(R.string.provinces)).clickable { provinceChange(null) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(4.dp))
                             Text(state.province.ifBlank { other }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }

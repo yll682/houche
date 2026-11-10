@@ -15,7 +15,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,7 +55,7 @@ import kotlin.math.sin
 internal fun MetroTopBar(title: String, back: () -> Unit) {
     com.yll682.houche.ui.components.HeaderSurface {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            HeaderIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), back)
+            HeaderIcon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back), back)
             Text(title, Modifier.padding(start = 8.dp), style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
                 color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
@@ -113,7 +113,7 @@ internal fun MetroSwapGlyph(color: Color? = null, modifier: Modifier = Modifier)
 /**
  * 刷新图标（规格 2.4）：开口圆环 + 顺时针三角箭头，线宽 4px≈1.3dp，ink 40×40px＝13.3dp。
  *
- * 这不是 Material 的 `Icons.Filled.Refresh`，一直是自绘的 Canvas（`drawArc` + 三角 Path）；
+ * 这不是 Material 的 `Icons.Outlined.Refresh`，一直是自绘的 Canvas（`drawArc` + 三角 Path）；
  * 旧版「看不到箭头」的原因是三角太小且贴着圆弧画：底宽 4.8dp、长仅 2dp，还落在半径 6dp 上，
  * 缩放后就是圆弧末端一撮毛刺。现在：
  *  - 圆环半径收到 4.7dp，把画布边角让给箭头（Canvas 会裁，箭头不能出界）；

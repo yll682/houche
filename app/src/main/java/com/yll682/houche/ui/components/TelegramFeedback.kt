@@ -7,7 +7,7 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -116,7 +116,7 @@ internal fun swipeArmed(offset:Float,width:Float)=width>0f && abs(offset)>=width
             drawCircle(error,radius=size.maxDimension*reveal,center=Offset(size.width-28.dp.toPx(),size.height/2))
         }
         Box(Modifier.align(Alignment.CenterEnd).padding(end=16.dp).graphicsLayer { scaleX=.85f+.15f*bounce;scaleY=scaleX }) {
-            Icon(Icons.Default.DeleteOutline,null,tint=Color.White)
+            Icon(Icons.Outlined.DeleteOutline,null,tint=Color.White)
         }
         Box(Modifier.offset { IntOffset(x.roundToInt(),0) }) { content() }
     }
