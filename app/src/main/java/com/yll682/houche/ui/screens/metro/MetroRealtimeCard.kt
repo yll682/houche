@@ -81,7 +81,6 @@ fun MetroRealtimeCard(
                 if (directionCount > 1) onDirection((directionIndex.coerceIn(0, directionCount - 1) + 1) % directionCount)
             }
         )
-        Spacer(Modifier.height(12.2.dp))
         StationRow(stationName, stationCode, line, loading, onRefresh, onTransfer)
         Spacer(Modifier.height(13.6.dp))
         // ETA 容器永远在：Loading / Empty / Ready / Unavailable 各有自己的文案。
