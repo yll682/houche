@@ -1,10 +1,10 @@
 {
-  "versionName": "2.4.0",
-  "versionCode": 37,
+  "versionName": "2.5.0",
+  "versionCode": 38,
   "released": "2026-11-15",
-  "notes": "线路页右上角的分享也变成带链接的分享：https://houche.rainlodyn.cn/share/?type=line&…，点开直接进这条线路的页面。修了「下车提醒站」那一行：行尾箭头回到最右边、提醒站名字号与其它行一致。从后台点桌面图标不再强行回首页，停在离开时的那一页。",
+  "notes": "分享链接的健壮性修正：线路方向不是 1/2（部分城市上游用别的编码）时不再生成链接——那种链接服务器和 App 都会判参数缺失——改为只发文字描述，不发打不开的链接。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v2.4.0/houche-v2.4.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.4.0/houche-v2.4.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v2.5.0/houche-v2.5.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.5.0/houche-v2.5.0.apk"
   }
 }

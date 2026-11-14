@@ -407,14 +407,20 @@ private fun VehicleActions(
     val shareTitle = stringResource(R.string.vehicle_share_title)
     val station = vehicleStation(data.vehicle) ?: stringResource(R.string.unknown_position)
     // 分享出去的是 https 链接：聊天软件能识别成链接，服务器再决定要不要跳进 App。
-    val shareLink = VehicleShareLink.buildWebLink(
-        cityCode = data.cityCode,
-        lineId = data.route.id.takeIf { it.isNotBlank() },
-        lineName = data.route.name,
-        direction = data.route.direction,
-        plate = data.plate
-    )
-    val shareText = stringResource(R.string.vehicle_share_text_link, data.plate, data.route.name, station, shareLink)
+    // 方向不是 1/2 时链接两端都用不了（服务器与 App 都按 1/2 判），这时退回纯文字分享。
+    val shareDirection = data.route.direction.takeIf { dir -> dir == "1" || dir == "2" }
+    val shareText = if (shareDirection == null) {
+        stringResource(R.string.vehicle_share_text, data.plate, data.route.name, station)
+    } else {
+        val shareLink = VehicleShareLink.buildWebLink(
+            cityCode = data.cityCode,
+            lineId = data.route.id.takeIf { it.isNotBlank() },
+            lineName = data.route.name,
+            direction = shareDirection,
+            plate = data.plate
+        )
+        stringResource(R.string.vehicle_share_text_link, data.plate, data.route.name, station, shareLink)
+    }
     // 乘车站与下车提醒站都能作为跟踪目标，任一存在即可开启跟踪。
     val canTrack = data.boarding != null || data.alight != null
     val alightLabel = data.alight?.name ?: stringResource(R.string.vehicle_map_alight_unset)

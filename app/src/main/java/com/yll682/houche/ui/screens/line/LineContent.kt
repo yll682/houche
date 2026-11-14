@@ -44,10 +44,15 @@ import com.yll682.houche.ui.theme.*
         // 分享出去的带链接：https 链接在聊天软件里能识别成链接，服务器再决定要不要跳进 App。
         val text = route?.let {
             val description = stringResource(R.string.share_text, city.name, it.name, it.to, it.first, it.last)
-            val link = VehicleShareLink.buildLineWebLink(
-                city.code.ifBlank { city.key }, it.id, it.name, it.direction
-            )
-            stringResource(R.string.share_text_link, description, link)
+            // 方向不是 1/2 时链接两端都用不了（服务器与 App 都按 1/2 判），这时只发纯文字，
+            // 宁可少一个链接，也不要发一个点开就是「参数不完整」的链接。
+            val direction = it.direction.takeIf { dir -> dir == "1" || dir == "2" }
+            if (direction == null) description else {
+                val link = VehicleShareLink.buildLineWebLink(
+                    city.code.ifBlank { city.key }, it.id, it.name, direction
+                )
+                stringResource(R.string.share_text_link, description, link)
+            }
         }
         val shareTitle = stringResource(R.string.share)
         HeaderIcon(Icons.Outlined.Share, shareTitle, { if (text != null) share(text, shareTitle) })
