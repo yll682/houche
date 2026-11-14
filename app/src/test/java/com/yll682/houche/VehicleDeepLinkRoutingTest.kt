@@ -1,7 +1,7 @@
 package com.yll682.houche
 
 import com.yll682.houche.core.Route
-import com.yll682.houche.core.VehicleShareTarget
+import com.yll682.houche.core.ShareTarget
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -9,7 +9,7 @@ import org.junit.Test
 import java.io.IOException
 
 class Vehicle深链路由测试 {
-    private val target = VehicleShareTarget("0592", "line-91", "91路", "2", "闽D28810")
+    private val target = ShareTarget.Vehicle("0592", "line-91", "91路", "2", "闽D28810")
     private val route = Route("91路", "line-91", "2")
 
     @Test fun `优先按编号与方向匹配完整线路而不依赖旧名称`() = runBlocking<Unit> {

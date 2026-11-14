@@ -49,7 +49,10 @@ class VehicleViewModel(
     route: Route,
     plate: String,
     boarding: RouteStation? = null
-) : StateViewModel<VehicleData>(VehicleData(route, plate, boarding, cityCode = city.code)) {
+) : StateViewModel<VehicleData>(
+    // 少数城市没有行政 code，用 key 兜底：分享链接里的 city 不能为空。
+    VehicleData(route, plate, boarding, cityCode = city.code.ifBlank { city.key })
+) {
     private val mutex = Mutex()
     private val trackingCommands = Mutex()
     // 只存 applicationContext（见 bindContext），不持有 Activity，因此不构成泄漏；

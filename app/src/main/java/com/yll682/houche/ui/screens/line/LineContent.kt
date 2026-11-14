@@ -41,7 +41,14 @@ import com.yll682.houche.ui.theme.*
     Page(route?.name ?: stringResource(R.string.lines), back, modifier, actions = {
         HeaderIcon(if (data.favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
             stringResource(if (data.favorite) R.string.unfavorite else R.string.favorite), favorite)
-        val text = route?.let { stringResource(R.string.share_text, city.name, it.name, it.to, it.first, it.last) }
+        // 分享出去的带链接：https 链接在聊天软件里能识别成链接，服务器再决定要不要跳进 App。
+        val text = route?.let {
+            val description = stringResource(R.string.share_text, city.name, it.name, it.to, it.first, it.last)
+            val link = VehicleShareLink.buildLineWebLink(
+                city.code.ifBlank { city.key }, it.id, it.name, it.direction
+            )
+            stringResource(R.string.share_text_link, description, link)
+        }
         val shareTitle = stringResource(R.string.share)
         HeaderIcon(Icons.Outlined.Share, shareTitle, { if (text != null) share(text, shareTitle) })
     }) { padding ->

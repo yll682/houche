@@ -437,8 +437,7 @@ private fun VehicleActions(
             trailingContent = { TrackingTrailingIcon(data.tracking) }
         )
         Hairline(Modifier.padding(start = 56.dp))
-        ActionRow(Icons.Outlined.Flag, stringResource(R.string.vehicle_map_alight_title), data.route.stations.isNotEmpty(), openAlight, Icons.Outlined.ChevronRight, alightLabel,
-            animatedValue = true)
+        ActionRow(Icons.Outlined.Flag, stringResource(R.string.vehicle_map_alight_title), data.route.stations.isNotEmpty(), openAlight, Icons.Outlined.ChevronRight, alightLabel)
         Hairline(Modifier.padding(start = 56.dp))
         ActionRow(Icons.Outlined.Notifications, notifyLabel, true, notify, Icons.Outlined.ChevronRight)
         Hairline(Modifier.padding(start = 56.dp))
@@ -480,7 +479,6 @@ private fun ActionRow(
     value: String? = null,
     labelColor: Color? = null,
     animatedLabel: Boolean = false,
-    animatedValue: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
     val tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
@@ -502,17 +500,10 @@ private fun ActionRow(
             Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = textColor)
         }
         if (value != null) {
-            if (animatedValue) {
-                // 值也是硬切的一处：站名换成 TelegramText，逐字形替换。
-                // weight(fill = false) 只占一份空间：站名再长也不会把行尾的箭头挤没。
-                Box(Modifier.weight(1f, fill = false).padding(end = 8.dp)) {
-                    TelegramText(value, style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                Text(value, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+            // 值用普通 Text：与其它行的字号、行高完全一致，长站名按省略号收尾，
+            // 行尾箭头也和其它行一样贴在最右边（不占 weight，不与标签抢空间）。
+            Text(value, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (trailingContent != null) {
             trailingContent()

@@ -85,20 +85,29 @@ class NavigationState : ViewModel() {
             notify(R.string.vehicle_link_incomplete)
             return
         }
-        notify(R.string.vehicle_link_loading)
+        if (target is ShareTarget.Vehicle) notify(R.string.vehicle_link_loading)
         vehicleLinkJob = viewModelScope.launch {
             try {
                 val screen = withTimeout(20_000) {
-                    val cities = graph.cities.all().filter { it.code == target.cityCode }
-                    if (cities.isEmpty()) {
+                    // 城市先按行政 code 找；少数城市没有行政 code（分享链接里用的是内部编号），
+                    // 只有在 code 一个都没命中时才按内部编号找。命中多个就是有歧义，不猜。
+                    val all = graph.cities.all()
+                    val byCode = all.filter { it.code == target.cityCode }
+                    val matches = byCode.ifEmpty { all.filter { it.key == target.cityCode } }
+                    if (matches.isEmpty()) {
                         notify(R.string.vehicle_link_city_not_found)
                         return@withTimeout null
                     }
-                    if (cities.size != 1) {
+                    if (matches.size > 1) {
                         notify(R.string.vehicle_link_incomplete)
                         return@withTimeout null
                     }
-                    val city = cities.single()
+                    val city = matches.single()
+                    // 线路页按名称与方向自行加载；深链入口不预查线路，也不要求车牌。
+                    if (target is ShareTarget.Line) {
+                        return@withTimeout Screen.Line(city, LineSummary(name = target.lineName, direction = target.direction))
+                    }
+                    target as ShareTarget.Vehicle
                     // 优先按 ID 匹配已有完整线路；跨城线路绝不混用。
                     val known = stack.mapNotNull { entry ->
                         when (val page = entry.screen) {
@@ -132,7 +141,7 @@ class NavigationState : ViewModel() {
                 throw cancel
             } catch (error: Exception) {
                 ensureActive()
-                android.util.Log.w("Houche", "分享车辆线路查询失败", error)
+                android.util.Log.w("Houche", "分享链接打开失败", error)
                 notify(if (error is BusException && error.message == "上游没有返回这条线路的资料")
                     R.string.vehicle_link_line_not_found else R.string.vehicle_link_failed)
             }
@@ -143,7 +152,7 @@ class NavigationState : ViewModel() {
 
 /** 复用线路页的加载入口；有 ID 时只接受相同 ID，防止同名或旧链接打开别的线路。 */
 internal suspend fun resolveVehicleShareRoute(
-    target: VehicleShareTarget,
+    target: ShareTarget.Vehicle,
     knownRoutes: List<Route>,
     lineDetail: suspend (String, String) -> Route
 ): Route? {
@@ -208,12 +217,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleVehicleIntent(intent: Intent?) {
-        // 从桌面图标重新进来时回到首页：singleTask 下系统只发 onNewIntent，
-        // 不重置的话会停在离开时的那一页。
-        if (intent?.action == Intent.ACTION_MAIN) {
-            navigation.home()
-            return
-        }
         if (intent?.action != Intent.ACTION_VIEW) return
         val uri = intent.dataString ?: return
         val context = applicationContext

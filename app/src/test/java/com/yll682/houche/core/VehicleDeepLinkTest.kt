@@ -7,7 +7,7 @@ import org.junit.Test
 class 车辆深链接测试 {
     private val bases = listOf("https://houche.rainlodyn.cn/share/", "houche://vehicle")
     private val query = "city=0592&line=007&name=7%E8%B7%AF&dir=1&plate=%E9%97%BDD12345"
-    private val target = VehicleShareTarget("0592", "007", "7路", "1", "闽D12345")
+    private val target = ShareTarget.Vehicle("0592", "007", "7路", "1", "闽D12345")
 
     @Test fun `分享域名路径和协议固定`() {
         assertEquals("houche.rainlodyn.cn", VehicleShareLink.HOST)
@@ -39,7 +39,7 @@ class 车辆深链接测试 {
             "${bases[1]}?$expectedQuery",
             VehicleShareLink.buildSchemeLink("0592", null, "", "", "闽D12345")
         )
-        验证双协议(expectedQuery, target.copy(lineId = null, lineName = "", direction = ""))
+        验证双协议(expectedQuery, null)
     }
 
     @Test fun `空格用加号而字面加号和其它分隔符精确转义`() {
@@ -57,6 +57,11 @@ class 车辆深链接测试 {
 
     @Test fun `双协议解析中文编码并保留城市和线路前导零`() {
         验证双协议(query, target)
+    }
+
+    @Test fun `显式车辆类型与旧链接解析为相同车辆目标`() {
+        验证双协议("type=vehicle&$query", target)
+        验证双协议("$query&type=vehicle", target)
     }
 
     @Test fun `网页分享路径允许省略末尾斜杠`() {
@@ -85,31 +90,34 @@ class 车辆深链接测试 {
         }
     }
 
-    @Test fun `缺少城市或车牌均拒绝`() {
+    @Test fun `缺少城市线路名或车牌均拒绝`() {
         for (missing in listOf(
-            "plate=闽D12345",
-            "city=0592",
-            "line=007&name=7路&dir=1",
-            "City=0592&plate=闽D12345",
-            "city=0592&Plate=闽D12345"
+            "line=007&name=7路&dir=1&plate=闽D12345",
+            "city=0592&line=007&dir=1&plate=闽D12345",
+            "city=0592&line=007&name=7路&dir=1",
+            "City=0592&line=007&name=7路&dir=1&plate=闽D12345",
+            "city=0592&line=007&Name=7路&dir=1&plate=闽D12345",
+            "city=0592&line=007&name=7路&dir=1&Plate=闽D12345"
         )) {
             验证双协议(missing, null)
+            验证双协议("type=vehicle&$missing", null)
         }
     }
 
-    @Test fun `城市或车牌为空及各种空白均拒绝`() {
+    @Test fun `城市线路名或车牌为空及各种空白均拒绝`() {
         for (blank in listOf("", "+", "%20", "%09", "%0A", "%0D%0A", "%E3%80%80")) {
-            验证双协议("city=$blank&plate=闽D12345", null)
-            验证双协议("city=0592&plate=$blank", null)
+            验证双协议("city=$blank&name=7路&plate=闽D12345", null)
+            验证双协议("city=0592&name=$blank&plate=闽D12345", null)
+            验证双协议("city=0592&name=7路&plate=$blank", null)
         }
-        验证双协议("city&plate=闽D12345", null)
-        验证双协议("city=0592&plate", null)
+        验证双协议("city&name=7路&plate=闽D12345", null)
+        验证双协议("city=0592&name=7路&plate", null)
     }
 
     @Test fun `未缺失但包含首尾空格的标识原样保留`() {
         验证双协议(
             "city=+0592+&line=+007+&name=+7路+&dir=1&plate=+闽D12345+",
-            VehicleShareTarget(" 0592 ", " 007 ", " 7路 ", "1", " 闽D12345 ")
+            ShareTarget.Vehicle(" 0592 ", " 007 ", " 7路 ", "1", " 闽D12345 ")
         )
     }
 
@@ -129,11 +137,11 @@ class 车辆深链接测试 {
         }
     }
 
-    @Test fun `缺少线路名或线路名为空时使用空串`() {
+    @Test fun `缺少线路名或线路名没有值时均拒绝`() {
         for (name in listOf("", "&name=", "&name")) {
             验证双协议(
                 "city=0592&line=007&dir=1&plate=闽D12345$name",
-                target.copy(lineName = "")
+                null
             )
         }
     }
@@ -153,23 +161,23 @@ class 车辆深链接测试 {
     @Test fun `线路名标识和其它参数均不能代替缺失方向`() {
         验证双协议(
             "city=0592&line=1&name=上行1路&direction=1&upDown=2&DIR=1&plate=闽D12345",
-            VehicleShareTarget("0592", "1", "上行1路", "", "闽D12345")
+            ShareTarget.Vehicle("0592", "1", "上行1路", "", "闽D12345")
         )
     }
 
     @Test fun `只有必填参数时其它字段按契约留空`() {
-        验证双协议("city=0592&plate=闽D12345", VehicleShareTarget("0592", null, "", "", "闽D12345"))
+        验证双协议("city=0592&name=7路&plate=闽D12345", target.copy(lineId = null, direction = ""))
     }
 
     @Test fun `可以直接解析未转义的中文参数`() {
         验证双协议(
             "city=厦门&line=线路甲&name=公交7路&dir=2&plate=闽D12345",
-            VehicleShareTarget("厦门", "线路甲", "公交7路", "2", "闽D12345")
+            ShareTarget.Vehicle("厦门", "线路甲", "公交7路", "2", "闽D12345")
         )
     }
 
     @Test fun `所有文本字段的中文特殊符号和补充平面字符均可往返`() {
-        val expected = VehicleShareTarget(
+        val expected = ShareTarget.Vehicle(
             cityCode = " 厦门+&=%?# 城 ",
             lineId = "线路 +&=%?#🚌",
             lineName = "公交 +&=%?# 空格 🚌",
@@ -190,8 +198,8 @@ class 车辆深链接测试 {
     @Test fun `加号百分号加号和百分号空格各按表单规则解析`() {
         for ((encoded, decoded) in listOf("+" to " ", "%20" to " ", "%2B" to "+", "%2b" to "+")) {
             验证双协议(
-                "city=0592&line=007&name=$encoded&dir=1&plate=闽D12345",
-                target.copy(lineName = decoded)
+                "city=0592&line=007&name=7${encoded}路&dir=1&plate=闽D12345",
+                target.copy(lineName = "7${decoded}路")
             )
         }
     }
@@ -212,7 +220,7 @@ class 车辆深链接测试 {
             "pl%61te=闽D12345&d%69r=1&n%61me=7路&l%69ne=007&c%69ty=0592",
             target
         )
-        验证双协议("c%2569ty=0592&plate=闽D12345", null)
+        验证双协议("c%2569ty=0592&name=7路&plate=闽D12345", null)
     }
 
     @Test fun `原始等号只在第一个位置分隔键值`() {
@@ -238,12 +246,16 @@ class 车辆深链接测试 {
             验证双协议("$query&$key=其它值", null)
             验证双协议("$query&$key=", null)
         }
+        for (duplicate in listOf("type=vehicle", "type=line", "type=")) {
+            验证双协议("type=vehicle&$query&$duplicate", null)
+        }
     }
 
     @Test fun `转义参数名不能绕过重复检查`() {
         for (encodedKey in listOf("c%69ty", "l%69ne", "n%61me", "d%69r", "pl%61te")) {
             验证双协议("$query&$encodedKey=另一个值", null)
         }
+        验证双协议("type=vehicle&$query&t%79pe=vehicle", null)
     }
 
     @Test fun `协议和主机大小写遵循网址语义`() {
@@ -319,7 +331,7 @@ class 车辆深链接测试 {
 
     @Test fun `畸形百分号出现在键值或未知参数中均返回空而不抛异常`() {
         for (invalid in listOf("%", "%0", "%GG", "%2G", "%G2", "%u95FD", "%E9%97%")) {
-            验证双协议("city=0592&plate=$invalid", null)
+            验证双协议("city=0592&name=7路&plate=$invalid", null)
             验证双协议("$query&$invalid=value", null)
             验证双协议("$query&extra=$invalid", null)
         }
@@ -330,7 +342,7 @@ class 车辆深链接测试 {
             "%FF", "%FE", "%80", "%C3", "%C3%28", "%E9%97",
             "%C0%AF", "%ED%A0%80", "%F4%90%80%80", "%F0%9F%9A"
         )) {
-            验证双协议("city=0592&plate=$invalid", null)
+            验证双协议("city=0592&name=7路&plate=$invalid", null)
             验证双协议("$query&extra=$invalid", null)
             验证双协议("$query&$invalid=value", null)
         }
@@ -345,7 +357,7 @@ class 车辆深链接测试 {
 
     @Test fun `片段不补齐查询参数且不改变已完整目标`() {
         for (base in bases) {
-            assertNull(VehicleShareLink.parse("$base?city=0592#plate=闽D12345"))
+            assertNull(VehicleShareLink.parse("$base?city=0592&name=7路#plate=闽D12345"))
             assertEquals(target, VehicleShareLink.parse("$base?$query#ignored"))
             assertNull(VehicleShareLink.parse("$base?$query#%GG"))
         }
@@ -354,14 +366,14 @@ class 车辆深链接测试 {
     @Test fun `空输入和畸形网址均返回空而不抛异常`() {
         for (invalid in listOf(
             "", " ", "不是网址", "https://[invalid", "https://",
-            "https://houche.rainlodyn.cn/share/?city=0592&plate=闽 D",
-            "houche://vehicle?city=0592&plate=闽D\n12345"
+            "https://houche.rainlodyn.cn/share/?city=0592&name=7路&plate=闽 D",
+            "houche://vehicle?city=0592&name=7路&plate=闽D\n12345"
         )) {
             assertNull(invalid, VehicleShareLink.parse(invalid))
         }
     }
 
-    private fun 验证双协议(rawQuery: String, expected: VehicleShareTarget?) {
+    private fun 验证双协议(rawQuery: String, expected: ShareTarget.Vehicle?) {
         for (base in bases) {
             val link = "$base?$rawQuery"
             assertEquals(link, expected, VehicleShareLink.parse(link))
