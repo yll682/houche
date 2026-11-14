@@ -1,10 +1,10 @@
 {
-  "versionName": "2.1.0",
-  "versionCode": 34,
-  "released": "2026-11-11",
-  "notes": "底部导航改成四个 Tab：公交、地铁、收藏、设置；地铁整页内嵌在底栏层，底栏始终可见，地铁页不再有返回箭头；底栏支持直接拖动切换，返回时选中指示块不再闪烁；地铁线路条支持长按拖动切换线路，首末端改为圆头，起终点更易辨认；时刻表的发车时间与分割线之间补了间距。",
+  "versionName": "2.2.0",
+  "versionCode": 35,
+  "released": "2026-11-14",
+  "notes": "公交车辆详情页新增站点图：一眼看到这辆车现在在第几站、下一站是哪个站，本线车辆位置一目了然；可在站点图上把任意一站设为下车提醒站，到站前一站与到站时各提醒一次；跟踪改为前台服务后台常驻，退到后台或锁屏仍继续跟踪并按时提醒。地铁位置条的列车图标现在可以点，选中后点站名即可看这班车到该站约几分钟（按区间运行时间推算，非官方读数）。公交站名竖排不再按 8 个字拆成多列，长站名只把盒子撑高。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v2.1.0/houche-v2.1.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.1.0/houche-v2.1.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v2.2.0/houche-v2.2.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.2.0/houche-v2.2.0.apk"
   }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -73,6 +74,10 @@ import kotlin.math.roundToInt
  * 橙「1号线」＋ 青「3号线」两枚），徽标＝[MetroLineBadge] 的缩小档（19.33dp＝官方 58px），
  * 底色用各线路官方色、块内「数字 ＋ 竖排线字」与 tab 徽标同一套画法。标注只占站名下方的
  * **垂直**空间：格宽 W、站心 `x=(i+0.5)·W`、车标的 lane 一律不动，条高不够时整条往下加高。
+ *
+ * 车标**可点**（第十二轮）：点一下选中这班车，随后点站名就能看「它到该站还要多久」。
+ * 命中区在车标这一行（[StripMarkerHitHeight]），站点命中列从这条线**下方**才开始，
+ * 两片命中区不重叠，所以点车标不会误切参考站、点站名也不会误选车。
  */
 @Composable
 internal fun MetroTrainStrip(
@@ -80,6 +85,10 @@ internal fun MetroTrainStrip(
     direction: MetroDirection,
     line: MetroLine,
     onSelectStation: (String) -> Unit = {},
+    /** 被选中的车标（markerKey）；null = 没选车。位置条据此高亮那一辆。 */
+    selectedTrainKey: Int? = null,
+    /** 点车标：交出 markerKey 与该车当时的下一站码（markerKey 只是同一批观测内的身份）。 */
+    onSelectTrain: (Int, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val cells = direction.stationCodes
@@ -121,6 +130,8 @@ internal fun MetroTrainStrip(
     )
     // 上层 lane 预留的空间：轨道、站名、命中列整体同步下移，最上层不会被裁。
     val stackRoom = laneHeight * (lanes - 1)
+    // 车标的无障碍动作说明（描述本身仍是「第N班」，既有断言按它找车标）。
+    val markerActionLabel = stringResource(R.string.metro_train_eta_marker_action)
 
     // 站名块高度按本方向最长的站名算（选中站行距比普通站大 4px，要分开算），
     // 滚动时卡片高度不会跟着名字长短跳。
@@ -147,8 +158,10 @@ internal fun MetroTrainStrip(
     val namesBottom = cells.maxOfOrNull { nameHeightOf(it) + transferRoomOf(it) } ?: namesHeight
     // 格宽 W 与站心完全不参与这里：换乘标注只往下长，条高不够就整体加高（下面的命中列跟着变高）。
     val height = stackRoom + namesTop + namesBottom + 1.5.dp
-    // 站点命中区：上沿压在选中环下沿再让 6dp（车标那一行不参与点按，免得点车标误切参考站），
-    // 下沿到整块底边。最矮的情况（单字站名）也有 50dp，满足 44dp 下限。
+    // 站点命中区：上沿压在选中环下沿再让 6dp（车标那一行单独给车标点按：车标命中区到
+    // [StripMarkerHitHeight] 为止，站点命中列从这条线**下方**才开始，两片不重叠，
+    // 点车标不会误切参考站、点站名也不会误选车），下沿到整块底边。
+    // 最矮的情况（单字站名）也有 50dp，满足 44dp 下限。
     val hitTop = stackRoom + TrackCenter - StripRingOuter / 2 - 6.dp
     val hitHeight = height - hitTop
 
@@ -297,6 +310,8 @@ internal fun MetroTrainStrip(
                 // 同一 cluster 的车不会叠在一起；只错层，不改 p、不横向挪站。
                 // key 用 core 的全线进度序（同一批观测内唯一，只做动画身份、不显示）：序列重排时位移
                 // 跨度会超过 1.5 格，[rememberMarkerCenter] 会直接吸附。
+                // 车标**可点**：点一下选中这班车（看它到某站还要多久）。命中区在车标这一行，
+                // 与下面的站点命中列不重叠（站名列从 [hitTop] 才开始），所以点车标不会误切参考站。
                 ordinals.trains.forEach { train ->
                     val presentation = train.presentation
                     key(train.markerKey) {
@@ -311,20 +326,32 @@ internal fun MetroTrainStrip(
                         } else {
                             stringResource(R.string.metro_realtime_train_passed)
                         }
+                        val isSelected = selectedTrainKey != null && selectedTrainKey == train.markerKey
                         Box(
                             Modifier.offset(
                                 x = centerX - StripMarkerBox / 2,
                                 y = stackRoom - laneHeight * presentation.stackIndex
                             ).width(StripMarkerBox)
-                                .semantics { contentDescription = label },
+                                .heightIn(min = StripMarkerHitHeight)
+                                .clickable(
+                                    // 无障碍描述仍是「第N班」（既有断言按它找车标）；
+                                    // 「可查看到站时间」放在动作说明里，不去改那句描述。
+                                    onClickLabel = markerActionLabel,
+                                    role = Role.Button
+                                ) { onSelectTrain(train.markerKey, presentation.train.nextStationCode) }
+                                .semantics {
+                                    contentDescription = label
+                                    selected = isSelected
+                                },
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            TrainIcon(tint)
+                            TrainIcon(tint, isSelected)
                             Text(
                                 label,
                                 Modifier.align(Alignment.TopCenter)
                                     .offset(x = 2.dp, y = TrainLabelTop).width(StripMarkerBox),
-                                style = if (ordinal != null) type.TrainLabel else type.TrainLabelPassed,
+                                style = if (isSelected) type.TrainLabelSelected
+                                else if (ordinal != null) type.TrainLabel else type.TrainLabelPassed,
                                 textAlign = TextAlign.Center,
                                 maxLines = 1,
                                 softWrap = false
@@ -407,9 +434,26 @@ private fun rememberMarkerCenter(target: Dp, cell: Dp): Dp {
 
 /** 车标：圆角方块 + 白色列车图形，纯色 = 当前线路的官方色（没有方向三角，2.0.x 起如此）。 */
 @Composable
-private fun TrainIcon(tint: Color) {
+private fun TrainIcon(tint: Color, selected: Boolean = false) {
+    val palette = officialPalette()
     Box(
-        Modifier.size(StripTrainSize).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.5.dp)).background(tint),
+        Modifier.size(StripTrainSize).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.5.dp))
+            .background(tint)
+            // 选中态：方块内侧描一圈明显的深色环（浅色模式近黑、深色模式白），
+            // 任何线路色上都看得清；环画在方块内部，不改方块尺寸，位置条几何一点不动。
+            .then(
+                if (selected) Modifier.drawBehind {
+                    val stroke = StripTrainSelectedRing.toPx()
+                    val inset = stroke / 2f
+                    drawRoundRect(
+                        color = palette.Ink,
+                        topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                        size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5.dp.toPx() - inset),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
+                    )
+                } else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(Icons.Outlined.DirectionsSubway, null, Modifier.size(15.5.dp), tint = Color.White.copy(alpha = .96f))

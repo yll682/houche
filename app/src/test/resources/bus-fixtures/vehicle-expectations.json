@@ -1,0 +1,2390 @@
+{
+  "description": "人工核验口径后冻结的逐车解析期望，非上游响应；测试期间不得用被测函数重建。",
+  "rules": [
+    "同方向站表 1 基；原始 order 对应站段起点，nextStationName 非空时等于 order+1 站名。",
+    "正速度且站表校验通过：between，绘图锚点为前方站；零速：unknown，绘图锚点 null。",
+    "下一站缺失的 3 条记录由同方向站表补全；不填 currentStation，不假定停靠。"
+  ],
+  "responseCount": 78,
+  "vehicleRowCount": 204,
+  "samples": [
+    {
+      "file": "803路-d1-seq1-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq1-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq1-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq1-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "第一医院海沧院区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq1-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 7,
+          "order": 8,
+          "positionState": "between",
+          "nextStation": "地铁东瑶",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq1-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "一中海沧校区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 19,
+          "order": 20,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "第一医院海沧院区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 7,
+          "order": 8,
+          "positionState": "between",
+          "nextStation": "地铁东瑶",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq19-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "一中海沧校区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 19,
+          "order": 20,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 5,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "地铁林埭•SM海沧",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "第一医院海沧院区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 7,
+          "order": 8,
+          "positionState": "between",
+          "nextStation": "地铁东瑶",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d1-seq36-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "1",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D03639D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "一中海沧校区东门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10665D",
+          "reportedOrder": 19,
+          "order": 20,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06982D",
+          "reportedOrder": 33,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D07381D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 2,
+          "order": 3,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "第一农场",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 3,
+          "order": 4,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 17,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 35,
+          "order": 36,
+          "positionState": "between",
+          "nextStation": "一农公交场站",
+          "nextStationSource": "lineDetail.stationList"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西园路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq1-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D07381D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 2,
+          "order": 3,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "第一农场",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 3,
+          "order": 4,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 17,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 35,
+          "order": 36,
+          "positionState": "between",
+          "nextStation": "一农公交场站",
+          "nextStationSource": "lineDetail.stationList"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西园路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 19,
+      "vehicles": [
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045113.json",
+      "lineDetail": "803路-lineDetail-20261114T045113.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D07381D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": 33,
+          "positionState": "between",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045249.json",
+      "lineDetail": "803路-lineDetail-20261114T045249.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 1,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "新阳大厦",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 32,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "一农路口",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045427.json",
+      "lineDetail": "803路-lineDetail-20261114T045427.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 2,
+          "order": 3,
+          "positionState": "between",
+          "nextStation": "长塑实业",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "长庚医院东",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 33,
+          "order": 34,
+          "positionState": "between",
+          "nextStation": "第一农场",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045605.json",
+      "lineDetail": "803路-lineDetail-20261114T045605.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 3,
+          "order": 4,
+          "positionState": "between",
+          "nextStation": "新顺路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 17,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "马銮湾云汐广场",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 35,
+          "order": 36,
+          "positionState": "between",
+          "nextStation": "一农公交场站",
+          "nextStationSource": "lineDetail.stationList"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045737.json",
+      "lineDetail": "803路-lineDetail-20261114T045737.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西园路口",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "新阳大道",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045910.json",
+      "lineDetail": "803路-lineDetail-20261114T045910.json",
+      "line": "803路",
+      "direction": "2",
+      "referenceOrder": 36,
+      "vehicles": [
+        {
+          "plate": "闽D17832D",
+          "reportedOrder": 1,
+          "order": 2,
+          "positionState": "between",
+          "nextStation": "生物医药园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D02993D",
+          "reportedOrder": 5,
+          "order": 6,
+          "positionState": "between",
+          "nextStation": "惠佐",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D00311D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "招商花园城",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": 7,
+          "positionState": "between",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 21,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "中孚花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 22,
+          "order": 23,
+          "positionState": "between",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 22,
+          "order": 23,
+          "positionState": "between",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 7,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "大湖",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 23,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "禹洲花园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "坂上社",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 24,
+          "order": 25,
+          "positionState": "between",
+          "nextStation": "西林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq1-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 25,
+          "order": 26,
+          "positionState": "between",
+          "nextStation": "西林云顶",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": 7,
+          "positionState": "between",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 21,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "中孚花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 22,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 23,
+          "order": 24,
+          "positionState": "between",
+          "nextStation": "禹洲花园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 7,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "大湖",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 23,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "禹洲花园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "坂上社",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 24,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq17-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 25,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西林云顶",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 21,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "中孚花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 22,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 6,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "林后",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 23,
+          "order": 24,
+          "positionState": "between",
+          "nextStation": "禹洲花园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 7,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "大湖",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 23,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "禹洲花园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 8,
+          "order": 9,
+          "positionState": "between",
+          "nextStation": "坂上社",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 24,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西林",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d1-seq32-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D16858D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 25,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "西林云顶",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 14,
+          "order": 15,
+          "positionState": "between",
+          "nextStation": "祥店",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "宏山新村",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": 30,
+          "positionState": "between",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "国际山庄",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "第二福利院",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 3,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq1-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "翰林苑西门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 14,
+          "order": 15,
+          "positionState": "between",
+          "nextStation": "祥店",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": 30,
+          "positionState": "between",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "宏山新村",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": 30,
+          "positionState": "between",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "国际山庄",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "第二福利院",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 3,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq17-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "翰林苑西门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045043.json",
+      "lineDetail": "91路-lineDetail-20261114T045043.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 14,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "祥店",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": 30,
+          "positionState": "between",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045223.json",
+      "lineDetail": "91路-lineDetail-20261114T045223.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 15,
+          "order": 16,
+          "positionState": "between",
+          "nextStation": "宏山新村",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 29,
+          "order": 30,
+          "positionState": "between",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045356.json",
+      "lineDetail": "91路-lineDetail-20261114T045356.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 16,
+          "order": 17,
+          "positionState": "between",
+          "nextStation": "国际山庄",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045533.json",
+      "lineDetail": "91路-lineDetail-20261114T045533.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 17,
+          "order": 18,
+          "positionState": "between",
+          "nextStation": "第二福利院",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 30,
+          "order": 31,
+          "positionState": "between",
+          "nextStation": "高崎南五路",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045713.json",
+      "lineDetail": "91路-lineDetail-20261114T045713.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 3,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林花园",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 18,
+          "order": 19,
+          "positionState": "between",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "91路-d2-seq32-busList-20261114T045844.json",
+      "lineDetail": "91路-lineDetail-20261114T045844.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 4,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 19,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "翰林苑西门",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 31,
+          "order": 32,
+          "positionState": "between",
+          "nextStation": "高崎T4公交场站",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d1-ref1-busList-20261114T043243067Z-2.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043240835Z-1.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 22,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d1-ref17-busList-20261114T043245116Z-3.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043240835Z-1.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 22,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d1-ref32-busList-20261114T043245483Z-4.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043240835Z-1.json",
+      "line": "91路",
+      "direction": "1",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D15517D",
+          "reportedOrder": 9,
+          "order": 10,
+          "positionState": "between",
+          "nextStation": "尚忠",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D06101D",
+          "reportedOrder": 22,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "北大生物园",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d2-ref1-busList-20261114T043246218Z-6.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043245833Z-5.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 1,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 4,
+          "order": 5,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 18,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10312D",
+          "reportedOrder": 29,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d2-ref17-busList-20261114T043246593Z-7.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043245833Z-5.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 17,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 4,
+          "order": 5,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 18,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10312D",
+          "reportedOrder": 29,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    },
+    {
+      "file": "xiamen-91路-d2-ref32-busList-20261114T043246963Z-8.json",
+      "lineDetail": "xiamen-91路-dboth-refnone-lineDetail-20261114T043245833Z-5.json",
+      "line": "91路",
+      "direction": "2",
+      "referenceOrder": 32,
+      "vehicles": [
+        {
+          "plate": "闽D17399D",
+          "reportedOrder": 4,
+          "order": 5,
+          "positionState": "between",
+          "nextStation": "华林",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D09669D",
+          "reportedOrder": 18,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "枋湖东路穆厝",
+          "nextStationSource": "busList.nextStationName"
+        },
+        {
+          "plate": "闽D10312D",
+          "reportedOrder": 29,
+          "order": null,
+          "positionState": "unknown",
+          "nextStation": "高崎T3候机楼",
+          "nextStationSource": "busList.nextStationName"
+        }
+      ]
+    }
+  ],
+  "publicSamples": [
+    {
+      "file": "beijing-1路-d1-ref1-cmd104-20261114T043249463Z-2.json",
+      "lineDetail": "beijing-1路-d1-refnone-cmd103-20261114T043247334Z-1.json",
+      "line": "1路",
+      "direction": "1",
+      "referenceOrder": 1
+    },
+    {
+      "file": "beijing-1路-d1-ref15-cmd104-20261114T043250198Z-3.json",
+      "lineDetail": "beijing-1路-d1-refnone-cmd103-20261114T043247334Z-1.json",
+      "line": "1路",
+      "direction": "1",
+      "referenceOrder": 15
+    },
+    {
+      "file": "beijing-1路-d1-ref29-cmd104-20261114T043250908Z-4.json",
+      "lineDetail": "beijing-1路-d1-refnone-cmd103-20261114T043247334Z-1.json",
+      "line": "1路",
+      "direction": "1",
+      "referenceOrder": 29
+    },
+    {
+      "file": "beijing-1路-d2-ref1-cmd104-20261114T043253001Z-6.json",
+      "lineDetail": "beijing-1路-d2-refnone-cmd103-20261114T043251552Z-5.json",
+      "line": "1路",
+      "direction": "2",
+      "referenceOrder": 1
+    },
+    {
+      "file": "beijing-1路-d2-ref15-cmd104-20261114T043253213Z-7.json",
+      "lineDetail": "beijing-1路-d2-refnone-cmd103-20261114T043251552Z-5.json",
+      "line": "1路",
+      "direction": "2",
+      "referenceOrder": 15
+    },
+    {
+      "file": "beijing-1路-d2-ref28-cmd104-20261114T043253441Z-8.json",
+      "lineDetail": "beijing-1路-d2-refnone-cmd103-20261114T043251552Z-5.json",
+      "line": "1路",
+      "direction": "2",
+      "referenceOrder": 28
+    }
+  ]
+}

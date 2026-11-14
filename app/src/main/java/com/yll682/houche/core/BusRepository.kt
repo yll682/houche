@@ -268,15 +268,15 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
         val records: List<Vehicle>
         if (city.isXiamen) {
             argument(line.id.isNotEmpty() && !anchor.id.isNullOrEmpty(), "厦门车辆查询需要线路和站点编号")
-            records = xm("busList", "busLineId" to line.id, "direction" to line.direction, "stationSeq" to order, "stationId" to anchor.id, "stationName" to anchor.name).items().map {
-                val reported = it.i("stationOrder")
-                Vehicle(it.s("plateNo"), reported?.plus(if (it.s("inOrOut") == "1") 1 else 0), when(it.s("inOrOut")) { "0" -> "at-stop"; "1" -> "between"; else -> "unknown" },
-                    reported, it.field("inOrOut").text(), it.field("nextStationName").text(), dataTime = it.field("dataTime").text(), lat = it.d("lat"), lng = it.d("lng"))
-            }
-            VehicleResults(sortVehicles(records, order), "车辆位置来自上游，站点序号依据厦门公交返回值。")
+            val raw = xm("busList", "busLineId" to line.id, "direction" to line.direction, "stationSeq" to order, "stationId" to anchor.id, "stationName" to anchor.name)
+            records = raw.items().map { parseXiamenVehicle(it, line.stations) }
+            VehicleResults(sortVehicles(records, order), if (raw is JsonArray)
+                "车辆位置来自上游；仅提供剩余站数，不估算分钟到站时间。"
+                else "上游车辆位置资料格式无效，位置暂不可用。")
         } else {
             val raw = realtime(city, line.name, line.direction, order)
             records = raw.list("list").map {
+                // index + 1 和状态码含义仍待同方向 CMD 103 / 104 真实响应交叉验证。
                 Vehicle(it.s("busNumber"), it.i("index")?.plus(1), when(it.s("statusType")) { "0" -> "at-stop"; "2" -> "between"; else -> "unknown" },
                     currentStation = it.field("stationName").text(), lat = it.d("bus_lat"), lng = it.d("bus_lng"), statusType = it.field("statusType").text(),
                     segmentDistance = it.d("busToStationNiheDistance"), dataTime = it.d("_recTime")?.let { time -> Instant.ofEpochMilli(time.toLong()).toString() })
@@ -323,11 +323,12 @@ internal fun publicArrivals(raw: JsonElement): List<Arrival> = raw.list("routeOn
 /**
  * 进场车辆从近到远：离参照站还剩几站就是排序键，正在进站的那辆排第一。
  * 已经驶过的车不参与「谁先到」的比较，统一压到后面，否则会顶掉真正要进站的车。
+ * 站差排序也用当前站锚点，避免同车停走切换导致绘图 order 前移/回退时跳动。
  */
 internal fun sortVehicles(records: List<Vehicle>, stationOrder: Int): List<Vehicle> =
     records.sortedWith(
         compareBy<Vehicle> {
-            val order = it.order
+            val order = it.currentStationOrder
             when {
                 order == null || it.positionState == "unknown" -> Int.MAX_VALUE
                 order <= stationOrder -> stationOrder - order
@@ -338,6 +339,97 @@ internal fun sortVehicles(records: List<Vehicle>, stationOrder: Int): List<Vehic
             .thenBy { it.segmentDistance?.takeIf { distance -> distance >= 0 } ?: Double.POSITIVE_INFINITY }
             .thenBy { it.plate }
     )
+/**
+ * stationOrder / reportedOrder 为 1 基「车当前站段起点」，nextStationName 是下一站。
+ * order 仅为绘图锚点：speed > 0 时右移到前方站，供 UI 左移半格后画在两站之间；
+ * speed == 0 时按本站停靠，锚点就是 reportedOrder。站差另用 currentStationOrder。
+ * inOrOut 两值均有正速度/零速，motionLessTime 也与正速度共存，均不作停站依据。
+ *
+ * 只有速度、原始站序及同方向站表校验通过才定位；缺失速度/站序、越界或冲突均未知。
+ * 缺失下一站名沿用唯一相邻站补全；环线仅在首末同名且明确报首站为下一站时回绕。
+ * 未知车辆清空绘图用 order，保留 reportedOrder / inOrOut / 下一站，避免旧 UI 将未知画成途中。
+ * 不累积轮询状态、不设未经验证的静止时长阈值，也不把零值距离/时间拿来算 ETA。
+ */
+internal fun parseXiamenVehicle(raw: JsonElement, stations: List<RouteStation>): Vehicle {
+    val reported = raw.i("stationOrder")
+    val nextName = raw.field("nextStationName").text()?.trim()?.takeIf { it.isNotEmpty() }
+    val vehicle = Vehicle(
+        plate = raw.s("plateNo"), order = null, positionState = "unknown",
+        reportedOrder = reported, inOrOut = raw.field("inOrOut").text(), nextStation = nextName,
+        dataTime = raw.field("dataTime").text(), lat = raw.d("lat"), lng = raw.d("lng")
+    )
+    if (raw.field("nextStationName") !is JsonPrimitive) return vehicle
+    // 原始站序缺失/非法时不从下一站名字倒推，保留 unknown。
+    if (reported == null || reported <= 0 || reported == Int.MAX_VALUE) return vehicle
+    val current = stations.singleOrNull { it.order == reported } ?: return vehicle
+    if (current.name.isBlank()) return vehicle
+    val speed = raw.d("speed")?.takeIf { it >= 0.0 } ?: return vehicle
+    val next = if (reported == stations.mapNotNull { it.order }.maxOrNull()) {
+        resolveXiamenLoopStart(reported, nextName, stations) ?: return vehicle
+    } else {
+        resolveVehicleStation(
+            vehicle.copy(order = reported + 1, positionState = "between"), stations
+        ) ?: return vehicle
+    }
+    if (stations.count { it.order == next.order } != 1) return vehicle
+    val withNext = vehicle.copy(nextStation = nextName ?: next.name)
+    return if (speed > 0.0)
+        withNext.copy(order = next.order, positionState = "between")
+    // 站名来自已唯一校验的本站；保留 nextStation 的下一站角色，避免停靠文字误用下一站名。
+    else withNext.copy(order = reported, positionState = "at-stop", currentStation = current.name)
+}
+
+/** 只有唯一首末站同名、且上游明确报首站为下一站时才回绕；解析和驶离判断共用此证据。 */
+internal fun resolveXiamenLoopStart(
+    reportedOrder: Int, nextStationName: String?, stations: List<RouteStation>
+): RouteStation? {
+    if (reportedOrder <= 1 || reportedOrder != stations.mapNotNull { it.order }.maxOrNull()) return null
+    val last = stations.singleOrNull { it.order == reportedOrder } ?: return null
+    val first = stations.singleOrNull { it.order == 1 } ?: return null
+    val name = first.name.trim().takeIf { it.isNotEmpty() } ?: return null
+    if (last.name.trim() != name || nextStationName?.trim() != name ||
+        stations.count { it.name.trim() == name } != 2) return null
+    return first
+}
+/**
+ * 将已经规范化的车辆站序映射到调用方提供的同线路、同方向站表。
+ * at-stop 对应停靠站，between 对应前方站；这不是上游站序换算函数。
+ *
+ * 序号优先，缺失时才允许同角色唯一站名兜底；已提供的无效站序不得被名称覆盖。
+ * 停靠站名校验本站，下一站名校验后继；途中下一站名校验前方站，当前站名校验前驱。
+ * 首末边界仅在原始站序、站表和下一站名共同证实回绕时允许相邻关系跨越末站。
+ * 同时提供的序号和名称冲突、重复站序、重名歧义或未知状态均返回 null。
+ * 厦门解析已接入，返回的 order 仅供车标使用，站差用 currentStationOrder；非厦门仍未校准。
+ */
+internal fun resolveVehicleStation(vehicle: Vehicle, stations: List<RouteStation>): RouteStation? {
+    val name = when (vehicle.positionState) {
+        "at-stop" -> vehicle.currentStation
+        "between" -> vehicle.nextStation
+        else -> return null
+    }?.trim()?.takeIf { it.isNotEmpty() }
+    val candidates = stations.filter { (it.order ?: 0) > 0 && it.name.isNotBlank() }
+    val stop = if (vehicle.order != null) {
+        candidates.singleOrNull { it.order == vehicle.order } ?: return null
+    } else {
+        if (name == null) return null
+        candidates.singleOrNull { it.name.trim() == name } ?: return null
+    }
+    if (candidates.count { it.order == stop.order } != 1 || (name != null && stop.name.trim() != name)) return null
+    val otherName = (if (vehicle.positionState == "at-stop") vehicle.nextStation else vehicle.currentStation)
+        ?.trim()?.takeIf { it.isNotEmpty() } ?: return stop
+    val adjacentOrder = stop.order!!.toLong() + if (vehicle.positionState == "at-stop") 1 else -1
+    val adjacent = candidates.singleOrNull { it.order?.toLong() == adjacentOrder } ?: run {
+        val reported = vehicle.reportedOrder ?: return null
+        val first = resolveXiamenLoopStart(reported, vehicle.nextStation, stations) ?: return null
+        when {
+            vehicle.positionState == "at-stop" && stop.order == reported -> first
+            vehicle.positionState == "between" && stop.order == first.order ->
+                stations.single { it.order == reported }
+            else -> return null
+        }
+    }
+    return stop.takeIf { adjacent.name.trim() == otherName }
+}
 private fun requireData(raw: JsonElement, message: String) { if (raw !is JsonObject || raw.isEmpty()) throw BusException(BusException.Kind.UPSTREAM, message) }
 private fun stationArray(raw: JsonElement): List<JsonElement> {
     if (raw !is JsonArray || raw.any { it !is JsonObject || it.isEmpty() })

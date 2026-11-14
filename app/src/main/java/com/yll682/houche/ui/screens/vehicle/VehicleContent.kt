@@ -1,6 +1,7 @@
 package com.yll682.houche.ui.screens.vehicle
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,32 +12,36 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DirectionsBus
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.yll682.houche.ui.components.Hairline
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,11 +50,14 @@ import com.yll682.houche.core.RouteStation
 import com.yll682.houche.core.Vehicle
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.CardSurface
+import com.yll682.houche.ui.components.Hairline
 import com.yll682.houche.ui.components.HeaderIcon
 import com.yll682.houche.ui.components.MetaPill
 import com.yll682.houche.ui.components.Page
 import com.yll682.houche.ui.components.PullToRefresh
+import com.yll682.houche.ui.components.RouteStrip
 import com.yll682.houche.ui.components.SectionHeader
+import com.yll682.houche.ui.components.TelegramSheet
 import com.yll682.houche.ui.components.feedback
 import com.yll682.houche.ui.components.touch
 import com.yll682.houche.ui.theme.ArrivedGreen
@@ -64,6 +72,8 @@ fun VehicleContent(
     notify: () -> Unit,
     refresh: () -> Unit,
     selectVehicle: (String) -> Unit = {},
+    selectAlight: (RouteStation) -> Unit = {},
+    clearAlight: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val data = state.data
@@ -77,6 +87,9 @@ fun VehicleContent(
             if (remaining == null) Int.MAX_VALUE else kotlin.math.abs(remaining)
         }
     )
+    // 点站 → 选下车提醒站；操作区的「下车提醒站」→ 打开站表选择。
+    var sheetStop by remember { mutableStateOf<RouteStation?>(null) }
+    var sheetPicker by remember { mutableStateOf(false) }
     Page(data?.plate ?: stringResource(R.string.vehicle_title), back, modifier, actions = {
         Box(Modifier.touch(refreshLabel)) {
             HeaderIcon(Icons.Outlined.Refresh, refreshLabel, refresh)
@@ -92,8 +105,25 @@ fun VehicleContent(
                 feedback(state, hasContent = true) { refresh() }
                 if (data != null) {
                     item { VehicleHeader(data) }
-                    if (data.boarding != null) item { RemainingCard(data) }
-                    item { VehicleActions(data, toggleTracking, notify, share) }
+                    if (data.route.stations.isNotEmpty()) {
+                        item {
+                            VehicleMapCard(
+                                data,
+                                onStationClick = { stop -> sheetStop = stop },
+                                onVehicleClick = { vehicle -> selectVehicle(vehicle.plate) }
+                            )
+                        }
+                    }
+                    if (data.alight != null || data.boarding != null) item { RemainingCard(data) }
+                    item {
+                        VehicleActions(
+                            data,
+                            toggleTracking,
+                            notify,
+                            share,
+                            openAlight = { sheetPicker = true }
+                        )
+                    }
                     item { SectionHeader(stringResource(R.string.vehicle_list)) }
                     if (vehicles.isEmpty()) item {
                         Text(
@@ -113,6 +143,82 @@ fun VehicleContent(
                         )
                     } }
                 }
+            }
+        }
+    }
+    sheetStop?.let { stop ->
+        val remaining = remainingStops(stop, data?.vehicle)
+        val stops = when {
+            remaining == null -> stringResource(R.string.vehicle_map_stops_unknown)
+            remaining < 0 -> stringResource(R.string.vehicle_map_passed)
+            remaining == 0 -> stringResource(R.string.vehicle_map_arrived)
+            else -> stringResource(R.string.vehicle_map_stops_away, remaining, stop.name)
+        }
+        TelegramSheet(dismiss = { sheetStop = null }) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text(stop.name, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(12.dp))
+                Text(stops, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(16.dp))
+                FilledTonalButton(
+                    { selectAlight(stop); sheetStop = null },
+                    Modifier.fillMaxWidth().height(48.dp).touch(stringResource(R.string.vehicle_map_alight_set)),
+                    shape = Capsule
+                ) { Text(stringResource(R.string.vehicle_map_alight_set)) }
+                if (data?.alight != null) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        { clearAlight(); sheetStop = null },
+                        Modifier.fillMaxWidth().height(48.dp).touch(stringResource(R.string.vehicle_map_alight_clear)),
+                        shape = Capsule
+                    ) { Text(stringResource(R.string.vehicle_map_alight_clear)) }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+    if (sheetPicker && data != null) {
+        TelegramSheet(dismiss = { sheetPicker = false }) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text(stringResource(R.string.vehicle_map_alight_picker), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.vehicle_map_alight_picker_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                if (data.alight != null) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.vehicle_map_alight_title) + " · " + data.alight.name,
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        TextButton(
+                            { clearAlight(); sheetPicker = false },
+                            Modifier.touch(stringResource(R.string.vehicle_map_alight_clear))
+                        ) { Text(stringResource(R.string.vehicle_map_alight_clear)) }
+                    }
+                    Hairline()
+                }
+                data.route.stations.forEach { stop ->
+                    val picked = stop == data.alight
+                    Row(
+                        Modifier.fillMaxWidth().clickable { selectAlight(stop); sheetPicker = false }.padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stop.name,
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (picked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        if (picked) Icon(Icons.Outlined.Check, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
@@ -150,9 +256,56 @@ private fun VehicleHeader(data: VehicleData) {
     }
 }
 
+/**
+ * 站点图卡片：这辆车现在在站点图的哪一站一目了然，同时就地设定下车提醒站。
+ * 用共享的 [RouteStrip]：高亮＝下车提醒站，焦点车＝当前这辆车。
+ */
+@Composable
+private fun VehicleMapCard(
+    data: VehicleData,
+    onStationClick: (RouteStation) -> Unit,
+    onVehicleClick: (Vehicle) -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    CardSurface {
+        Column(Modifier.padding(vertical = 12.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.vehicle_map_title), Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium, color = colors.primary)
+                Text(data.plate.ifBlank { stringResource(R.string.no_plate) },
+                    style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+            }
+            // 上游两套接口一个给当前站、一个给下一站：哪个有值就写哪个，两个都没有就不写这一行。
+            val current = data.vehicle?.currentStation?.takeIf { it.isNotBlank() }
+            val next = data.vehicle?.nextStation?.takeIf { it.isNotBlank() }
+            if (current != null || next != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    listOfNotNull(
+                        current?.let { stringResource(R.string.vehicle_map_current, it) },
+                        next?.let { stringResource(R.string.vehicle_map_next, it) }
+                    ).joinToString(" · "),
+                    Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            RouteStrip(
+                route = data.route,
+                vehicles = data.vehicles,
+                highlight = data.alight,
+                focusedPlate = data.plate,
+                onStationClick = onStationClick,
+                onVehicleClick = onVehicleClick
+            )
+        }
+    }
+}
+
 @Composable
 private fun RemainingCard(data: VehicleData) {
-    val stop = data.boarding ?: return
+    // 有下车提醒站就按它算，没有才退回乘车站。
+    val stop = data.alight ?: data.boarding ?: return
     val remaining = remainingStops(stop, data.vehicle)
     val color = when {
         remaining == null -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -162,8 +315,11 @@ private fun RemainingCard(data: VehicleData) {
     }
     CardSurface {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.vehicle_boarding), style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(if (data.alight != null) R.string.vehicle_map_alight_title else R.string.vehicle_boarding),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Text(stop.name, style = MaterialTheme.typography.titleLarge)
             Text(stringResource(if (data.offline) R.string.vehicle_last_position else R.string.vehicle_remaining),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -197,31 +353,60 @@ private fun RemainingCard(data: VehicleData) {
 }
 
 @Composable
-private fun VehicleActions(data: VehicleData, toggleTracking: () -> Unit, notify: () -> Unit, share: (String, String) -> Unit) {
-    val trackingLabel = stringResource(if (data.tracking) R.string.vehicle_tracking_cancel else R.string.vehicle_tracking_start)
+private fun VehicleActions(
+    data: VehicleData,
+    toggleTracking: () -> Unit,
+    notify: () -> Unit,
+    share: (String, String) -> Unit,
+    openAlight: () -> Unit
+) {
+    val trackingLabel = stringResource(if (data.tracking) R.string.vehicle_map_track_stop else R.string.vehicle_map_track_start)
     val notifyLabel = stringResource(R.string.vehicle_notify)
     val shareLabel = stringResource(R.string.vehicle_share)
     val shareTitle = stringResource(R.string.vehicle_share_title)
     val station = vehicleStation(data.vehicle) ?: stringResource(R.string.unknown_position)
     val shareText = stringResource(R.string.vehicle_share_text, data.plate, data.route.name, station)
-    val canTrack = data.boarding != null
+    // 乘车站与下车提醒站都能作为跟踪目标，任一存在即可开启跟踪。
+    val canTrack = data.boarding != null || data.alight != null
+    val alightLabel = data.alight?.name ?: stringResource(R.string.vehicle_map_alight_unset)
     CardSurface {
         ActionRow(Icons.Outlined.NotificationsActive, trackingLabel, canTrack, toggleTracking,
             if (data.tracking) Icons.Outlined.Check else Icons.Outlined.ChevronRight)
+        Hairline(Modifier.padding(start = 56.dp))
+        ActionRow(Icons.Outlined.Flag, stringResource(R.string.vehicle_map_alight_title), data.route.stations.isNotEmpty(), openAlight, Icons.Outlined.ChevronRight, alightLabel)
         Hairline(Modifier.padding(start = 56.dp))
         ActionRow(Icons.Outlined.Notifications, notifyLabel, true, notify, Icons.Outlined.ChevronRight)
         Hairline(Modifier.padding(start = 56.dp))
         ActionRow(Icons.Outlined.Share, shareLabel, true, { share(shareText, shareTitle) }, Icons.Outlined.ChevronRight)
     }
+    if (data.backgroundActive) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            MetaPill(stringResource(R.string.vehicle_map_background_active))
+        }
+    }
     Text(
-        stringResource(if (data.boarding == null) R.string.vehicle_choose_boarding else R.string.vehicle_tracking_scope),
+        stringResource(
+            when {
+                data.alight != null -> R.string.vehicle_map_scope_alight
+                data.boarding != null -> R.string.vehicle_tracking_scope
+                else -> R.string.vehicle_map_choose_alight
+            },
+            data.alight?.name.orEmpty()
+        ),
         Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
 @Composable
-private fun ActionRow(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit, trailing: ImageVector) {
+private fun ActionRow(
+    icon: ImageVector,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    trailing: ImageVector,
+    value: String? = null
+) {
     val tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
     Row(
         Modifier.fillMaxWidth().touch(label).clickable(enabled = enabled, onClick = onClick)
@@ -232,6 +417,10 @@ private fun ActionRow(icon: ImageVector, label: String, enabled: Boolean, onClic
         Spacer(Modifier.width(16.dp))
         Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
             color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f))
+        if (value != null) {
+            Text(value, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
         Icon(trailing, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

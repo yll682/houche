@@ -1,0 +1,381 @@
+第12轮公交校准：实际验证证据（派生产物，不是上游响应）
+LC_ALL=C.UTF-8 LANG=C.UTF-8；全程没有联网；没有新增/下载依赖。
+1. 指定 Gradle 命令：
+./gradlew --stop
+./build.sh :app:testDebugUnitTest --no-build-cache --rerun --tests 'com.yll682.houche.core.Bus*' --tests 'com.yll682.houche.RepositoryTest'
+默认 Gradle 缓存只读，先发生 wrapper zip.lck 无法写入；随后复制已有缓存重试。
+GRADLE_USER_HOME=/tmp/round12-bus-gradle-home
+Gradle 实际执行测试数：0（启动失败，不能标记通过）。
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine a usable wildcard IP for this machine.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine a usable wildcard IP for this machine.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+2. 替代验证：重新编译当前15个源码文件，独立输出目录，无旧 app/build class。
+Kotlin compiler / serialization compiler plugin 2.0.21；Java 21；JVM target 17；JUnit 4.13.2。
+
+编译及测试辅助命令：
+python3 /tmp/round12-bus-jvm-check.py
+python3 /tmp/round12-bus-run-junit.py
+最终 JUnit 命令（JSON 参数数组，包含完整类路径）：
+[
+  "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+  "-Dfile.encoding=UTF-8",
+  "-Dlive=false",
+  "-Dround12.result=/tmp/round12-bus-jvm/results.txt",
+  "-cp",
+  "/tmp/round12-bus-jvm/classes:/data/repos/houche/app/src/test/resources:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.0.21/618b539767b4899b4660a83006e052b63f1db551/kotlin-stdlib-2.0.21.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/23.0.0/8cc20c07506ec18e0834947b84a864bfc094484e/annotations-23.0.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.7.3/2b09627576f0989a436a00a4a54b55fa5026fb86/kotlinx-coroutines-core-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm/1.7.3/6701e8c68d9e82387ce72ee96e8ddf058208d58f/kotlinx-serialization-json-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm/1.7.3/1f226780b845ff9206474c05159245d861556249/kotlinx-serialization-core-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp3/okhttp/4.12.0/2f4525d4a200e97e1b87449c2cd9bd2e25b7e8cd/okhttp-4.12.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio-jvm/3.7.0/276b999b41f7dcde00054848fc53af338d86b349/okio-jvm-3.7.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.36/6c62681a2f655b49963a5983b8b0950a6120ae14/slf4j-api-1.7.36.jar:/data/tools/gradle/lib/junit-4.13.2.jar:/data/tools/gradle/lib/hamcrest-core-1.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-content-negotiation-jvm/2.3.13/4fe37dd31fe192a1adaaae883f3216f160fa0a2a/ktor-client-content-negotiation-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-core-jvm/2.3.13/67cbe7757ed4a0818dadac88c0aad42c7c0a665d/ktor-client-core-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-mock-jvm/2.3.13/558a9a9ae4267768c5deed81dc8ab7da4ab7125c/ktor-client-mock-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-okhttp-jvm/2.3.13/d662d879f5938a206b4a34ce3cdaf5f9f0f6d05e/ktor-client-okhttp-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-events-jvm/2.3.13/f0d36d45767371f12fc7312f28c3ff7aa8bb5cf8/ktor-events-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-http-jvm/2.3.13/826d602a0e7ce29437e71f2bbc280824154f4498/ktor-http-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-io-jvm/2.3.13/c72b740fc87089f7389799f9a86fb5cc0ad83797/ktor-io-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-jvm/2.3.13/294e7597d203948a673ba6e4df80ba3417533326/ktor-serialization-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-kotlinx-json-jvm/2.3.13/86b4d6424eedff4f48db69d86d973a6b6570722f/ktor-serialization-kotlinx-json-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-kotlinx-jvm/2.3.13/f17a807826a84c55f7298697667c7687a0dd2d71/ktor-serialization-kotlinx-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-utils-jvm/2.3.13/1c46fa7ee1bddb3427f98c6f5c385fd5f8eddbc6/ktor-utils-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-websocket-serialization-jvm/2.3.13/57e6ad17d18e24994a21ee58d683e231a3995200/ktor-websocket-serialization-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-websockets-jvm/2.3.13/316c829551c015c4bb31c63a52e742341a51d576/ktor-websockets-jvm-2.3.13.jar",
+  "Round12BusTestRunner",
+  "com.yll682.houche.core.Bus真实车辆夹具测试",
+  "com.yll682.houche.core.Bus北京空车辆夹具测试",
+  "com.yll682.houche.core.Bus车辆解析边界测试",
+  "com.yll682.houche.core.Bus夹具完整性测试",
+  "com.yll682.houche.core.Bus车辆解析测试",
+  "com.yll682.houche.core.BusStationArrivalsTest",
+  "com.yll682.houche.RepositoryTest",
+  "com.yll682.houche.core.Bus原始响应抓取测试"
+]
+实际结果：
+startedAtUtc=2026-11-14T05:10:25.529210030Z
+com.yll682.houche.core.Bus真实车辆夹具测试: executed=234 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus北京空车辆夹具测试: executed=6 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus车辆解析边界测试: executed=10 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus夹具完整性测试: executed=4 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus车辆解析测试: executed=11 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.BusStationArrivalsTest: executed=14 ignored=0 failures=0 assumptions=0
+com.yll682.houche.RepositoryTest: executed=5 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus原始响应抓取测试: executed=0 ignored=2 failures=0 assumptions=0
+TOTAL executed=284 ignored=2 failures=0
+finishedAtUtc=2026-11-14T05:10:28.218075195Z
+
+15个当前源码文件的 SHA-256（最终运行后再次核对一致）：
+{
+  "app/src/main/java/com/yll682/houche/core/Models.kt": "118aacd15dad5f57a718f5ee1fe28135d7760c0cfbf1257a3e493b1b33b3a816",
+  "app/src/main/java/com/yll682/houche/core/Errors.kt": "2c24abf32383ea9636819290417899db8728a6231c0f38ec837dcb7c20a164ca",
+  "app/src/main/java/com/yll682/houche/core/Signing.kt": "9a0a8f2018b9bdeb950b40d41152428b5d526ca0766f43a963b49f3e7dcb937b",
+  "app/src/main/java/com/yll682/houche/core/XmbusClient.kt": "02f89ea10d41a08a5692e54e5cad27b30d0c419d3472bc00876746ddbe87e6a3",
+  "app/src/main/java/com/yll682/houche/core/ZsgjClient.kt": "ad909a42529b3d29f92b2d32b069eef6ad20da976f106a4a5c4b5acc8df62406",
+  "app/src/main/java/com/yll682/houche/core/Cities.kt": "71eaf2749c0ae2cb49f5afed94e8e43d3cb4026911cb5be1ef105f895a5eb3c8",
+  "app/src/main/java/com/yll682/houche/core/StationArrivals.kt": "75ad65d5e9e5e9433b4e26bb10f2dd3d18cdacdb630e0046104e61913ae79c4b",
+  "app/src/main/java/com/yll682/houche/core/ArrivalOrder.kt": "70bf0b2091a54b4a27720f9525ac09cf88e6b426f10380c385af343947b7bf21",
+  "app/src/main/java/com/yll682/houche/core/BusRepository.kt": "9f458492b51bc271516ec44df86e9926266b7baed4abf76ebc6371448661fb9a",
+  "app/src/test/java/com/yll682/houche/RepositoryTest.kt": "9426909932f264fd1acec621f3fad32b82a4ac8e3a4fa9ef5f0a3607328b82bc",
+  "app/src/test/java/com/yll682/houche/LiveApiTest.kt": "32270a87c83e1f83b8436a1f95b6768cfb770af2271246f70620720b8196a206",
+  "app/src/test/java/com/yll682/houche/core/BusStationArrivalsTest.kt": "c2f870f1123f9aa73ad27d32a52340e86c66bd800664d99c759a3e80d38ac16d",
+  "app/src/test/java/com/yll682/houche/core/BusFixturesLiveTest.kt": "bd8aa19db58697217c7294203fe0ad765e95d7bedb480ab1b9793b89ddedf812",
+  "app/src/test/java/com/yll682/houche/core/BusVehiclesParseTest.kt": "a6d6254d1d365eb78c30fb60c0af2ecb8fe088416ff1ecd49944afe5d0f4ab2e",
+  "app/src/test/java/com/yll682/houche/core/BusRealVehicleFixturesTest.kt": "a1d19a664817d34b5b5a818212a7fbaf613939a8131e1b80e162a6583a8d1117"
+}
+用于本次运行的清单和冻结期望 SHA-256：
+28bf844e6f29d31c5515f002b6f1ebd7102b59c1e1fab05465614fcc82a34f94  fixture-manifest.json
+63cb51bba7ed4c1c9a2efef83dcd0d3e44155b474a47bcf43feb55e9d7b7b6fa  vehicle-expectations.json
+8d60d922299ffb7a6593dc8d7d9160adf7b8a013171c12f2969d1f24ad9d0a04  calibration-statistics.json
+执行方法名（仅提取实际 EXECUTE / IGNORED 事件，不把异常降级测试的预期日志当失败）：
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d1-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d1-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d1-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq1-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq19-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045113.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045249.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045427.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045605.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045737.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[803路-d2-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[803路-d2-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[803路-d2-seq36-busList-20261114T045910.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d1-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d1-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d1-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq1-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq17-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045043.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045223.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045356.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045533.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045713.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[91路-d2-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[91路-d2-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[91路-d2-seq32-busList-20261114T045844.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d1-ref1-busList-20261114T043243067Z-2.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d1-ref1-busList-20261114T043243067Z-2.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d1-ref1-busList-20261114T043243067Z-2.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d1-ref17-busList-20261114T043245116Z-3.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d1-ref17-busList-20261114T043245116Z-3.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d1-ref17-busList-20261114T043245116Z-3.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d1-ref32-busList-20261114T043245483Z-4.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d1-ref32-busList-20261114T043245483Z-4.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d1-ref32-busList-20261114T043245483Z-4.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d2-ref1-busList-20261114T043246218Z-6.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d2-ref1-busList-20261114T043246218Z-6.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d2-ref1-busList-20261114T043246218Z-6.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d2-ref17-busList-20261114T043246593Z-7.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d2-ref17-busList-20261114T043246593Z-7.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d2-ref17-busList-20261114T043246593Z-7.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#车标锚点由核心校验后落在相邻两站且未知不参与定位[xiamen-91路-d2-ref32-busList-20261114T043246963Z-8.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#同方向真实站表逐车确认一基站序和下一站角色[xiamen-91路-d2-ref32-busList-20261114T043246963Z-8.json]
+EXECUTE com.yll682.houche.core.Bus真实车辆夹具测试#生产仓库逐车解析站序状态下一站和原始诊断字段[xiamen-91路-d2-ref32-busList-20261114T043246963Z-8.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d1-ref1-cmd104-20261114T043249463Z-2.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d1-ref15-cmd104-20261114T043250198Z-3.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d1-ref29-cmd104-20261114T043250908Z-4.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d2-ref1-cmd104-20261114T043253001Z-6.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d2-ref15-cmd104-20261114T043253213Z-7.json]
+EXECUTE com.yll682.houche.core.Bus北京空车辆夹具测试#真实北京请求成功但没有车辆不能验证索引和状态映射[beijing-1路-d2-ref28-cmd104-20261114T043253441Z-8.json]
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#速度缺失负数非法类型和非有限值均保持未知
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#零速与任意静止计数不证明在站也不提供绘图锚点
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#只有缺失原始序号可以用唯一下一站名定位
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#空响应及上游列表结构异常保持无可用位置且不崩溃
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#环线重名无站序不能取第一个而明确站序可以消歧
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#下一站缺失可由有效相邻站序补全但异常结构不当作缺失
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#正速度优先于进出站字段和静止计数但前方锚点始终加一
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#空表缺段重复站序首站之前终点之后都不猜区间
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#真实九十一路方向二第三十站为高崎航站楼且车不会定位到第二十九站
+EXECUTE com.yll682.houche.core.Bus车辆解析边界测试#下一站名与原始序号加一冲突时不平移也不定位
+EXECUTE com.yll682.houche.core.Bus夹具完整性测试#冻结期望覆盖全部有车响应和全部北京空响应
+EXECUTE com.yll682.houche.core.Bus夹具完整性测试#真实车辆时间距离字段全为占位零或空值不能当作到站估算
+EXECUTE com.yll682.houche.core.Bus夹具完整性测试#一百份响应均与来源清单的字节数和摘要相符
+EXECUTE com.yll682.houche.core.Bus夹具完整性测试#进出站两值均有移动和零速且正速度可与静止计数同时出现
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#已规范化站序可以直接定位且不依赖列表下标
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#同方向重名站可由站序消歧但不能仅凭名字选择第一个
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#只有缺失站序可由角色相符的唯一站名兜底而越界保持未知
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#区间状态不能用刚离开的站名冒充前方站
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#空白名称不影响有效站序且只裁剪名称首尾空白
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#重复站序即使有唯一站名也保持未知
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#未知状态空站表和无有效站序的站表不能推断位置
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#停靠状态不能用下一站冒充当前站
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#站序与角色相符的站名共同确认位置
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#站名与站序冲突时保持未知而不自动平移一站
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#停靠时下一站校验后继而途中当前站校验前驱
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#一个站台核心失败仍可用其他台且失败不缓存
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#发起页取消不取消活跃等待页且取消请求不入缓存
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#无编号先按名称解析并使用上游规范编号和坐标
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#补充时间失败保留原生车辆并立即重试而不重复核心请求
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#合法空数组与缺失空值错误类型分别给空记录和查询失败
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#详情返回的规范编号优先于请求编号
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#已知线路缺报保持未知不捏造等待车辆
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#站点页仅查询所选坐标站台
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#其他城市查询所有明确坐标站台并保留各自来源
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#原生详情缓存五分钟而核心十五秒且请求线路上限覆盖全部已知线路
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#聚合站点的详情过期失败时降级仍保留各台线路归属
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#全仓站台请求共用三个并发许可
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#同时活跃的首页和详情查询共享全部在途请求
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#浅站和详情共用规范参数查询全部编号且保留站台来源
+EXECUTE com.yll682.houche.RepositoryTest#arrivalsAndVehicleSorting
+EXECUTE com.yll682.houche.RepositoryTest#nearbyEnrichmentIsConcurrentAndIsolatesFailure
+EXECUTE com.yll682.houche.RepositoryTest#cacheAndNativeMapping
+EXECUTE com.yll682.houche.RepositoryTest#citiesAndNormalization
+EXECUTE com.yll682.houche.RepositoryTest#strictArguments
+IGNORED com.yll682.houche.core.Bus原始响应抓取测试#厦门九十一路双向多参照站抓取
+IGNORED com.yll682.houche.core.Bus原始响应抓取测试#北京一路双向多参照站抓取
+
+最终范围复核：15个已测试源码摘要仍一致；100份响应及来源字节/摘要核对通过。
+并行任务期间出现的只读路径变化（本任务未写入/未回滚，属于公交交付之外）：["app/src/main/java/com/yll682/houche/ui/screens/vehicle/VehicleViewModel.kt", "app/src/main/java/com/yll682/houche/ui/screens/vehicle/VehicleRoute.kt", "app/src/main/res/values/strings_vehicle.xml", "app/src/main/AndroidManifest.xml"]

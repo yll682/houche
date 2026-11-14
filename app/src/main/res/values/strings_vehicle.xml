@@ -24,5 +24,22 @@
     <string name="vehicle_notify_arrival">车辆即将到站</string>
     <string name="vehicle_notify_stop">%1$s · %2$s</string>
     <string name="vehicle_choose_boarding">在线路页选择乘车站后，可开启到站提醒</string>
-    <string name="vehicle_tracking_scope">此页打开时，车辆距离乘车站 1 站内提醒</string>
+    <string name="vehicle_tracking_scope">后台持续跟踪；设定下车站后，前一站和到站时各提醒一次</string>
+    <string name="vehicle_tracking_service_channel">后台车辆跟踪</string>
+    <string name="vehicle_tracking_service_title">正在跟踪公交车</string>
+    <string name="vehicle_tracking_service_restoring">正在恢复车辆跟踪…</string>
+    <string name="vehicle_tracking_service_text">%1$s · %2$s\n%3$s · %4$s</string>
+    <string name="vehicle_tracking_service_stop">停止跟踪</string>
+    <string name="vehicle_tracking_position_unknown">位置未知</string>
+    <string name="vehicle_tracking_at_stop">停靠 %1$s</string>
+    <string name="vehicle_tracking_towards_stop">驶向 %1$s</string>
+    <string name="vehicle_tracking_remaining">距 %1$s 还有 %2$d 站</string>
+    <string name="vehicle_tracking_last_position">%1$s\n暂未获取实时位置，显示上次位置</string>
+    <string name="vehicle_alight_notification_title">下车提醒</string>
+    <string name="vehicle_alight_one_stop">还有 1 站到 %1$s</string>
+    <string name="vehicle_alight_arrived">已到 %1$s 站</string>
+    <string name="vehicle_alight_station">下车提醒站</string>
+    <string name="vehicle_alight_select">设为下车提醒站</string>
+    <string name="vehicle_alight_clear">清除下车提醒站</string>
+    <string name="vehicle_alight_scope">后台持续跟踪，到站前一站和到站时各提醒一次</string>
 </resources>

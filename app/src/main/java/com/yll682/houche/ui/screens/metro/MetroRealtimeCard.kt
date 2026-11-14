@@ -61,6 +61,12 @@ fun MetroRealtimeCard(
     onRefresh: () -> Unit,
     onSelectStation: (String) -> Unit = {},
     onTransfer: (String, String) -> Unit = { _, _ -> },
+    /** 被选中的列车（位置条车标）；null = 没选车。 */
+    selectedTrain: MetroSelectedTrain? = null,
+    /** 推算到站的目标站码；空串 = 没选目标站。 */
+    targetStationCode: String = "",
+    /** 点车标：交出 markerKey 与该车当时的下一站码。 */
+    onSelectTrain: (Int, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     // 本站第 k 行 → 第几班：与位置条**同一套**「到本站先后」编号（[arrivalOrdinals]）。
@@ -69,6 +75,13 @@ fun MetroRealtimeCard(
     val ordinalOfRow: (Int) -> Int? = remember(ordinals) { { row -> ordinals?.ordinalOfRow(row) } }
     // 一次成功批次都还没有时，位置条也要画得出来：只用线路自己的完整站表，不编造任何车。
     val stripDirection = direction ?: remember(line) { line.fallbackStripDirection() }
+    // 站名表：推算结果那一行要写目标站名；只用线路自己的站表，不另外请求。
+    val stationNames = remember(line) { line.stations.associate { it.code to it.name } }
+    val stationNameOf: (String) -> String = remember(stationNames) { { code -> stationNames[code].orEmpty() } }
+    // 选中车标（刷新后身份对不上就是 null）：位置条据此高亮，卡片据此显示推算。
+    val selectedMarkerKey = remember(direction, stationCode, selectedTrain) {
+        metroSelectedTrainKey(direction, stationCode, selectedTrain)
+    }
     // 深色卡比页底亮一档（1.12:1，与官方浅色白卡 vs #F1F1F1 同强度），仍然无描边无阴影。
     val palette = officialPalette()
     Column(modifier.fillMaxWidth().clip(OfficialCardShape).background(palette.Card)) {
@@ -90,9 +103,19 @@ fun MetroRealtimeCard(
             MetroTrainStrip(
                 stationCode, strip, line,
                 onSelectStation = onSelectStation,
+                selectedTrainKey = selectedMarkerKey,
+                onSelectTrain = onSelectTrain,
                 modifier = Modifier.padding(horizontal = 10.dp)
             )
         }
+        // 「这班车到某站还要多久」：推算值只出现在这一行，不进上面的 ETA 蓝块。
+        MetroTrainEtaRow(
+            direction = direction,
+            referenceStationCode = stationCode,
+            selectedTrain = selectedTrain,
+            targetStationCode = targetStationCode,
+            stationNameOf = stationNameOf
+        )
         // 一次成功批次都没有时，ETA 块已用占位文案说明状态；这里只补失败细节。
         if (direction == null && !loading && note.isNotBlank()) MetroStatusLine(loading, note)
         Spacer(Modifier.height(10.6.dp))

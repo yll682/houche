@@ -30,12 +30,18 @@ import kotlinx.serialization.json.JsonNull
     val platformNumber: String? = null, val platformLat: Double? = null, val platformLng: Double? = null
 )
 typealias StationBus = Arrival
+// reportedOrder 是厦门原始 1 基「车当前站段起点」；nextStation 是下一站。
+// order 是绘图锚点：停靠为本站；行驶中右移一站，供 UI 左移半格后画在两站之间。
 @Serializable data class Vehicle(
     val plate: String, val order: Int?, val positionState: String, val reportedOrder: Int? = null,
     val inOrOut: String? = null, val nextStation: String? = null, val currentStation: String? = null,
     val dataTime: String? = null, val lat: Double? = null, val lng: Double? = null,
     val statusType: String? = null, val segmentDistance: Double? = null
-)
+) {
+    /** 站差使用当前站锚点，不随停车/行驶切换；非厦门缺原始站序时沿用 order，仍未校准。 */
+    val currentStationOrder: Int?
+        get() = reportedOrder?.takeIf { it > 0 } ?: order?.takeIf { it > 0 }
+}
 @Serializable data class VehicleResults(
     val vehicles: List<Vehicle>, val notice: String, val arrivals: List<Arrival> = emptyList(),
     val hasReal: Int? = null, val runState: Int? = null, val nextDeparture: String? = null, val segments: JsonElement = JsonNull

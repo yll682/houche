@@ -15,11 +15,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.yll682.houche.R
 import com.yll682.houche.core.*
 import com.yll682.houche.ui.UiState
@@ -191,65 +188,13 @@ import com.yll682.houche.ui.theme.*
                 }
             }
             Spacer(Modifier.height(12.dp))
-            RouteStrip(route, data.selected, vehicles, previewStation)
-        }
-    }
-}
-
-@Composable private fun RouteStrip(route: Route, selected: RouteStation?, vehicles: List<Vehicle>, preview: (RouteStation) -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    val listState = rememberLazyListState()
-    // 列宽固定 48dp（一屏约 7 站）；超过 8 个字的站名拆成多列竖排，不再截断。
-    val column = 48.dp
-    LaunchedEffect(route.name, route.direction) {
-        val target = selected ?: vehicles.firstOrNull()?.order?.let { order -> route.stations.firstOrNull { it.order == order } }
-        // 留一列余量：途中车辆要画在「两站之间」，贴左边缘会被裁掉半个图形。
-        val index = (route.stations.indexOf(target) - 1).coerceAtLeast(0)
-        if (route.stations.isNotEmpty()) listState.scrollToItem(index)
-    }
-    LazyRow(state = listState, contentPadding = PaddingValues(horizontal = 8.dp)) {
-        itemsIndexed(route.stations, key = { index, stop -> "${stop.order}-${stop.name}-$index" }) { index, stop ->
-            val active = stop == selected
-            val buses = vehicles.filter { it.order != null && it.order == stop.order }
-            val passed = selected?.order?.let { (stop.order ?: it) < it } == true
-            val description = if (buses.isEmpty()) stop.name else stringResource(R.string.stop_vehicles_accessibility, stop.name, buses.size)
-            Column(Modifier.width(column).heightIn(min = 152.dp).clickable(role = Role.Button) { preview(stop) }
-                .semantics(mergeDescendants = true) { contentDescription = description }, horizontalAlignment = Alignment.CenterHorizontally) {
-                // 车的位置就是状态：到站停在该站正上方（正脸），途中偏左半格落在两站之间（侧视）。
-                Box(Modifier.height(26.dp).fillMaxWidth().clearAndSetSemantics {}) {
-                    if (buses.isNotEmpty()) {
-                        val running = buses.first().positionState != "at-stop"
-                        Row(
-                            Modifier.align(Alignment.Center).offset(x = if (running) -(column / 2f) else 0.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Outlined.DirectionsBus, null, Modifier.size(18.dp), tint = primary)
-                            if (buses.size > 1) {
-                                Text(buses.size.toString(), Modifier.padding(start = 1.dp),
-                                    style = MaterialTheme.typography.labelSmall, color = primary)
-                            }
-                        }
-                    }
-                }
-                Text(stop.order?.toString().orEmpty(), Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelSmall, color = if (active) primary else MaterialTheme.colorScheme.outline)
-                Box(Modifier.fillMaxWidth().height(24.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                    Box(Modifier.align(if (index == 0) Alignment.CenterEnd else Alignment.CenterStart)
-                        .fillMaxWidth(if (index == 0 || index == route.stations.lastIndex) .5f else 1f).height(4.dp).background(primary.copy(alpha = .28f)))
-                    Box(Modifier.size(15.dp).clip(Capsule).background(if (active) primary else MaterialTheme.colorScheme.surface)
-                        .border(if (buses.isNotEmpty()) 2.dp else 1.5.dp, primary.copy(alpha = if (active || buses.isNotEmpty()) 1f else .35f), Capsule), contentAlignment = Alignment.Center) {
-                        if (active) Box(Modifier.size(5.dp).clip(Capsule).background(Color.White))
-                    }
-                }
-                // 竖排一字一行，行高收紧；上限 8 行覆盖常见长站名，再长才省略。
-                val nameColor = if (active) primary else if (passed) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
-                val columns = remember(stop.name) { stop.name.codePoints().toArray().toList().chunked(8).map { cps -> cps.joinToString("\n") { String(Character.toChars(it)) } } }
-                Row(Modifier.clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    columns.forEach { text ->
-                        Text(text, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 18.sp), textAlign = TextAlign.Center,
-                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal, color = nameColor)
-                    }
-                }
-            }
+            // 站点图用共享组件：线路页高亮＝乘车站，点站＝看这站的到站。
+            RouteStrip(
+                route = route,
+                vehicles = vehicles,
+                highlight = data.selected,
+                onStationClick = previewStation
+            )
         }
     }
 }

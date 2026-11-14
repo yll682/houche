@@ -1,0 +1,138 @@
+Bus order audit verification (execution evidence; NOT an upstream response)
+Locale: LC_ALL=C.UTF-8 LANG=C.UTF-8
+Toolchain: Java 21; Kotlin compiler + serialization plugin 2.0.21; JVM target 17; JUnit 4.13.2
+Gradle command attempted:
+./gradlew --stop
+./build.sh :app:testDebugUnitTest --no-build-cache --rerun --tests 'com.yll682.houche.core.Bus*' --tests 'com.yll682.houche.RepositoryTest'
+GRADLE_USER_HOME=/tmp/round11-gradle-home (default /home/user/.gradle is read-only)
+Gradle result: failed before test execution; executed test methods = 0
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine a usable wildcard IP for this machine.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Separate --no-daemon --stacktrace diagnostic (excerpt):
+java.net.SocketException: Operation not permitted
+org.gradle.api.UncheckedIOException: java.net.SocketException: Operation not permitted
+	at org.gradle.internal.remote.internal.inet.TcpIncomingConnector.accept(TcpIncomingConnector.java:62)
+Caused by: java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.socket0(Native Method)
+	at org.gradle.internal.remote.internal.inet.TcpIncomingConnector.accept(TcpIncomingConnector.java:58)
+java.net.SocketException: Operation not permitted
+org.gradle.api.UncheckedIOException: java.net.SocketException: Operation not permitted
+	at org.gradle.internal.remote.internal.inet.TcpIncomingConnector.accept(TcpIncomingConnector.java:62)
+Caused by: java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.socket0(Native Method)
+	at org.gradle.internal.remote.internal.inet.TcpIncomingConnector.accept(TcpIncomingConnector.java:58)
+Direct compiler result:
+compiler exit: 0
+compiled current source files: 14
+
+Direct JUnit offline result (current sources; not Gradle):
+startedAtUtc=2026-11-13T18:04:29.472935120Z
+com.yll682.houche.core.Bus车辆解析测试: executed=10 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.BusStationArrivalsTest: executed=14 ignored=0 failures=0 assumptions=0
+com.yll682.houche.RepositoryTest: executed=5 ignored=0 failures=0 assumptions=0
+com.yll682.houche.core.Bus原始响应抓取测试: executed=0 ignored=2 failures=0 assumptions=0
+TOTAL executed=29 ignored=2 failures=0
+finishedAtUtc=2026-11-13T18:04:31.083886382Z
+
+Offline method execution / ignored list:
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#缺失或越界站序只能由角色相符的唯一站名兜底
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#已规范化站序可以直接定位且不依赖列表下标
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#同方向重名站可由站序消歧但不能仅凭名字选择第一个
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#区间状态不能用刚离开的站名冒充前方站
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#空白名称不影响有效站序且只裁剪名称首尾空白
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#重复站序即使有唯一站名也保持未知
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#未知状态空站表和无有效站序的站表不能推断位置
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#停靠状态不能用下一站冒充当前站
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#站序与角色相符的站名共同确认位置
+EXECUTE com.yll682.houche.core.Bus车辆解析测试#站名与站序冲突时保持未知而不自动平移一站
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#一个站台核心失败仍可用其他台且失败不缓存
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#发起页取消不取消活跃等待页且取消请求不入缓存
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#无编号先按名称解析并使用上游规范编号和坐标
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#补充时间失败保留原生车辆并立即重试而不重复核心请求
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#合法空数组与缺失空值错误类型分别给空记录和查询失败
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#详情返回的规范编号优先于请求编号
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#已知线路缺报保持未知不捏造等待车辆
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#站点页仅查询所选坐标站台
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#其他城市查询所有明确坐标站台并保留各自来源
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#原生详情缓存五分钟而核心十五秒且请求线路上限覆盖全部已知线路
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#聚合站点的详情过期失败时降级仍保留各台线路归属
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#全仓站台请求共用三个并发许可
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#同时活跃的首页和详情查询共享全部在途请求
+EXECUTE com.yll682.houche.core.BusStationArrivalsTest#浅站和详情共用规范参数查询全部编号且保留站台来源
+EXECUTE com.yll682.houche.RepositoryTest#arrivalsAndVehicleSorting
+EXECUTE com.yll682.houche.RepositoryTest#nearbyEnrichmentIsConcurrentAndIsolatesFailure
+EXECUTE com.yll682.houche.RepositoryTest#cacheAndNativeMapping
+EXECUTE com.yll682.houche.RepositoryTest#citiesAndNormalization
+EXECUTE com.yll682.houche.RepositoryTest#strictArguments
+IGNORED com.yll682.houche.core.Bus原始响应抓取测试#厦门九十一路双向多参照站抓取
+IGNORED com.yll682.houche.core.Bus原始响应抓取测试#北京一路双向多参照站抓取
+Direct JUnit live result (-Dlive=true; not Gradle):
+startedAtUtc=2026-11-13T18:04:31.169842463Z
+com.yll682.houche.LiveApiTest#xiamenVehicles: executed=1 ignored=0 failures=1 assumptions=0
+com.yll682.houche.LiveApiTest#beijingVehicles: executed=1 ignored=0 failures=1 assumptions=0
+com.yll682.houche.core.Bus原始响应抓取测试: executed=2 ignored=0 failures=2 assumptions=0
+TOTAL executed=4 ignored=0 failures=4
+finishedAtUtc=2026-11-13T18:04:32.062077191Z
+
+Live failure excerpts (the following are local errors, NOT upstream JSON):
+EXECUTE com.yll682.houche.LiveApiTest#xiamenVehicles
+Caused by: java.net.UnknownHostException: app.xmbus.com: Temporary failure in name resolution
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+EXECUTE com.yll682.houche.LiveApiTest#beijingVehicles
+Caused by: java.net.UnknownHostException: h5.mygolbs.com: Temporary failure in name resolution
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+EXECUTE com.yll682.houche.core.Bus原始响应抓取测试#厦门九十一路双向多参照站抓取
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+Caused by: java.net.UnknownHostException: app.xmbus.com
+EXECUTE com.yll682.houche.core.Bus原始响应抓取测试#北京一路双向多参照站抓取
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+Caused by: java.net.UnknownHostException: h5.mygolbs.com
+java.lang.AssertionError: 没有取得可对照站表的有车响应；[direction=1 lineDetail: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: app.xmbus.com, direction=2 lineDetail: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: app.xmbus.com]
+java.lang.AssertionError: 没有取得可对照站表的有车响应；[direction=1 lineDetail: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com, direction=1 diagnostic ref=1: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com, direction=1 diagnostic ref=16: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com, direction=2 lineDetail: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com, direction=2 diagnostic ref=1: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com, direction=2 diagnostic ref=16: 公交查询失败，请检查网络后重试; cause=java.net.UnknownHostException: h5.mygolbs.com]
+Compiled source SHA-256 (same compilation includes main + tests, no old app/build classes):
+a6bdc35c48b5a714ffe2a51b619e9e5d9759d35a037b8fc66cf4aad4200d3c5a  app/src/main/java/com/yll682/houche/core/Models.kt
+2c24abf32383ea9636819290417899db8728a6231c0f38ec837dcb7c20a164ca  app/src/main/java/com/yll682/houche/core/Errors.kt
+9a0a8f2018b9bdeb950b40d41152428b5d526ca0766f43a963b49f3e7dcb937b  app/src/main/java/com/yll682/houche/core/Signing.kt
+02f89ea10d41a08a5692e54e5cad27b30d0c419d3472bc00876746ddbe87e6a3  app/src/main/java/com/yll682/houche/core/XmbusClient.kt
+ad909a42529b3d29f92b2d32b069eef6ad20da976f106a4a5c4b5acc8df62406  app/src/main/java/com/yll682/houche/core/ZsgjClient.kt
+71eaf2749c0ae2cb49f5afed94e8e43d3cb4026911cb5be1ef105f895a5eb3c8  app/src/main/java/com/yll682/houche/core/Cities.kt
+75ad65d5e9e5e9433b4e26bb10f2dd3d18cdacdb630e0046104e61913ae79c4b  app/src/main/java/com/yll682/houche/core/StationArrivals.kt
+70bf0b2091a54b4a27720f9525ac09cf88e6b426f10380c385af343947b7bf21  app/src/main/java/com/yll682/houche/core/ArrivalOrder.kt
+32df8631a8bb9f0e32259e20e1a300c45b60a0fbaba8e57316a592a54c56d751  app/src/main/java/com/yll682/houche/core/BusRepository.kt
+9426909932f264fd1acec621f3fad32b82a4ac8e3a4fa9ef5f0a3607328b82bc  app/src/test/java/com/yll682/houche/RepositoryTest.kt
+32270a87c83e1f83b8436a1f95b6768cfb770af2271246f70620720b8196a206  app/src/test/java/com/yll682/houche/LiveApiTest.kt
+c2f870f1123f9aa73ad27d32a52340e86c66bd800664d99c759a3e80d38ac16d  app/src/test/java/com/yll682/houche/core/BusStationArrivalsTest.kt
+bd8aa19db58697217c7294203fe0ad765e95d7bedb480ab1b9793b89ddedf812  app/src/test/java/com/yll682/houche/core/BusFixturesLiveTest.kt
+a89314bbd1ec6e855de85c6263f6b671384a8a3832a4214ed54ed3d05766adee  app/src/test/java/com/yll682/houche/core/BusVehiclesParseTest.kt
+Resolved runtime classpath from existing dependency cache (no dependencies added/downloaded):
+/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.0.21/618b539767b4899b4660a83006e052b63f1db551/kotlin-stdlib-2.0.21.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/23.0.0/8cc20c07506ec18e0834947b84a864bfc094484e/annotations-23.0.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.7.3/2b09627576f0989a436a00a4a54b55fa5026fb86/kotlinx-coroutines-core-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm/1.7.3/6701e8c68d9e82387ce72ee96e8ddf058208d58f/kotlinx-serialization-json-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm/1.7.3/1f226780b845ff9206474c05159245d861556249/kotlinx-serialization-core-jvm-1.7.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp3/okhttp/4.12.0/2f4525d4a200e97e1b87449c2cd9bd2e25b7e8cd/okhttp-4.12.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio-jvm/3.7.0/276b999b41f7dcde00054848fc53af338d86b349/okio-jvm-3.7.0.jar:/home/user/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.36/6c62681a2f655b49963a5983b8b0950a6120ae14/slf4j-api-1.7.36.jar:/data/tools/gradle/lib/junit-4.13.2.jar:/data/tools/gradle/lib/hamcrest-core-1.3.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-content-negotiation-jvm/2.3.13/4fe37dd31fe192a1adaaae883f3216f160fa0a2a/ktor-client-content-negotiation-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-core-jvm/2.3.13/67cbe7757ed4a0818dadac88c0aad42c7c0a665d/ktor-client-core-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-mock-jvm/2.3.13/558a9a9ae4267768c5deed81dc8ab7da4ab7125c/ktor-client-mock-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-okhttp-jvm/2.3.13/d662d879f5938a206b4a34ce3cdaf5f9f0f6d05e/ktor-client-okhttp-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-events-jvm/2.3.13/f0d36d45767371f12fc7312f28c3ff7aa8bb5cf8/ktor-events-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-http-jvm/2.3.13/826d602a0e7ce29437e71f2bbc280824154f4498/ktor-http-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-io-jvm/2.3.13/c72b740fc87089f7389799f9a86fb5cc0ad83797/ktor-io-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-jvm/2.3.13/294e7597d203948a673ba6e4df80ba3417533326/ktor-serialization-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-kotlinx-json-jvm/2.3.13/86b4d6424eedff4f48db69d86d973a6b6570722f/ktor-serialization-kotlinx-json-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-serialization-kotlinx-jvm/2.3.13/f17a807826a84c55f7298697667c7687a0dd2d71/ktor-serialization-kotlinx-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-utils-jvm/2.3.13/1c46fa7ee1bddb3427f98c6f5c385fd5f8eddbc6/ktor-utils-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-websocket-serialization-jvm/2.3.13/57e6ad17d18e24994a21ee58d683e231a3995200/ktor-websocket-serialization-jvm-2.3.13.jar:/home/user/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-websockets-jvm/2.3.13/316c829551c015c4bb31c63a52e742341a51d576/ktor-websockets-jvm-2.3.13.jar

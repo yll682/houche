@@ -43,7 +43,10 @@ import kotlinx.coroutines.flow.Flow
         // 手动刷新沿用现有的实时轮询入口（二十秒批次复用策略不动，只是提前问一次）。
         refresh = { vm.refreshRealtime() },
         // 换乘徽标：一次提交完整目标（目标线 id + 目标线自己的站码）；false 时数据层保持当前选择。
-        selectTransfer = { lineId, stationCode -> vm.selectTransfer(lineId, stationCode) }
+        selectTransfer = { lineId, stationCode -> vm.selectTransfer(lineId, stationCode) },
+        // 车标与目标站：位置条上的选中状态放在 VM 里，重组与刷新都不会丢。
+        selectTrain = { markerKey, nextStationCode -> vm.selectTrain(markerKey, nextStationCode) },
+        selectTargetStation = { code -> vm.selectTargetStation(code) }
     )
 }
 

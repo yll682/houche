@@ -71,7 +71,11 @@ data class MetroData(
     /** 独立本站成功响应，不能用它的时间替位置批次续命。 */
     val realtimeArrivalFrame: MetroRealtime? = null,
     /** 由 VM 的可注入时钟更新；纯数据默认未知，getter 不读取系统墙钟。 */
-    val realtimeOutOfService: Boolean = false
+    val realtimeOutOfService: Boolean = false,
+    /** 位置条上被选中的那班车；null = 没选车（markerKey 只是同一批观测内的身份，不是车辆 ID）。 */
+    val selectedTrain: MetroSelectedTrain? = null,
+    /** 「这班车到该站还要多久」的目标站码；空串 = 没选目标站。 */
+    val selectedTargetStation: String = ""
 ) {
     val line: MetroLine? get() = lines.firstOrNull { it.id == selected } ?: lines.firstOrNull()
 
@@ -172,7 +176,9 @@ internal fun MetroData.selectRealtimeLine(id: String): MetroData {
         selected = id, directionIndex = 0, realtimeStation = "", realtimeStationName = "", realtime = null,
         realtimeUpdated = "", realtimeNote = "", realtimeLoading = false, realtimeRequestId = 0,
         selectedDirectionKey = null, realtimeLastSuccessfulFrame = null, realtimeUnavailable = false,
-        realtimeArrivalFrame = null, realtimeOutOfService = false
+        realtimeArrivalFrame = null, realtimeOutOfService = false,
+        // 换线后车标与站序都不是同一批了，选中状态整体作废。
+        selectedTrain = null, selectedTargetStation = ""
     )
 }
 
@@ -223,12 +229,18 @@ internal fun MetroData.withMetroSnapshot(snapshot: MetroSnapshot, preferred: Str
         realtimeLastSuccessfulFrame = realtimeLastSuccessfulFrame.takeIf { keepRealtime },
         realtimeUnavailable = realtimeUnavailable && keepRealtime,
         realtimeArrivalFrame = realtimeArrivalFrame.takeIf { keepRealtime },
-        realtimeOutOfService = realtimeOutOfService && keepRealtime
+        realtimeOutOfService = realtimeOutOfService && keepRealtime,
+        // 站表刷新后仍看同一条线、同一参考站时保留选中状态；否则车标已经不是那一辆。
+        selectedTrain = selectedTrain.takeIf { keepRealtime },
+        selectedTargetStation = selectedTargetStation.takeIf { keepRealtime }.orEmpty()
     )
 }
 
 internal fun MetroData.selectRealtimeDirection(index: Int): MetroData =
-    withRealtimeState(realtimeState.selectDirection(index))
+    withRealtimeState(realtimeState.selectDirection(index)).copy(
+        // 换向后车标身份属于另一个方向，选中状态作废；目标站是站码，先留着。
+        selectedTrain = null
+    )
 
 internal fun MetroData.beginRealtimeRequest(id: Long): Pair<MetroData, MetroRealtimeRequest>? {
     val current = line ?: return null
@@ -468,6 +480,27 @@ class MetroViewModel(
     fun selectDirection(index: Int) {
         initialSelection = initialSelection.manualSelection()
         update(data.selectRealtimeDirection(index))
+    }
+
+    /**
+     * 选中位置条上的那班车（markerKey + 它当时的下一站码）。
+     *
+     * 再点一次同一辆就取消选择。markerKey 只是同一批观测内的身份，
+     * 刷新后若它指向别的车，界面会把这次选择当成过期（见 [metroSelectedMarker]）。
+     */
+    fun selectTrain(markerKey: Int, nextStationCode: String) {
+        val current = data.selectedTrain
+        val next = if (current != null && current.markerKey == markerKey &&
+            current.nextStationCode == nextStationCode
+        ) null else MetroSelectedTrain(markerKey, nextStationCode)
+        if (next == current) return
+        update(data.copy(selectedTrain = next))
+    }
+
+    /** 选中「这班车到该站还要多久」的目标站（位置条站名与站序行都走这里）。 */
+    fun selectTargetStation(code: String) {
+        if (code.isBlank() || data.selectedTargetStation == code) return
+        update(data.copy(selectedTargetStation = code))
     }
 
     /** 只验证并提交一次目标，实时请求直接查询目标站，不会先请求目标线首站。 */

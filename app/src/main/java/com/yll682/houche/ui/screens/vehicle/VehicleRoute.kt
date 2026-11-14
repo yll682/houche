@@ -20,15 +20,14 @@ fun VehicleRoute(vm: VehicleViewModel, back: () -> Unit, share: (String, String)
     val context = LocalContext.current
     SideEffect { vm.bindContext(context) }
     PollEvery20Seconds(enabled = state !is UiState.Loading && state !is UiState.Error) { vm.refreshLive() }
-    // 点「开启到站提醒」：Android 13+ 未授权通知时先申请，授权后再开始；<13 直接开始。
+    // 用户从可见页面启动 FGS；Android 13+ 先申请提醒权限，拒绝后仍可仅跟踪。
     fun startTracking() {
-        val data = vm.state.value.data ?: return
-        vm.toggleTracking()
-        VehicleTracker.start(context, vm.city, data.route.name, data.plate, data.boarding?.name)
+        vm.startTracking()
         vm.refresh()
     }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startTracking()
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        // 拒绝提醒权限仍可跟踪；系统允许 FGS 运行，但不会展示普通到站通知。
+        startTracking()
     }
     // 「通知设置」：打开系统里本应用的通知设置页（不再发测试通知）。
     val notify: () -> Unit = {
@@ -38,15 +37,14 @@ fun VehicleRoute(vm: VehicleViewModel, back: () -> Unit, share: (String, String)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
     }
-    VehicleScreen(
-        vm = vm,
+    VehicleContent(
+        state = state,
         back = back,
         share = share,
         toggleTracking = {
             val data = vm.state.value.data
             if (data != null) {
                 if (data.tracking) {
-                    VehicleTracker.stop()
                     vm.stop()
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !VehicleTracker.canNotify(context)) {
                     permission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -55,6 +53,10 @@ fun VehicleRoute(vm: VehicleViewModel, back: () -> Unit, share: (String, String)
                 }
             }
         },
-        notify = notify
+        notify = notify,
+        refresh = { vm.refresh() },
+        selectVehicle = { vm.selectVehicle(it) },
+        selectAlight = { vm.selectAlight(it) },
+        clearAlight = { vm.clearAlight() }
     )
 }

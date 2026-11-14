@@ -23,11 +23,49 @@ class Prefs(context: Context) {
     private val linesKey = stringPreferencesKey("savedLines")
     private val stationsKey = stringPreferencesKey("savedStations")
     private val historyKey = stringPreferencesKey("history")
+    private val trackedVehicleKey = stringPreferencesKey("trackedVehicle")
+    private val vehicleAlightKey = stringPreferencesKey("vehicleAlightSelection")
     private val values = store.data.catch { error -> throw wrap(error) }
     val currentCityKey: Flow<String?> = values.map { it[cityKey] }
     val favoriteLines: Flow<List<SavedLine>> = values.map { decode<List<SavedLine>>(it[linesKey]) }.flowOn(Dispatchers.IO)
     val favoriteStations: Flow<List<SavedStation>> = values.map { decode<List<SavedStation>>(it[stationsKey]) }.flowOn(Dispatchers.IO)
     val recentSearches: Flow<List<String>> = values.map { decode<List<String>>(it[historyKey]).take(10) }.flowOn(Dispatchers.IO)
+    val trackedVehicle: Flow<TrackedVehicle?> = values.map { decodeOptional<TrackedVehicle>(it[trackedVehicleKey]) }.flowOn(Dispatchers.IO)
+    val vehicleAlightSelection: Flow<VehicleAlightSelection?> = values.map { decodeOptional<VehicleAlightSelection>(it[vehicleAlightKey]) }.flowOn(Dispatchers.IO)
+
+    init {
+        // 应用重新进入前台时恢复上次目标；普通 Prefs/Robolectric Application 不注册恢复入口。
+        VehicleTracker.initialize(context.applicationContext)
+    }
+
+    suspend fun setTrackedVehicle(value: TrackedVehicle?) = io {
+        store.edit { prefs ->
+            if (value == null) prefs.remove(trackedVehicleKey)
+            else prefs[trackedVehicleKey] = json.encodeToString(value)
+        }
+        Unit
+    }
+
+    /** 在同一个 DataStore 事务中认领提醒；已切站或关闭的旧请求不能覆写新目标。 */
+    suspend fun compareAndSetTrackedVehicle(expected: TrackedVehicle?, value: TrackedVehicle?): Boolean = io {
+        var changed = false
+        store.edit { prefs ->
+            if (decodeOptional<TrackedVehicle>(prefs[trackedVehicleKey]) == expected) {
+                if (value == null) prefs.remove(trackedVehicleKey)
+                else prefs[trackedVehicleKey] = json.encodeToString(value)
+                changed = true
+            }
+        }
+        changed
+    }
+
+    suspend fun setVehicleAlightSelection(value: VehicleAlightSelection?) = io {
+        store.edit { prefs ->
+            if (value == null) prefs.remove(vehicleAlightKey)
+            else prefs[vehicleAlightKey] = json.encodeToString(value)
+        }
+        Unit
+    }
 
     suspend fun deviceId(): String = io {
         // edit 是串行事务；并发首次调用也只会生成并持久化一个编号。
@@ -75,6 +113,8 @@ class Prefs(context: Context) {
         }; Unit
     }
     private inline fun <reified T> decode(value: String?): T = try { json.decodeFromString(value ?: "[]") } catch (error: Exception) { throw wrap(error) }
+    private inline fun <reified T> decodeOptional(value: String?): T? =
+        value?.let { try { json.decodeFromString<T>(it) } catch (error: Exception) { throw wrap(error) } }
     private fun stationKey(station: Station) = listOf(station.number ?: station.name, station.lat, station.lng)
     private suspend fun <T> io(block: suspend () -> T): T = withContext(Dispatchers.IO) { try { block() } catch (error: Exception) { throw wrap(error) } }
     private fun wrap(error: Throwable): BusException {

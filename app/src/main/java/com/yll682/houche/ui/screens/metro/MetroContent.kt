@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -65,6 +66,10 @@ fun MetroContent(
     selectStation: (String) -> Unit = {}, selectDirection: (Int) -> Unit = {},
     refresh: () -> Unit = {},
     selectTransfer: (String, String) -> Unit = { _, _ -> },
+    /** 点位置条上的车标：选中那班车（markerKey + 当时的下一站码）。 */
+    selectTrain: (Int, String) -> Unit = { _, _ -> },
+    /** 点站名/站序行：把它设为「这班车到该站还要多久」的目标站。 */
+    selectTargetStation: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val data = state.data ?: MetroData()
@@ -76,8 +81,19 @@ fun MetroContent(
     var sheetStation by rememberSaveable { mutableStateOf<String?>(null) }
     // 换线后关掉面板。
     LaunchedEffect(data.selected) { sheetStation = null }
+    // 参考站码：实时参考站 → 响应站码 → 线路首站（与实时卡片同一口径）。
+    val referenceStation = data.realtimeStation.ifBlank { data.realtime?.stationCode.orEmpty() }
+        .ifBlank { line?.stations?.firstOrNull()?.code.orEmpty() }
+    // 站名表：推算结果要写目标站名；只用线路自己的站表。
+    val stationNames = remember(heading) { heading?.stations?.associate { it.code to it.name }.orEmpty() }
+    val stationNameOf: (String) -> String = remember(stationNames) { { code -> stationNames[code].orEmpty() } }
     val openSheet: (String) -> Unit = { code ->
-        if (code.isNotBlank() && line?.stations?.any { it.code == code } == true) sheetStation = code
+        if (code.isNotBlank() && line?.stations?.any { it.code == code } == true) {
+            // 点站名/站序行：既开底部面板（老的两步流程不变：面板里再点「设为乘车站」），
+            // 也把它设为推算的目标站——「点某列车 + 某站」这一步就在这里完成。
+            selectTargetStation(code)
+            sheetStation = code
+        }
     }
     Column(modifier.fillMaxSize()) {
         MetroLineTabs(data.lines, data.selected, select)
@@ -108,6 +124,9 @@ fun MetroContent(
                     onRefresh = refresh,
                     onSelectStation = openSheet,
                     onTransfer = selectTransfer,
+                    selectedTrain = data.selectedTrain,
+                    targetStationCode = data.selectedTargetStation,
+                    onSelectTrain = selectTrain,
                     modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp)
                 )
             }
@@ -157,12 +176,18 @@ fun MetroContent(
     sheetStation?.let { code ->
         val stop = line?.stations?.firstOrNull { it.code == code }
         if (stop != null && heading != null) {
+            // 弹层里的站就是用户点的那个站（点站名会同时把它设为推算目标站）；
+            // 有选中列车时补一行「所选列车到本站」，推算失败/已过都有中性说法。
+            val trainEta = metroTrainEtaProjection(
+                data.direction, referenceStation, data.selectedTrain, code, stationNameOf
+            )
             MetroStationSheet(
                 stop = stop,
                 destination = data.realtime?.directions?.getOrNull(data.directionIndex)?.destination?.takeIf { it.isNotBlank() }
                     ?: heading.to,
                 times = metroStationOperatingTimes(heading, stop),
                 isBoarding = code == data.realtimeStation,
+                trainEta = trainEta,
                 onConfirm = { selectStation(code); sheetStation = null },
                 dismiss = { sheetStation = null }
             )
@@ -170,11 +195,17 @@ fun MetroContent(
     }
 }
 
-/** 点站点弹出的底部面板：站名、开往、首末班，确认后才把它设为乘车站。 */
+/**
+ * 点站点弹出的底部面板：站名、开往、首末班，确认后才把它设为乘车站。
+ *
+ * 有选中列车时多一行「所选列车到本站：约 X 分钟（推算）」；
+ * 「设为乘车站」的两步流程一个字都没改。
+ */
 @Composable
 private fun MetroStationSheet(
     stop: MetroStation, destination: String, times: com.yll682.houche.core.MetroOperatingTimes,
-    isBoarding: Boolean, onConfirm: () -> Unit, dismiss: () -> Unit
+    isBoarding: Boolean, trainEta: MetroTrainEtaProjection? = null,
+    onConfirm: () -> Unit, dismiss: () -> Unit
 ) {
     TelegramSheet(dismiss = dismiss) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -187,6 +218,19 @@ private fun MetroStationSheet(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Schedule, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                     Text(stringResource(R.string.service_times, times.first, times.last), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            // 所选列车到本站：推算值，带「推算」口径；已过/推不出来都给中性说法。
+            trainEta?.let { eta ->
+                val text = when {
+                    eta.minutes != null && eta.approximate -> stringResource(R.string.metro_train_eta_sheet_row_approximate, eta.minutes)
+                    eta.minutes != null -> stringResource(R.string.metro_train_eta_sheet_row, eta.minutes)
+                    eta.passed -> stringResource(R.string.metro_train_eta_sheet_row_passed)
+                    else -> stringResource(R.string.metro_train_eta_sheet_row_unknown)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Info, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(text, style = MaterialTheme.typography.bodyMedium)
                 }
             }
             Button(

@@ -306,8 +306,19 @@ internal class OfficialTypography(palette: OfficialPalette) {
     /** 选中站名：Bold + 靛蓝 + 行距 65px≈21.7dp。 */
     val StripeNameSelected = official(14.3.sp, palette.StationSelected, 21.7.sp, FontWeight.Bold)
 
-    /** 车标下方「第N班」11.5sp。 */
+    /**
+     * 车标下方「第N班」11.5sp。
+     */
     val TrainLabel = official(11.5.sp, palette.TrainLabel, 15.sp)
+
+    /**
+     * 选中列车的「第N班」：同字号同位置，字重加粗并改成主文字色。
+     *
+     * 选中态的强区分靠车标上那圈描边（见 [MetroTrainStrip]），这里只把标签也提上来，
+     * 两处一起看才有一眼就选中的效果；颜色用 [OfficialPalette.Ink]（浅色近黑、深色纯白），
+     * 不用品牌蓝：11.5sp 小字压在 #298ACF 上只有 3.7:1，达不到 4.5:1。
+     */
+    val TrainLabelSelected = official(11.5.sp, palette.Ink, 15.sp, FontWeight.SemiBold)
 
     /**
      * 车标下方「已过」：与「第N班」**同字号同位置**，只把颜色换成次要文字色 [OfficialPalette.SubInk]
@@ -353,6 +364,17 @@ internal val StripMinTapWidth = 44.dp
 
 /** 车标列宽：车标 20.7dp、「第N班」约 34.5dp，取 40dp 让标签不被父级宽度裁掉。 */
 internal val StripMarkerBox = 40.dp
+
+/**
+ * 车标的点按命中高度：车标本身只有 20.7dp，太难点；命中区往下补到 30dp。
+ *
+ * **不能更长**：站点命中列从 [MetroTrainStrip] 的 `hitTop`（车标行下方 31.8dp）开始，
+ * 车标命中区一旦越过那条线，站点列上沿那一小条就会被车标抢走，点站名会误选车。
+ */
+internal val StripMarkerHitHeight = 30.dp
+
+/** 选中车标时方块内侧那圈描边的粗细（画在方块内部，不改方块尺寸）。 */
+internal val StripTrainSelectedRing = 1.6.dp
 
 /** 错层 lane 的高度下限：图标 20.7dp ＋ 标签行盒，单层至少 44dp 才好按。 */
 internal val StripLaneMin = 44.dp

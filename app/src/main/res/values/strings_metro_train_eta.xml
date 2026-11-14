@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  地铁「点某列车 + 某站 → 还有多久到」的文案（第十二轮新增）。
+
+  单独一个文件，不动 strings.xml：这个功能的推算口径与官方 ETA 读数是两回事，
+  文案放在一起容易被别人顺手改掉，「（推算）」这几个字必须留着。
+
+  口径说明：
+  - 「推算」：接口没有车辆 ID，跨参考站的匹配是近似匹配，分钟数是按区间运行时间推的，不是读数；
+  - 「推算·约」：这班车是靠跨参考站近似匹配认出来的，连「约」都要更保守；
+  - 「已过该站」/「站数未知」：推不出来时只给中性说法，不给 0 或假数字。
+-->
+<resources>
+    <!-- 没选车时的引导：这一行不留空白。 -->
+    <string name="metro_train_eta_hint">点列车图标可看它到站时间</string>
+    <!-- 选了车、还没选目标站。 -->
+    <string name="metro_train_eta_pick_station">已选 %1$s，点站名可看它到该站时间</string>
+    <!-- 已过本站的车没有班号，单独一个说法。 -->
+    <string name="metro_train_eta_train_passed">已过本站的车</string>
+    <!-- 推算成功：分钟向上取整，标「推算」。 -->
+    <string name="metro_train_eta_row">%1$s → %2$s：约 %3$d 分钟（推算）</string>
+    <!-- 跨参考站近似匹配：口径更保守。 -->
+    <string name="metro_train_eta_row_approximate">%1$s → %2$s：约 %3$d 分钟（推算·约）</string>
+    <!-- 目标站已被该车驶过。 -->
+    <string name="metro_train_eta_row_passed">%1$s → %2$s：已过该站</string>
+    <!-- 推算失败（方向不对 / 缺区间运行时间）：中性说法，不给数字。 -->
+    <string name="metro_train_eta_row_unknown">%1$s → %2$s：站数未知</string>
+    <!-- 站序弹层里的同一句信息（弹层里的站就是选中的目标站）。 -->
+    <string name="metro_train_eta_sheet_row">所选列车到本站：约 %1$d 分钟（推算）</string>
+    <string name="metro_train_eta_sheet_row_approximate">所选列车到本站：约 %1$d 分钟（推算·约）</string>
+    <string name="metro_train_eta_sheet_row_passed">所选列车已过本站</string>
+    <string name="metro_train_eta_sheet_row_unknown">所选列车到本站：站数未知</string>
+    <!-- 车标的无障碍动作说明（车标本身的无障碍描述仍是「第N班」，不改）。 -->
+    <string name="metro_train_eta_marker_action">可查看到站时间</string>
+</resources>

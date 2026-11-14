@@ -1,0 +1,118 @@
+{
+  "description": "本地真实响应字段统计，非上游响应；重复参照站不当作独立车辆。",
+  "vehicleResponseCount": 78,
+  "vehicleRowCount": 204,
+  "uniquePlateCount": 13,
+  "uniqueVehicleDataTimeCount": 101,
+  "expectedStateCounts": {
+    "between": 126,
+    "unknown": 78
+  },
+  "inOrOutGroups": {
+    "0": {
+      "records": 52,
+      "speedPositive": 22,
+      "speedZero": 30,
+      "speedRange": [
+        0.0,
+        360.0
+      ],
+      "motionLessTimeRange": [
+        0,
+        6
+      ],
+      "motionLessTimePositive": 11,
+      "speedPositiveAndMotionLessTimePositive": 6,
+      "speedZeroMotionLessTimeRange": [
+        0,
+        6
+      ],
+      "dist2Next": {
+        "0": 52
+      },
+      "time2Next": {
+        "0": 52
+      },
+      "stationNumToGo": {
+        "null": 52
+      },
+      "remainingTime": {
+        "null": 52
+      },
+      "remainingDistance": {
+        "null": 52
+      }
+    },
+    "1": {
+      "records": 152,
+      "speedPositive": 104,
+      "speedZero": 48,
+      "speedRange": [
+        0.0,
+        520.0
+      ],
+      "motionLessTimeRange": [
+        0,
+        8
+      ],
+      "motionLessTimePositive": 50,
+      "speedPositiveAndMotionLessTimePositive": 22,
+      "speedZeroMotionLessTimeRange": [
+        0,
+        8
+      ],
+      "dist2Next": {
+        "0": 152
+      },
+      "time2Next": {
+        "0": 152
+      },
+      "stationNumToGo": {
+        "null": 152
+      },
+      "remainingTime": {
+        "null": 152
+      },
+      "remainingDistance": {
+        "null": 152
+      }
+    }
+  },
+  "etaFields": {
+    "dist2Next": {
+      "0": 204
+    },
+    "time2Next": {
+      "0": 204
+    },
+    "distance2Next": {
+      "null": 204
+    },
+    "stationNumToGo": {
+      "null": 204
+    },
+    "remainingTime": {
+      "null": 204
+    },
+    "remainingDistance": {
+      "null": 204
+    }
+  },
+  "missingNextStationRecords": [
+    {
+      "file": "803路-d2-seq1-busList-20261114T045605.json",
+      "plate": "闽D17832D",
+      "reportedOrder": 35
+    },
+    {
+      "file": "803路-d2-seq19-busList-20261114T045605.json",
+      "plate": "闽D17832D",
+      "reportedOrder": 35
+    },
+    {
+      "file": "803路-d2-seq36-busList-20261114T045605.json",
+      "plate": "闽D17832D",
+      "reportedOrder": 35
+    }
+  ]
+}
