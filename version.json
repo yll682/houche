@@ -1,10 +1,10 @@
 {
-  "versionName": "2.2.0",
-  "versionCode": 35,
-  "released": "2026-11-14",
-  "notes": "公交车辆详情页新增站点图：一眼看到这辆车现在在第几站、下一站是哪个站，本线车辆位置一目了然；可在站点图上把任意一站设为下车提醒站，到站前一站与到站时各提醒一次；跟踪改为前台服务后台常驻，退到后台或锁屏仍继续跟踪并按时提醒。地铁位置条的列车图标现在可以点，选中后点站名即可看这班车到该站约几分钟（按区间运行时间推算，非官方读数）。公交站名竖排不再按 8 个字拆成多列，长站名只把盒子撑高。",
+  "versionName": "2.3.0",
+  "versionCode": 36,
+  "released": "2026-11-15",
+  "notes": "车辆详情页的跟踪开关改为 Telegram 式过渡：点击后图标与文案平滑切换，不再是硬打一个勾；「后台跟踪中」胶囊淡入淡出，剩余站数与站名变化也不再整行硬切。分享车辆改为带链接的分享：分享出去的是 https://houche.rainlodyn.cn/share/ 链接，装了 App 的人点开直接进这辆车的详情页，没装的落到网页。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v2.2.0/houche-v2.2.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.2.0/houche-v2.2.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v2.3.0/houche-v2.3.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.3.0/houche-v2.3.0.apk"
   }
 }

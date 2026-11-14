@@ -64,6 +64,8 @@ class PageEntry(val screen: Screen) : ViewModelStoreOwner {
 class NavigationState : ViewModel() {
     val stack = mutableStateListOf(PageEntry(Screen.Home))
     private val retired = mutableSetOf<PageEntry>()
+    internal var initialVehicleIntentHandled = false
+    private var vehicleLinkJob: Job? = null
     var cityVisible by mutableStateOf(false)
     // 四个 Tab 共用首页条目，切换时保留各自的 ViewModel。
     var segment by mutableIntStateOf(HomeTab.BUS)
@@ -76,8 +78,87 @@ class NavigationState : ViewModel() {
     fun home() { val visible = stack.last(); while (stack.size > 1) pop(); segment = HomeTab.BUS; pendingMetroLine = null; metroCity = null; retired.filter { it != visible }.toList().forEach { release(it) } }
     // 站点也可能从搜索页进入，换乘时要把中间页一并退掉，才能露出地铁 Tab。
     fun metro(line: String, city: City? = null) { home(); segment = HomeTab.METRO; metroCity = city; pendingMetroLine = line }
+    fun openVehicleLink(graph: AppGraph, uri: String, notify: (Int) -> Unit) {
+        vehicleLinkJob?.cancel()
+        val target = VehicleShareLink.parse(uri)
+        if (target == null || target.direction.isEmpty()) {
+            notify(R.string.vehicle_link_incomplete)
+            return
+        }
+        notify(R.string.vehicle_link_loading)
+        vehicleLinkJob = viewModelScope.launch {
+            try {
+                val screen = withTimeout(20_000) {
+                    val cities = graph.cities.all().filter { it.code == target.cityCode }
+                    if (cities.isEmpty()) {
+                        notify(R.string.vehicle_link_city_not_found)
+                        return@withTimeout null
+                    }
+                    if (cities.size != 1) {
+                        notify(R.string.vehicle_link_incomplete)
+                        return@withTimeout null
+                    }
+                    val city = cities.single()
+                    // 优先按 ID 匹配已有完整线路；跨城线路绝不混用。
+                    val known = stack.mapNotNull { entry ->
+                        when (val page = entry.screen) {
+                            is Screen.Vehicle -> page.route.takeIf { page.city.key == city.key }
+                            is Screen.Times -> page.route.takeIf { page.city.key == city.key }
+                            else -> null
+                        }
+                    }.toMutableList()
+                    if (target.lineId != null && known.none { it.id == target.lineId && it.direction == target.direction }) {
+                        graph.prefs.trackedVehicle.first()?.takeIf { it.city.key == city.key }?.let { known.add(it.route) }
+                    }
+                    val route = resolveVehicleShareRoute(target, known) { name, direction ->
+                        graph.repository().lineDetail(city, name, direction)
+                    }
+                    // 厦门 Route.direction 是请求值；实际方向必须由该方向站表证实。
+                    if (route == null || (city.isXiamen && route.stations.isEmpty())) {
+                        notify(R.string.vehicle_link_line_not_found)
+                        null
+                    } else Screen.Vehicle(city, route, target.plate, boarding = null)
+                }
+                ensureActive()
+                if (screen != null) {
+                    cityVisible = false
+                    push(screen)
+                }
+            } catch (timeout: TimeoutCancellationException) {
+                // 被新链接取消的旧请求不能再提示超时或推入页面。
+                ensureActive()
+                notify(R.string.vehicle_link_failed)
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                ensureActive()
+                android.util.Log.w("Houche", "分享车辆线路查询失败", error)
+                notify(if (error is BusException && error.message == "上游没有返回这条线路的资料")
+                    R.string.vehicle_link_line_not_found else R.string.vehicle_link_failed)
+            }
+        }
+    }
     override fun onCleared() { (stack + retired).forEach { it.viewModelStore.clear() } }
 }
+
+/** 复用线路页的加载入口；有 ID 时只接受相同 ID，防止同名或旧链接打开别的线路。 */
+internal suspend fun resolveVehicleShareRoute(
+    target: VehicleShareTarget,
+    knownRoutes: List<Route>,
+    lineDetail: suspend (String, String) -> Route
+): Route? {
+    if (target.direction != "1" && target.direction != "2") return null
+    target.lineId?.let { id ->
+        knownRoutes.firstOrNull { it.id == id && it.direction == target.direction && it.name.isNotBlank() }?.let { return it }
+    }
+    // BusRepository 目前只有 name + direction 入口，不把 ID 冒充 busLineName。
+    if (target.lineName.isBlank()) return null
+    return lineDetail(target.lineName, target.direction).takeIf { route ->
+        route.name.isNotBlank() && route.direction == target.direction &&
+            if (target.lineId != null) route.id == target.lineId else route.name == target.lineName
+    }
+}
+
 data class RootData(val cities: List<City> = emptyList(), val city: City? = null)
 class RootViewModel(val graph: AppGraph) : StateViewModel<RootData>(RootData()) {
     private var job: Job? = null
@@ -98,10 +179,16 @@ class RootViewModel(val graph: AppGraph) : StateViewModel<RootData>(RootData()) 
     override fun <M : ViewModel> create(modelClass: Class<M>): M { @Suppress("UNCHECKED_CAST") return create() as M }
 })
 class MainActivity : ComponentActivity() {
+    private val navigation: NavigationState by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val graph = (application as HoucheApp).graph
+        if (!navigation.initialVehicleIntentHandled) {
+            navigation.initialVehicleIntentHandled = true
+            handleVehicleIntent(intent)
+        }
         setContent {
             val dark = isSystemInDarkTheme()
             SideEffect {
@@ -111,6 +198,27 @@ class MainActivity : ComponentActivity() {
                 }
             }
             HoucheTheme(dynamicColor = false) { HoucheRoot(graph) { finish() } }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleVehicleIntent(intent)
+    }
+
+    private fun handleVehicleIntent(intent: Intent?) {
+        // 从桌面图标重新进来时回到首页：singleTask 下系统只发 onNewIntent，
+        // 不重置的话会停在离开时的那一页。
+        if (intent?.action == Intent.ACTION_MAIN) {
+            navigation.home()
+            return
+        }
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val uri = intent.dataString ?: return
+        val context = applicationContext
+        navigation.openVehicleLink((application as HoucheApp).graph, uri) { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 }

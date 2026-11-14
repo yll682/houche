@@ -38,7 +38,9 @@ data class VehicleData(
     /** 下车提醒站：用户指定的到站提醒目标。 */
     val alight: RouteStation? = null,
     /** 后台跟踪服务是否正在运行。 */
-    val backgroundActive: Boolean = false
+    val backgroundActive: Boolean = false,
+    /** 城市 code：分享链接要带上它，别人打开才能定位到同一座城市。 */
+    val cityCode: String = ""
 )
 
 class VehicleViewModel(
@@ -47,7 +49,7 @@ class VehicleViewModel(
     route: Route,
     plate: String,
     boarding: RouteStation? = null
-) : StateViewModel<VehicleData>(VehicleData(route, plate, boarding)) {
+) : StateViewModel<VehicleData>(VehicleData(route, plate, boarding, cityCode = city.code)) {
     private val mutex = Mutex()
     private val trackingCommands = Mutex()
     // 只存 applicationContext（见 bindContext），不持有 Activity，因此不构成泄漏；

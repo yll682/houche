@@ -15,6 +15,12 @@
     <string name="vehicle_share">分享</string>
     <string name="vehicle_share_title">分享车辆</string>
     <string name="vehicle_share_text">%1$s · %2$s\n%3$s\n来自候车</string>
+    <string name="vehicle_share_text_link">%1$s · %2$s\n%3$s\n%4$s</string>
+    <string name="vehicle_link_incomplete">链接里的车辆信息不完整</string>
+    <string name="vehicle_link_loading">正在查询分享的车辆…</string>
+    <string name="vehicle_link_city_not_found">链接里的城市没找到</string>
+    <string name="vehicle_link_line_not_found">链接里的线路没找到</string>
+    <string name="vehicle_link_failed">车辆信息查询失败，请检查网络后重试</string>
     <string name="vehicle_list">本线车辆</string>
     <string name="vehicle_no_vehicles">暂无车辆</string>
     <string name="vehicle_refresh">刷新</string>
