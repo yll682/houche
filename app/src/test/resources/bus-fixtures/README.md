@@ -7,10 +7,10 @@
 
 ## 来源和字节保真范围
 
-- 新增 84 份 JSON 从 `/data/work/houche/calib/` 按原文件名、文件名内 UTC 时间戳原字节复制，保留来源文件 mtime；没有格式化、改字段或补造响应。
-- 已读取 `/data/work/houche/xmbus_fetch.py`：该脚本用 `urllib` 读取 HTTP 响应后先 `json.loads`，再以 `json.dump(..., ensure_ascii=False)` 写文件。因此新增夹具与**来源落盘文件字节一致**，并非未经处理的 HTTP body 字节。清单记录脚本 SHA-256 及这一差异。
+- 新增 84 份 JSON 从 `projects/houche/analysis/calib-2026-11/` 按原文件名、文件名内 UTC 时间戳原字节复制，保留来源文件 mtime；没有格式化、改字段或补造响应。
+- 已读取 `projects/houche/analysis/xmbus_fetch.py`：该脚本用 `urllib` 读取 HTTP 响应后先 `json.loads`，再以 `json.dump(..., ensure_ascii=False)` 写文件。因此新增夹具与**来源落盘文件字节一致**，并非未经处理的 HTTP body 字节。清单记录脚本 SHA-256 及这一差异。
 - 原有 16 份生产客户端响应是抓取客户端保存的应用层 body；其字节数、SHA-256 均与 `capture-attempts.jsonl` 中对应成功请求核对一致。这里不把解压后的应用层 body 称为 TLS/压缩线缆数据。
-- `fixture-manifest.json` 的 `responses` 逐文件列出来源绝对路径、SHA-256、字节数、接口、线路 ID、方向、参照站序/ID/Name、站表文件、时间来源和车辆数，供测试枚举。清单本身不是响应。
+- `fixture-manifest.json` 的 `responses` 逐文件列出来源路径（相对工作区根，不含 `/data` 前缀）、SHA-256、字节数、接口、线路 ID、方向、参照站序/ID/Name、站表文件、时间来源和车辆数，供测试枚举。清单本身不是响应。
 - 测试应枚举清单的 `responses`，不能把本目录所有 `*.json` 都当作真实响应；`excludedArtifacts` 列出统计/期望 JSON，这些是派生产物。
 
 ## 实际时间与样本数量
@@ -82,7 +82,7 @@ Python 文件名的 `YYYYMMDDTHHMMSS` 来自 `time.gmtime()`，只表示该线�
 
 ## 日志与历史结果
 
-- `fetch.log`：从 `/data/work/houche/calib/fetch.log` 原字节复制的 **Python 来源摘要日志，不是响应**。共 72 个车辆查询摘要，与各响应记录数/参照站名核对一致；不能代替完整请求日志。
+- `fetch.log`：从 `projects/houche/analysis/calib-2026-11/fetch.log` 原字节复制的 **Python 来源摘要日志，不是响应**。共 72 个车辆查询摘要，与各响应记录数/参照站名核对一致；不能代替完整请求日志。
 - `capture-attempts.jsonl`：保留原字节的 **请求尝试日志，不是响应**。共 40 条，其中前一轮 24 条失败尝试（UTC 2026-11-13 18:02:47–18:04:32，北京时间 2026-11-14 02:02:47–02:04:32），本轮 16 条成功且有响应文件。旧失败记录不会因新增成功样本而删除。
 - `verification-results.txt`：**第 1 轮历史验证结果**，时间为 UTC 2026-11-13 / 北京时间 2026-11-14 凌晨；不是本轮测试结果，也不是响应或解析期望值。
 - `verification-round12.txt`：本轮实际验证结果、执行方法名及当前源码摘要，**不是上游响应**。指定 Gradle 任务启动被沙箱阻止，离线 Kotlin/JUnit 的实际执行数量与结果单列。
@@ -244,4 +244,4 @@ print(f"verified {len(responses)} responses and {len(manifest['supportingArtifac
 PY
 ```
 
-来源绝对路径用于本工作区追溯；移走 `/data/work/houche/calib/` 后，仍可用清单 SHA-256 验证仓库夹具，但来源字节比较需要原目录可读。
+来源路径用于本工作区追溯（相对工作区根）；移走 `projects/houche/analysis/calib-2026-11/` 后，仍可用清单 SHA-256 验证仓库夹具，但来源字节比较需要原目录可读。

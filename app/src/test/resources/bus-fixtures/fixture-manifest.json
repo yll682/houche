@@ -5,7 +5,7 @@
   "enumeration": "仅枚举 responses；本清单、README、supportingArtifacts 和 excludedArtifacts 都不是响应。",
   "fieldNotes": {
     "sha256": "目标文件完整字节的 SHA-256；Python 同时对比来源字节，既有响应同时对比请求日志。",
-    "sourcePath": "Python 为原来源绝对路径；既有响应本就在本目录，来源路径为本目录，凭请求日志证明来源。",
+    "sourcePath": "Python 为原来源路径（相对工作区根，重组后位置见 responses.sourcePath）；既有响应本就在本目录，来源路径为本目录，凭请求日志证明来源。",
     "direction": "1/2 为接口方向；both 为 lineDetail 同时包含双向站表，接口不接收方向。",
     "requestedDirection": "仅保留生产客户端请求日志中的调用上下文；Python 重建方向见 direction 和 request.params.direction。",
     "lineId": "厦门 data.id；北京 CMD 103 的 routeId，均保留响应类型。",
@@ -19,8 +19,8 @@
     "positionState": "本清单不推导 positionState 或 inOrOut 语义，详见主线程后续统计/解析报告。"
   },
   "sourceSnapshot": {
-    "directory": "/data/work/houche/calib",
-    "captureScriptPath": "/data/work/houche/xmbus_fetch.py",
+    "directory": "projects/houche/analysis/calib-2026-11",
+    "captureScriptPath": "projects/houche/analysis/xmbus_fetch.py",
     "captureScriptSha256": "ffbbb1733e061ac0b795f0bb19474cc73bda7f73109b66d7763d6df1394f87a2",
     "observations": [
       {
@@ -240,7 +240,7 @@
       "fileName": "fetch.log",
       "kind": "source-summary-log",
       "isResponse": false,
-      "sourcePath": "/data/work/houche/calib/fetch.log",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/fetch.log",
       "bytes": 28011,
       "sha256": "a8ac20b30c5a92018d73a020b6e1df25904ed3a2e5116f1f4b54b9cb68650d19"
     },
@@ -280,7 +280,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045113.json",
       "sha256": "6d40a3e807c75163f5a80b9bcc92dae34928d81347e7b3bbcd77f474b84df20e",
       "bytes": 2438,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -313,7 +313,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 22,
@@ -349,7 +349,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045249.json",
       "sha256": "84c7d23ca966ce559a58e38bff137c15b57cb872384ece433885628d032a6285",
       "bytes": 2434,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -382,7 +382,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 67,
@@ -418,7 +418,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045427.json",
       "sha256": "a6be5b2ecad2f1f8aa9469793f83d46eb620918fb06b339bb2eb5f19277a2a9e",
       "bytes": 2434,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -451,7 +451,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 109,
@@ -487,7 +487,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045605.json",
       "sha256": "04222c684e3061473b97a1a0e033954f853081fde3401c741499b2f9d720b7cc",
       "bytes": 2447,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -520,7 +520,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 151,
@@ -556,7 +556,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045737.json",
       "sha256": "5674e4cf5f9d41f515271ca3ef7b7ec20558dbf9626d664289724741bb06a4ff",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -589,7 +589,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 196,
@@ -625,7 +625,7 @@
       "fileName": "803路-d1-seq1-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq1-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq1-busList-20261114T045910.json",
       "sha256": "0047a645681ddb4c02d762a2b9b54d8171f02566a29bd0866bf377d72dc1350e",
       "bytes": 2442,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -658,7 +658,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 238,
@@ -694,7 +694,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045113.json",
       "sha256": "fd61386792b1c5b92b5e0eb83a596b441faca17e7227c5c5cb6c61378d5a5bd3",
       "bytes": 2441,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -727,7 +727,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 26,
@@ -763,7 +763,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045249.json",
       "sha256": "f3114eb16eb0228c0bd2e833b0e232a416f7505ce2f79a7fc0510c86619f585e",
       "bytes": 2434,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -796,7 +796,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 71,
@@ -832,7 +832,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045427.json",
       "sha256": "a4a87749f8c9807c99a94a446af1fdc8cbb71a7c1b6c78213ad34d710cf047c3",
       "bytes": 2434,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -865,7 +865,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 113,
@@ -901,7 +901,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045605.json",
       "sha256": "ee75c9c013fe7fe4c02c4bcf0878ace7e8158e2a15fa75bd5ddd089c1a3a8754",
       "bytes": 2447,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -934,7 +934,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 155,
@@ -970,7 +970,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045737.json",
       "sha256": "34ad66b8cfd275277b3404fca2f87ce0e689828c57af9b5db56ce843953fa3b6",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1003,7 +1003,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 200,
@@ -1039,7 +1039,7 @@
       "fileName": "803路-d1-seq19-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq19-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq19-busList-20261114T045910.json",
       "sha256": "5f5fbcd0274b4c41a18cee97ad045f34e3442ba97722da6d2a758867904b8c5a",
       "bytes": 2443,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1072,7 +1072,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 242,
@@ -1108,7 +1108,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045113.json",
       "sha256": "fd58ac728c602393a199f8472dbeb77d45034645933f51fda0b5e8b62c6d458f",
       "bytes": 2441,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1141,7 +1141,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 30,
@@ -1177,7 +1177,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045249.json",
       "sha256": "575d2695e90f7623235632d1cf2cecacb60719a869bc086be1efc3557212b269",
       "bytes": 2434,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1210,7 +1210,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 75,
@@ -1246,7 +1246,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045427.json",
       "sha256": "da0b8dff0c4d98e99020e856701413eb34b770bb464266ce5306111938acdb41",
       "bytes": 2433,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1279,7 +1279,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 117,
@@ -1315,7 +1315,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045605.json",
       "sha256": "05623841806320b106fa6734fed8805ac0a0303563b3de521d18c58f1757a9aa",
       "bytes": 2448,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1348,7 +1348,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 159,
@@ -1384,7 +1384,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045737.json",
       "sha256": "37c04465500664b0e10b9ddc56a584a9b9fc231a6dd66d1539766f9b57d99277",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1417,7 +1417,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 204,
@@ -1453,7 +1453,7 @@
       "fileName": "803路-d1-seq36-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d1-seq36-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d1-seq36-busList-20261114T045910.json",
       "sha256": "f854c8a7937a398c382ec2fa16aa2a0f03d95c37a79f747b5e7a863738408fce",
       "bytes": 2443,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1486,7 +1486,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 246,
@@ -1522,7 +1522,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045113.json",
       "sha256": "187707562f67718691d9e25906c593ecd8c9348e9095bbb7e75389b4be61e0ae",
       "bytes": 3208,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1555,7 +1555,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 34,
@@ -1591,7 +1591,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045249.json",
       "sha256": "3fecfb5d88c88c47fbf3f364ea92beaa2478548ff6d5a9ef47d83a06473355fe",
       "bytes": 2428,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1624,7 +1624,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 79,
@@ -1660,7 +1660,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045427.json",
       "sha256": "3a4013a9b675f8225cf744061b71e12b3b173576e0cb9b3b75e8044b643946fb",
       "bytes": 2433,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1693,7 +1693,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 121,
@@ -1729,7 +1729,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045605.json",
       "sha256": "a02f64e02a243c342cd77a23342e213706253cd0ba66ce59c68ac571b4af079c",
       "bytes": 2427,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1762,7 +1762,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 163,
@@ -1798,7 +1798,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045737.json",
       "sha256": "03323a85c8343a78e06eaf4858b476fa3d9f7df55b0a78c6726fe2500e0f47cf",
       "bytes": 1648,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1831,7 +1831,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 208,
@@ -1867,7 +1867,7 @@
       "fileName": "803路-d2-seq1-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq1-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq1-busList-20261114T045910.json",
       "sha256": "c6902a011ee6ffcca2ef148ef32490a6e25b80e6e38d116611e58e2da10b07c0",
       "bytes": 2428,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1900,7 +1900,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 250,
@@ -1936,7 +1936,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045113.json",
       "sha256": "1a7ca3b7efe368bb6da1dc0a07efc0857eba0812e7057eea9932e7635219e35b",
       "bytes": 3208,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -1969,7 +1969,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 39,
@@ -2005,7 +2005,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045249.json",
       "sha256": "3e1690cb0838097cc426c745d79c5c4004415acf4e84b2feadf02a485eecf9f2",
       "bytes": 2428,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2038,7 +2038,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 83,
@@ -2074,7 +2074,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045427.json",
       "sha256": "d561bc3caf64dc72def9f55ad9eea6e1582d447d7c96bd6125d800b3003153b8",
       "bytes": 2435,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2107,7 +2107,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 125,
@@ -2143,7 +2143,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045605.json",
       "sha256": "707b13544f34a006fb44ad848c82100749f792f6df07acbd0177e95a325c2391",
       "bytes": 2427,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2176,7 +2176,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 167,
@@ -2212,7 +2212,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045737.json",
       "sha256": "321651c01649654ea4ae9a9aace0b3c097eb7def4f25357b20dc195fbd1817fa",
       "bytes": 1648,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2245,7 +2245,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 211,
@@ -2281,7 +2281,7 @@
       "fileName": "803路-d2-seq19-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq19-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq19-busList-20261114T045910.json",
       "sha256": "c9cd7e6bf3c4145b5f0494a49ecb026cb6c9ead9c58a32f447180778d10e1264",
       "bytes": 2428,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2314,7 +2314,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 254,
@@ -2350,7 +2350,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045113.json",
       "sha256": "41f4d960466cf85c7d39e8a176045f1e7c421c8cd1502aca6d4bdd71d96b2906",
       "bytes": 3208,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2383,7 +2383,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045113.json"
         ],
         "fetchLogLineNumber": 44,
@@ -2419,7 +2419,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045249.json",
       "sha256": "85a25fe183813c6c4261725b36f03670b4b0a45b8281eef8c95ba848196479bb",
       "bytes": 2429,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2452,7 +2452,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045249.json"
         ],
         "fetchLogLineNumber": 87,
@@ -2488,7 +2488,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045427.json",
       "sha256": "b3b4c5715093ac399f365da58d09ed0333c0e2e6b19afcb9c318396c38356f24",
       "bytes": 2436,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2521,7 +2521,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045427.json"
         ],
         "fetchLogLineNumber": 129,
@@ -2557,7 +2557,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045605.json",
       "sha256": "639514e1038a3c25fb8a90ad4c51503884a6fd816f0c3266a428a5365131cd41",
       "bytes": 2427,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2590,7 +2590,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045605.json"
         ],
         "fetchLogLineNumber": 171,
@@ -2626,7 +2626,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045737.json",
       "sha256": "aa921fab9f2989b076bf0646a1d35c0ab7c0685f2100502c1e26188252facbfa",
       "bytes": 1648,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2659,7 +2659,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045737.json"
         ],
         "fetchLogLineNumber": 214,
@@ -2695,7 +2695,7 @@
       "fileName": "803路-d2-seq36-busList-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-d2-seq36-busList-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-d2-seq36-busList-20261114T045910.json",
       "sha256": "c656928f6735eeb32d7954dc9ec79dfea184e3da4a89d66e19805b8737a868d6",
       "bytes": 2428,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2728,7 +2728,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "803路-lineDetail-20261114T045910.json"
         ],
         "fetchLogLineNumber": 258,
@@ -2764,7 +2764,7 @@
       "fileName": "803路-lineDetail-20261114T045113.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045113.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045113.json",
       "sha256": "97a37e5e27d87868b887098077c1872a6747c41757b2d802cbfffda374c3fa43",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2786,7 +2786,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -2821,7 +2821,7 @@
       "fileName": "803路-lineDetail-20261114T045249.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045249.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045249.json",
       "sha256": "257a2fcaec7c6121069ece0b23db4f778501a761673d882c74170b19d0664f69",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2843,7 +2843,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -2878,7 +2878,7 @@
       "fileName": "803路-lineDetail-20261114T045427.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045427.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045427.json",
       "sha256": "89857a8dcee710a79f3c4bfdcb24827928c79927c2b6365c46ca2e57b35097c2",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2900,7 +2900,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -2935,7 +2935,7 @@
       "fileName": "803路-lineDetail-20261114T045605.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045605.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045605.json",
       "sha256": "de9c00ec46d476e7b212d9b3c4d59d34c16bc321c22f916d354fc636233c7e9e",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -2957,7 +2957,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -2992,7 +2992,7 @@
       "fileName": "803路-lineDetail-20261114T045737.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045737.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045737.json",
       "sha256": "415b7d1a0471b9bafcae807caaad1920024d9e59cbc75d345907d137b8c46e16",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3014,7 +3014,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -3049,7 +3049,7 @@
       "fileName": "803路-lineDetail-20261114T045910.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-803",
-      "sourcePath": "/data/work/houche/calib/803路-lineDetail-20261114T045910.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/803路-lineDetail-20261114T045910.json",
       "sha256": "03ba3122bd89863b0c285fb40df5d0dbee594699c016cc8116640c718498bab3",
       "bytes": 50694,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3071,7 +3071,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -3106,7 +3106,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045043.json",
       "sha256": "dca4ee9911d6a2b0ff2a93419f5cf8d99441cd042c6f71cabf4c61fe5cdda610",
       "bytes": 2419,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3139,7 +3139,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 1,
@@ -3175,7 +3175,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045223.json",
       "sha256": "ddbcb3c02b4b91fe038f1a7ba80cf48cd16b506fe58a92049dbaaaa4807114d7",
       "bytes": 1648,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3208,7 +3208,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 49,
@@ -3244,7 +3244,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045356.json",
       "sha256": "07484bd0c35e34b8a1b1853c85a8aa3026a854d54ad52c7a272f4896172dbfab",
       "bytes": 1645,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3277,7 +3277,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 91,
@@ -3313,7 +3313,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045533.json",
       "sha256": "5ab31ff9ce531aa428403224e5d262485a7e1494ee8c7f6301446c2f3d764d6b",
       "bytes": 1641,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3346,7 +3346,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 133,
@@ -3382,7 +3382,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045713.json",
       "sha256": "221d7cb223f9f36fa8dd1bed15295377bc605bad7c59d43398e9cbe21bca6fb9",
       "bytes": 1644,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3415,7 +3415,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 175,
@@ -3451,7 +3451,7 @@
       "fileName": "91路-d1-seq1-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq1-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq1-busList-20261114T045844.json",
       "sha256": "9d4cca13e24774e5b9961ed323bed1f0f2e8d68c011556c8034abbd27603f7ac",
       "bytes": 1646,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3484,7 +3484,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 217,
@@ -3520,7 +3520,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045043.json",
       "sha256": "b1fb026bd56a98ac1889b5f7a2e76c3793cd77959abebc6cbb7325ec1ffe5509",
       "bytes": 2418,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3553,7 +3553,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 5,
@@ -3589,7 +3589,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045223.json",
       "sha256": "d9658484f6dfd19dc263df01b42d93af4592a8adc403a99988819e92cd2ac1ad",
       "bytes": 1646,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3622,7 +3622,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 52,
@@ -3658,7 +3658,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045356.json",
       "sha256": "9bbd03e1720d9a4257240b04ffa2434936735c25d58af742cb0f2726ce291145",
       "bytes": 1642,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3691,7 +3691,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 94,
@@ -3727,7 +3727,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045533.json",
       "sha256": "8e00effd68d5a505ca5cc68dace43c09be2e05b65d5c13d97d5ec2cdfb099997",
       "bytes": 1641,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3760,7 +3760,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 136,
@@ -3796,7 +3796,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045713.json",
       "sha256": "cc7abe3bc280a45d7cdf17aeb17d3fdce904118d7607e989765b678362226770",
       "bytes": 1641,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3829,7 +3829,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 178,
@@ -3865,7 +3865,7 @@
       "fileName": "91路-d1-seq17-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq17-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq17-busList-20261114T045844.json",
       "sha256": "7315f9999bf8459a4cbf069f6cac8f3d1760fef7a08d35a323e3ee5c6944f49f",
       "bytes": 1643,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3898,7 +3898,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 220,
@@ -3934,7 +3934,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045043.json",
       "sha256": "658be4f1ba3081ba59067f91f063d1fd4372c4287ef2833a98e7eecfd8d5903f",
       "bytes": 2416,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -3967,7 +3967,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 9,
@@ -4003,7 +4003,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045223.json",
       "sha256": "621f0eff5dcf69fc7a0959766f3cb1db9c71dbbd6fa388727cc9853349838a09",
       "bytes": 1646,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4036,7 +4036,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 55,
@@ -4072,7 +4072,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045356.json",
       "sha256": "d6128a443ea7b896d929ed5dc3d60d986b7ca765ecfe716ba47fe43ad0ac8f21",
       "bytes": 1642,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4105,7 +4105,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 97,
@@ -4141,7 +4141,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045533.json",
       "sha256": "0e3a8dee5937fe893485fc780e3ea01402f23f187ec873d14fd0cbe4dfb2e1a6",
       "bytes": 1642,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4174,7 +4174,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 139,
@@ -4210,7 +4210,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045713.json",
       "sha256": "385492d175b6a70dee68a19d51a1f913d9a64c287aafc07c3bc64b9657ee19c4",
       "bytes": 1641,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4243,7 +4243,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 181,
@@ -4279,7 +4279,7 @@
       "fileName": "91路-d1-seq32-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d1-seq32-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d1-seq32-busList-20261114T045844.json",
       "sha256": "528cd911ebfa16f94bd6cebc3a6a6ff3fd79090d88d86a18e5e88b72c21c811e",
       "bytes": 1643,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4312,7 +4312,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 223,
@@ -4348,7 +4348,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045043.json",
       "sha256": "f02cde6d24ee3eebc611b9860c35e01c425f604052b054dd19ab4152c264bba4",
       "bytes": 1652,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4381,7 +4381,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 13,
@@ -4417,7 +4417,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045223.json",
       "sha256": "2caaad6dd3a5a136c3f48528dd0e7da8ab52dfc141cd851ba123a4e99dd39eeb",
       "bytes": 1658,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4450,7 +4450,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 58,
@@ -4486,7 +4486,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045356.json",
       "sha256": "881743e667f234f333f3338063428206f72aba4d4f6dd89b5bcddb8702a21c0d",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4519,7 +4519,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 100,
@@ -4555,7 +4555,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045533.json",
       "sha256": "c1c3d3e757a75800d29eb1ab9c5c0fad6a0a2b1641d15bae6f410b6a7b112009",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4588,7 +4588,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 142,
@@ -4624,7 +4624,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045713.json",
       "sha256": "da25b1025fd06e5c4651f59a56d4c54d7f4a3ad2665f062ccc0f20d6148c55f9",
       "bytes": 2447,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4657,7 +4657,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 184,
@@ -4693,7 +4693,7 @@
       "fileName": "91路-d2-seq1-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq1-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq1-busList-20261114T045844.json",
       "sha256": "256114af95bc3a6d16bd9f2d11c7d9e03b673ca8893d6f4c26dd309d87cf1a65",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4726,7 +4726,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 226,
@@ -4762,7 +4762,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045043.json",
       "sha256": "593cf0c9f681c6e00fc812193406f12f70f474f4c068afff98cc0f527f912185",
       "bytes": 1652,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4795,7 +4795,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 16,
@@ -4831,7 +4831,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045223.json",
       "sha256": "0752a255d7167ce46f54915f597fc15cb42d24e69df40312460ad680f2d59723",
       "bytes": 1658,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4864,7 +4864,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 61,
@@ -4900,7 +4900,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045356.json",
       "sha256": "0179eeae54f179331f1dde56917cef42b57fc45c6f3e2c3d8019c7582c8a76e2",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -4933,7 +4933,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 103,
@@ -4969,7 +4969,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045533.json",
       "sha256": "e86b1f1b6ac5d38f3f05da0f7090ca6efd9be9fb23900d49107ff127da45cbbd",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5002,7 +5002,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 145,
@@ -5038,7 +5038,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045713.json",
       "sha256": "ab76f4454abdf0c5ac0e8f0d55a916a408d104ce374a8ec08f0bf916846ac621",
       "bytes": 2447,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5071,7 +5071,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 188,
@@ -5107,7 +5107,7 @@
       "fileName": "91路-d2-seq17-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq17-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq17-busList-20261114T045844.json",
       "sha256": "748542b1b3b98f79da2387e6089cda7ce657ad82f885451e01d5f3381fa9b521",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5140,7 +5140,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 230,
@@ -5176,7 +5176,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045043.json",
       "sha256": "e89a25b93a27e48182fb86088267b9057e7b973567b50c95af0907e35b4f754a",
       "bytes": 1651,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5209,7 +5209,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045043.json"
         ],
         "fetchLogLineNumber": 19,
@@ -5245,7 +5245,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045223.json",
       "sha256": "e4af39bca0dc3b16218395615bc7d42a488e61709dfbcaef27ca7cbc7dc13c57",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5278,7 +5278,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045223.json"
         ],
         "fetchLogLineNumber": 64,
@@ -5314,7 +5314,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045356.json",
       "sha256": "119ef568ed8c68441aa199d8a4fb92ce248b03d0af02fb18c56bb049fb5e134a",
       "bytes": 1660,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5347,7 +5347,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045356.json"
         ],
         "fetchLogLineNumber": 106,
@@ -5383,7 +5383,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045533.json",
       "sha256": "46254ee2e08ad5822956705d30a844b5ba264a23a80a3288b976bdb04d8ce15d",
       "bytes": 1659,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5416,7 +5416,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045533.json"
         ],
         "fetchLogLineNumber": 148,
@@ -5452,7 +5452,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045713.json",
       "sha256": "cde84ff4e89e3c2a8ff7b819ca4412553f0a7babc406309ba9e89917f86972fc",
       "bytes": 2447,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5485,7 +5485,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045713.json"
         ],
         "fetchLogLineNumber": 192,
@@ -5521,7 +5521,7 @@
       "fileName": "91路-d2-seq32-busList-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-d2-seq32-busList-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-d2-seq32-busList-20261114T045844.json",
       "sha256": "f7cfc8d5c0958fb887af9af0c99cb39e4ec9c19ba3132aae63d093d055e6694e",
       "bytes": 2439,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5554,7 +5554,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py",
+          "projects/houche/analysis/xmbus_fetch.py",
           "91路-lineDetail-20261114T045844.json"
         ],
         "fetchLogLineNumber": 234,
@@ -5590,7 +5590,7 @@
       "fileName": "91路-lineDetail-20261114T045043.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045043.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045043.json",
       "sha256": "96b4d562c5083c38e0c7bd1a77ac9f65105f14b0fc56e422d97fdd08e63c998e",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5612,7 +5612,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -5647,7 +5647,7 @@
       "fileName": "91路-lineDetail-20261114T045223.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045223.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045223.json",
       "sha256": "fb1a4d6240b7e6e7594ebb97dc3a2338b9c24c912805835d71c2c3b1162017af",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5669,7 +5669,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -5704,7 +5704,7 @@
       "fileName": "91路-lineDetail-20261114T045356.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045356.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045356.json",
       "sha256": "04cdf86632f8c875460a3331218130aeb6406e9684665bdc9444ff3fc880cb9b",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5726,7 +5726,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -5761,7 +5761,7 @@
       "fileName": "91路-lineDetail-20261114T045533.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045533.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045533.json",
       "sha256": "112c674f292c020865ba0a7f15592453ad65db4380ebe33612591be99d13f4e9",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5783,7 +5783,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -5818,7 +5818,7 @@
       "fileName": "91路-lineDetail-20261114T045713.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045713.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045713.json",
       "sha256": "ada9ceb2295d791050add3d8068ddefb72a29826b0e6b46bd280f2555bfb52e3",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5840,7 +5840,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
@@ -5875,7 +5875,7 @@
       "fileName": "91路-lineDetail-20261114T045844.json",
       "kind": "response",
       "sourceGroup": "python-xiamen-91",
-      "sourcePath": "/data/work/houche/calib/91路-lineDetail-20261114T045844.json",
+      "sourcePath": "projects/houche/analysis/calib-2026-11/91路-lineDetail-20261114T045844.json",
       "sha256": "a2790264e1043882ad7d6f091726e336c6c7cc852ee650cfed7937463565927d",
       "bytes": 48271,
       "representation": "json-parsed-then-reserialized-by-source-python-script",
@@ -5897,7 +5897,7 @@
         "paramsEvidence": "reconstructed-from-capture-script-and-same-batch-station-table",
         "paramsCapturedInRequestLog": false,
         "evidencePaths": [
-          "/data/work/houche/xmbus_fetch.py"
+          "projects/houche/analysis/xmbus_fetch.py"
         ],
         "fetchLogLineNumber": null,
         "httpStatus": null,
