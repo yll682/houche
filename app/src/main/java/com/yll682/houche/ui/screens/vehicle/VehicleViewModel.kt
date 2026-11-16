@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.yll682.houche.AppGraph
 import com.yll682.houche.core.Arrival
+import com.yll682.houche.core.BusRepository
 import com.yll682.houche.core.City
 import com.yll682.houche.core.Route
 import com.yll682.houche.core.RouteStation
@@ -16,6 +17,7 @@ import com.yll682.houche.data.remainingStopsToTarget
 import com.yll682.houche.ui.StateViewModel
 import com.yll682.houche.ui.UiState
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collect
@@ -34,13 +36,13 @@ data class VehicleData(
     val tracking: Boolean = false,
     val updatedAt: String? = null,
     val offline: Boolean = false,
-    val arrival: Arrival? = null,
     /** 下车提醒站：用户指定的到站提醒目标。 */
     val alight: RouteStation? = null,
     /** 后台跟踪服务是否正在运行。 */
     val backgroundActive: Boolean = false,
     /** 城市 code：分享链接要带上它，别人打开才能定位到同一座城市。 */
-    val cityCode: String = ""
+    val cityCode: String = "",
+    val staleRetry: Int = 0
 )
 
 class VehicleViewModel(
@@ -48,7 +50,9 @@ class VehicleViewModel(
     val city: City,
     route: Route,
     plate: String,
-    boarding: RouteStation? = null
+    boarding: RouteStation? = null,
+    private val repositoryProvider: suspend () -> BusRepository = graph::repository,
+    private val now: () -> String = { LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) }
 ) : StateViewModel<VehicleData>(
     // 少数城市没有行政 code，用 key 兜底：分享链接里的 city 不能为空。
     VehicleData(route, plate, boarding, cityCode = city.code.ifBlank { city.key })
@@ -87,45 +91,42 @@ class VehicleViewModel(
 
     fun load() = action { queryLive(showLoading = true) }
 
-    suspend fun refreshLive() {
-        queryLive(showLoading = false)
-    }
+    suspend fun refreshLive(): Boolean = queryLive(showLoading = false)
 
-    private suspend fun queryLive(showLoading: Boolean) {
-        if (!mutex.tryLock()) return
+    private suspend fun queryLive(showLoading: Boolean): Boolean {
+        if (!mutex.tryLock()) return false
+        val snapshot = data
         try {
-            attempt {
-                if (showLoading) mutable.value = UiState.Loading(data)
-                val snapshot = data
-                val repo = graph.repository()
-                coroutineScope {
-                    val liveQuery = async { repo.vehicles(city, snapshot.route, snapshot.boarding) }
-                    val arrivalQuery = async {
-                        val order = snapshot.boarding?.order
-                        if (city.isXiamen && order != null && order > 0) {
-                            repo.arrivals(city, snapshot.route.name, snapshot.route.direction, order)
-                        } else emptyList()
-                    }
-                    val live = liveQuery.await()
-                    val arrivals = if (city.isXiamen) arrivalQuery.await() else live.arrivals
-                    val current = live.vehicles.firstOrNull { it.plate == snapshot.plate }
-                    val arrival = arrivals.firstOrNull { it.plate == snapshot.plate && !it.waiting }
-                    // 切车期间到达的旧响应不能覆盖新车位置；解锁后补查当前车辆。
-                    if (snapshot.plate != data.plate) {
-                        reloadAfterQuery = true
-                        return@coroutineScope
-                    }
-                    // 离线时保留最后位置，提醒只使用本次确实查到的车辆。
-                    update(data.copy(
-                        vehicle = current ?: data.vehicle,
-                        vehicles = live.vehicles,
-                        offline = current == null,
-                        arrival = if (current != null) arrival else null,
-                        updatedAt = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-                    ))
-                    // 页面只展示实时数据；提醒唯一由后台服务发送。
+            if (showLoading) mutable.value = UiState.Loading(data)
+            val repo = repositoryProvider()
+            val applied = coroutineScope {
+                val liveQuery = async { repo.vehicles(city, snapshot.route, snapshot.boarding) }
+                val live = liveQuery.await()
+                val current = live.vehicles.firstOrNull { it.plate == snapshot.plate }
+                // 切车期间到达的旧响应不能覆盖新车位置；解锁后补查当前车辆。
+                if (snapshot.plate != data.plate) {
+                    reloadAfterQuery = true
+                    return@coroutineScope false
                 }
+                // 离线时保留最后位置，提醒只使用本次确实查到的车辆。
+                update(data.copy(
+                    vehicle = current ?: data.vehicle,
+                    vehicles = live.vehicles,
+                    offline = current == null,
+                    updatedAt = now(),
+                    staleRetry = 0
+                ))
+                // 页面只展示实时数据；提醒唯一由后台服务发送。
+                true
             }
+            return applied && snapshot.plate == data.plate
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            if (snapshot.plate == data.plate) {
+                preserveState(data.copy(staleRetry = data.staleRetry + 1))
+                report(error)
+            } else reloadAfterQuery = true
+            return false
         } finally {
             mutex.unlock()
             if (reloadAfterQuery) {
@@ -139,7 +140,7 @@ class VehicleViewModel(
 
     fun selectVehicle(plate: String) {
         if (plate == data.plate) return
-        update(data.copy(plate = plate, vehicle = null, arrival = null, offline = false))
+        update(data.copy(plate = plate, vehicle = null, offline = false, staleRetry = 0))
         syncTracking(VehicleTracker.active.value, VehicleTracker.backgroundActive.value)
         if (mutex.isLocked) reloadAfterQuery = true
         load()
@@ -196,7 +197,7 @@ class VehicleViewModel(
             trackingCommands.withLock {
                 VehicleTracker.selectAlight(context, target, null)
                 if (target.matches(city, data.route, data.plate, data.boarding)) {
-                    preserveState(data.copy(alight = null, tracking = false, backgroundActive = false))
+                    preserveState(data.copy(alight = null))
                 }
             }
         }

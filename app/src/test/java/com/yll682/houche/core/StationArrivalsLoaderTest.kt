@@ -61,9 +61,10 @@ class StationArrivalsLoaderTest {
             StationArrivals(stop, emptyList(), StationArrivalsStatus.UNAVAILABLE, listOf("上游失败")) to StationLiveState.Failed::class.java
         )
         for ((result, stateClass) in cases) {
-            val loaded = StationArrivalsLoader(query = { _, _ -> result }).load(city, stop)
+            val loaded = StationArrivalsLoader(query = { _, _ -> result }, now = { "12:03:11" }).load(city, stop)
             assertEquals(stateClass, loaded.state.javaClass)
             assertEquals(result.arrivals, loaded.state.arrivals)
+            assertEquals(if (result.status == StationArrivalsStatus.UNAVAILABLE) null else "12:03:11", loaded.state.at)
             if (loaded.state is StationLiveState.Partial && result.unreportedLines.isNotEmpty()) {
                 assertEquals(listOf(gap), loaded.state.unreportedLines)
             }
@@ -71,18 +72,59 @@ class StationArrivalsLoaderTest {
     }
 
     @Test fun `刷新失败保留上次到站而成功的空结果清除旧资料`() = runBlocking {
-        val failed = StationArrivalsLoader(query = { _, _ -> throw BusException(BusException.Kind.NETWORK, "离线") })
-            .load(city, stop, listOf(arrival)).state
+        val previous = StationLiveState.Ready(listOf(arrival), at = "12:03:11")
+        var clockCalls = 0
+        val now = { clockCalls++; "12:05:00" }
+        val failed = StationArrivalsLoader(query = { _, _ -> throw BusException(BusException.Kind.NETWORK, "离线") }, now = now)
+            .load(city, stop, previous).state
         assertTrue(failed is StationLiveState.Failed)
-        assertEquals(listOf(arrival), failed.arrivals)
-        val unavailable = StationArrivalsLoader(query = { _, _ -> StationArrivals(stop, emptyList(), StationArrivalsStatus.UNAVAILABLE) })
-            .load(city, stop, listOf(arrival)).state
+        assertEquals(previous.arrivals, failed.arrivals)
+        assertEquals(previous.at, failed.at)
+        assertEquals("离线", failed.message)
+        val unavailable = StationArrivalsLoader(query = { _, _ -> StationArrivals(stop, emptyList(), StationArrivalsStatus.UNAVAILABLE) }, now = now)
+            .load(city, stop, failed).state
         assertTrue(unavailable is StationLiveState.Failed)
-        assertEquals(listOf(arrival), unavailable.arrivals)
-        val empty = StationArrivalsLoader(query = { _, _ -> StationArrivals(stop, emptyList(), StationArrivalsStatus.EMPTY) })
-            .load(city, stop, listOf(arrival)).state
-        assertSame(StationLiveState.Empty, empty)
+        assertEquals(previous.arrivals, unavailable.arrivals)
+        assertEquals(previous.at, unavailable.at)
+        assertEquals(0, clockCalls)
+        val empty = StationArrivalsLoader(query = { _, _ -> StationArrivals(stop, emptyList(), StationArrivalsStatus.EMPTY) }, now = now)
+            .load(city, stop, unavailable).state
+        assertEquals(StationLiveState.Empty("12:05:00"), empty)
         assertTrue(empty.arrivals.isEmpty())
+        assertEquals(1, clockCalls)
+    }
+
+    @Test fun `从未成功和成功空结果后的失败分别保留未知和已知时间`() = runBlocking {
+        val loader = StationArrivalsLoader(query = { _, _ -> throw BusException(BusException.Kind.NETWORK, "离线") })
+        val initial = loader.load(city, stop).state
+        assertTrue(initial is StationLiveState.Failed)
+        assertTrue(initial.arrivals.isEmpty())
+        assertNull(initial.at)
+        val failed = loader.load(city, stop, StationLiveState.Empty("12:03:11")).state
+        assertTrue(failed is StationLiveState.Failed)
+        assertTrue(failed.arrivals.isEmpty())
+        assertEquals("12:03:11", failed.at)
+    }
+
+    @Test fun `批量失败逐站保留旧数据和各自成功时间`() = runBlocking {
+        val previous = mapOf(
+            0 to StationLiveState.Ready(listOf(arrival), at = "12:03:11"),
+            1 to StationLiveState.Empty("12:04:22"),
+            2 to StationLiveState.Loading(listOf(arrival), "12:05:33")
+        )
+        val stations = (1..3).map { stop.copy(number = "$it") }
+        val results = mutableMapOf<Int, StationLiveResult>()
+        val loader = StationArrivalsLoader(query = { _, station ->
+            StationArrivals(station, emptyList(), StationArrivalsStatus.UNAVAILABLE, listOf("离线"))
+        })
+        loader.loadAll(city, stations, previous) { index, result -> results[index] = result }
+        assertEquals(previous.keys, results.keys)
+        previous.forEach { (index, state) ->
+            val failed = results.getValue(index).state
+            assertTrue(failed is StationLiveState.Failed)
+            assertEquals(state.arrivals, failed.arrivals)
+            assertEquals(state.at, failed.at)
+        }
     }
 
     @Test fun `一个站点完成后立即交付无需等同批慢请求`() = runBlocking {

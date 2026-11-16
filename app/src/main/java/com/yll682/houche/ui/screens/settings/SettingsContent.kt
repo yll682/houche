@@ -60,7 +60,8 @@ import com.yll682.houche.ui.components.*
             SettingRow(
                 icon = Icons.Outlined.CleaningServices,
                 title = stringResource(R.string.clear_cache),
-                value = if (data.cleared) stringResource(R.string.cache_cleared) else null,
+                value = if (data.cleared) stringResource(R.string.cache_cleared)
+                        else stringResource(R.string.cache_entries, data.cacheEntries),
                 onClick = clearCache
             )
             Hairline()
@@ -79,7 +80,7 @@ import com.yll682.houche.ui.components.*
                     update.checking -> stringResource(R.string.update_checking)
                     update.error != null -> stringResource(R.string.update_failed)
                     release == null -> stringResource(R.string.update_check_action)
-                    release != null && update.hasUpdate -> release.versionName
+                    update.hasUpdate -> release.versionName
                     else -> stringResource(R.string.update_up_to_date)
                 },
                 onClick = { if (!update.checking) checkUpdate() }, loading = update.checking
@@ -90,7 +91,6 @@ import com.yll682.houche.ui.components.*
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.about), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.about_text).replace("每 20 秒", "每 ${RefreshPolicy.seconds} 秒"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (data.metroNote.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -156,7 +156,11 @@ import com.yll682.houche.ui.components.*
     }
 }
 
-private fun intervalLabel(seconds: Int): String = if (seconds >= 60) "${seconds / 60} 分钟" else "$seconds 秒"
+@Composable private fun intervalLabel(seconds: Int): String = when {
+    seconds == 0 -> stringResource(R.string.refresh_manual)
+    seconds >= 60 -> "${seconds / 60} 分钟"
+    else -> "$seconds 秒"
+}
 
 /** 「自动刷新间隔」选择面板：当前项带「当前」和对勾，点一项即生效并关闭。 */
 @Composable private fun IntervalSheet(dismiss: () -> Unit) {

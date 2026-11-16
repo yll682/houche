@@ -8,6 +8,9 @@ import com.yll682.houche.core.RemoteRelease
 import com.yll682.houche.core.UpdateClient
 import com.yll682.houche.core.isNewer
 import com.yll682.houche.ui.StateViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 
 /** 检查更新的界面状态；release 非空表示已拿到远端版本信息（可能已是最新）。 */
 data class UpdateState(
@@ -19,6 +22,7 @@ data class UpdateState(
 
 data class SettingsData(
     val city: City,
+    val cacheEntries: Int = 0,
     val cleared: Boolean = false,
     val versionName: String = BuildConfig.VERSION_NAME,
     val versionCode: Int = BuildConfig.VERSION_CODE,
@@ -31,8 +35,12 @@ data class SettingsData(
 
 class SettingsViewModel(private val graph: AppGraph, city: City) : StateViewModel<SettingsData>(SettingsData(city)) {
     private val updates = UpdateClient()
+    private var clearCacheJob: Job? = null
 
     init {
+        action {
+            graph.repository().cacheEntries.collect { update(data.copy(cacheEntries = it)) }
+        }
         action {
             val network = graph.metro.networkFor(city)
             update(
@@ -43,12 +51,15 @@ class SettingsViewModel(private val graph: AppGraph, city: City) : StateViewMode
             )
         }
     }
-    fun clearCache() = action {
-        update(data.copy(cleared = false))
-        graph.repository().clearCache()
-        update(data.copy(cleared = true))
-        kotlinx.coroutines.delay(4_000)
-        update(data.copy(cleared = false))
+    fun clearCache() {
+        clearCacheJob?.cancel()
+        clearCacheJob = action {
+            val repository = graph.repository()
+            repository.clearCache()
+            update(data.copy(cleared = true))
+            delay(1200)
+            update(data.copy(cleared = false, cacheEntries = repository.stats().entries))
+        }
     }
 
     /** 失败只落到 state.update.error，界面照常显示，不往上抛。 */

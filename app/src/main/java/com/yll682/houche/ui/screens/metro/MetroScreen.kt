@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.Flow
     // Tab 离开组合也不取消首次定位；是否已经问过系统由同城 ViewModel 记住。
     LaunchedEffect(vm, locator) { vm.requestInitialLocation { locator.locate() } }
     // 实时到站按官方节奏持续刷新；页面退到后台就停，回来再问一次。
-    PollEvery20Seconds(enabled = data.lines.isNotEmpty()) { vm.refreshRealtime() }
+    PollEvery20Seconds(enabled = data.lines.isNotEmpty()) { vm.refreshLive() }
     MetroContent(
         state,
         select = { vm.select(it) },

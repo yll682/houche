@@ -244,12 +244,16 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.ErrorOutline, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
             Spacer(Modifier.width(10.dp))
-            Text(
-                stringResource(R.string.error_generic),
-                Modifier.weight(1f).semantics { contentDescription = message.orEmpty() },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (!message.isNullOrBlank()) {
+                Text(
+                    message.take(120),
+                    Modifier.weight(1f).semantics { contentDescription = message },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else Spacer(Modifier.weight(1f))
             TextButton(retry, Modifier.touch(stringResource(R.string.retry))) { Text(stringResource(R.string.retry)) }
         }
     }
@@ -518,14 +522,18 @@ private fun arrivalLike(text: String) = text.contains("到站") || text.contains
     }
 }
 
-/** 前台按「自动刷新间隔」（默认 15 秒）刷新，切到后台自动停下；间隔改了会按新值重启。 */
-@Composable fun PollEvery20Seconds(enabled: Boolean = true, refresh: suspend () -> Unit) {
+/** 失败只延后下一轮，不关闭轮询；后台暂停，0 = 仅手动。 */
+@Composable fun PollEvery20Seconds(enabled: Boolean = true, refresh: suspend () -> Boolean) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val current by rememberUpdatedState(refresh)
     val seconds = com.yll682.houche.data.RefreshPolicy.seconds
+    val backoff = remember(seconds) { com.yll682.houche.data.RefreshBackoff(seconds) }
     LaunchedEffect(lifecycle, enabled, seconds) {
-        if (enabled) lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) { current(); delay(seconds * 1000L) }
+        if (enabled && seconds != 0) lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val succeeded = current()
+                delay(backoff.nextMillis(!succeeded))
+            }
         }
     }
 }

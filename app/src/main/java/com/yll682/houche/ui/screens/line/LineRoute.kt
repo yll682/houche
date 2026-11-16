@@ -13,7 +13,6 @@ import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yll682.houche.core.*
-import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.*
 import com.yll682.houche.ui.theme.*
 
@@ -23,7 +22,7 @@ import com.yll682.houche.ui.theme.*
     val context = LocalContext.current
     var panel by rememberSaveable { mutableIntStateOf(0) }
     var fare by rememberSaveable { mutableStateOf(false) }
-    PollEvery20Seconds(data.route != null && state !is UiState.Loading && state !is UiState.Error) { vm.refreshLive() }
+    PollEvery20Seconds(enabled = data.route != null) { vm.refreshLive() }
     LineScreen(vm, panel, fare, { panel = it }, { fare = !fare }, back, timetable,
         { text, title -> context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, title)) },
         { route, vehicle -> openVehicle(route, vehicle.plate, vm.state.value.data?.selected) })

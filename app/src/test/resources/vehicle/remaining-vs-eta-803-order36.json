@@ -1,0 +1,60 @@
+{
+  "provenance": {
+    "captureFile": "projects/houche/analysis/vehicle/remaining-vs-eta-803路-d1-20261116T105816.json",
+    "captureScript": "projects/houche/analysis/vehicle/capture_remaining_vs_eta.py",
+    "capturedAt": "2026-11-16T10:58:16+0000",
+    "extractionNote": "仅摘录同次捕获的 anchor、stations、rawBusList 和 rawCmd104 所需字段，保留原始字段类型和值。stations 是 lineDetail 的派生站表；脚本未请求或保存 CMD103。",
+    "requestNote": "CMD104 参数按脚本及 anchor 重建；来源没有保留完整 HTTP 响应体或请求日志。测试构造成功响应封套，封套不属于真实捕获数据。"
+  },
+  "line": "803路",
+  "direction": "1",
+  "anchor": {
+    "id": "1d6193d4d884ba9ad0b04ec06a94cfe6",
+    "name": "一农公交场站",
+    "stationOrder": 36
+  },
+  "cmd104Request": {
+    "CMD": "104",
+    "CITYNAME": "厦门市",
+    "LINENAME": "803路",
+    "DIRECTION": "1",
+    "STATIONORDER": 36
+  },
+  "stations": [
+    {
+      "id": "a5eec8dbbcfa681b5783f7f06ec5c53d",
+      "name": "柯达",
+      "order": 30
+    },
+    {
+      "id": "e9f85f8cd858d1d7de270f0af93abada",
+      "name": "惠佐",
+      "order": 31
+    },
+    {
+      "id": "1d6193d4d884ba9ad0b04ec06a94cfe6",
+      "name": "一农公交场站",
+      "order": 36
+    }
+  ],
+  "rawBusList": [
+    {
+      "dataTime": "2026-11-16 18:58:02",
+      "plateNo": "闽D06982D",
+      "stationOrder": 30,
+      "inOrOut": "1",
+      "lqBusLineId": "0e2b9e664b62b4626e0e297660589714",
+      "speed": "0",
+      "nextStationName": "惠佐"
+    }
+  ],
+  "rawCmd104": {
+    "闽D06982D": {
+      "toStationName": "一农公交场站",
+      "busToStationCount": 6,
+      "busToStationTime": 13.0,
+      "busToStationTimeTips": "14分钟",
+      "busNumber": "闽D06982D"
+    }
+  }
+}

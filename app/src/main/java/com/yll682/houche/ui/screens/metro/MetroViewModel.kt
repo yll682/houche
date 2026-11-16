@@ -97,6 +97,12 @@ data class MetroData(
     /** UI 可分别绑定等待、成功空车、本站到站行和不可用，ETA 区域无需随空列表消失。 */
     val etaState: MetroEtaState get() = realtimeState.etaState
 
+    fun realtimeAgeMillis(nowElapsed: Long = SystemClock.elapsedRealtime()): Long? =
+        realtimeState.positionsAt(nowElapsed, METRO_REALTIME_WINDOW_MILLIS).ageMillis
+
+    val realtimeStale: Boolean get() =
+        realtimeState.positionsAt(SystemClock.elapsedRealtime(), METRO_REALTIME_WINDOW_MILLIS).isStale
+
     /**
      * 展示站序跟随所选方向的行驶顺序（始发在前），三处「方向」讲同一件事；
      * 没有方向或站码对不上时退回线路自身顺序。
@@ -533,6 +539,12 @@ class MetroViewModel(
 
     fun applyInitialLocation(lat: Double?, lng: Double?, accuracyMeters: Double?, coordinateSystem: String): Boolean =
         applyInitialLocation(MetroInitialLocation(lat, lng, accuracyMeters, coordinateSystem))
+
+    suspend fun refreshLive(): Boolean {
+        val job = refreshRealtime() ?: return false
+        job.join()
+        return !job.isCancelled
+    }
 
     /**
      * 现有 UI 的轮询和手刷共用入口，均优先真实查询本站；预算排队保持 Loading。

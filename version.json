@@ -1,10 +1,10 @@
 {
-  "versionName": "2.5.0",
-  "versionCode": 38,
-  "released": "2026-11-15",
-  "notes": "分享链接的健壮性修正：线路方向不是 1/2（部分城市上游用别的编码）时不再生成链接——那种链接服务器和 App 都会判参数缺失——改为只发文字描述，不发打不开的链接。",
+  "versionName": "2.6.0",
+  "versionCode": 39,
+  "released": "2026-11-16",
+  "notes": "这一版主要修「看起来正常但其实没数据」的地方：断网一次后轮询不再永久停掉，改为逐次退避并在恢复后自动继续；查询失败时保留上一次的到站数据并标明；错误卡片直接显示真实原因。刷新间隔去掉 5/10 秒（实际拿不到新数据），新增「仅手动」。清除下车提醒站不再顺带结束整个跟踪。通知被关闭时到站提醒行改用图标标出。设置页缓存显示实际条数。车辆页删掉了那行会与剩余站数矛盾的到站时间提示。",
   "downloads": {
-    "github": "https://github.com/yll682/houche/releases/download/v2.5.0/houche-v2.5.0.apk",
-    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.5.0/houche-v2.5.0.apk"
+    "github": "https://github.com/yll682/houche/releases/download/v2.6.0/houche-v2.6.0.apk",
+    "cnb": "https://cnb.cool/yll682/houche/-/releases/download/v2.6.0/houche-v2.6.0.apk"
   }
 }

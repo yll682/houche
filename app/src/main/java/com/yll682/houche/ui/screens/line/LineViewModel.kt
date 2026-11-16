@@ -44,14 +44,15 @@ class LineViewModel(private val graph: AppGraph, val city: City, private val sum
         update(data.copy(selected = station, arrivals = emptyList()))
         job = action { refreshLive() }
     }
-    suspend fun refreshLive() {
-        val route = data.route ?: return
-        if (route.stations.isEmpty()) return
+    suspend fun refreshLive(): Boolean {
+        val route = data.route ?: return false
+        if (route.stations.isEmpty()) return false
         val station = data.selected
-        if (!mutex.tryLock()) return
+        if (!mutex.tryLock()) return false
+        var succeeded = false
         try { attempt {
             val repo = graph.repository()
-            coroutineScope {
+            val applied = coroutineScope {
                 val vehicles = async { repo.vehicles(city, route, station) }
                 val arrivals = async { if (station != null && city.isXiamen) repo.arrivals(city, route.name, route.direction, station.order ?: 0) else emptyList() }
                 val live = vehicles.await()
@@ -61,9 +62,14 @@ class LineViewModel(private val graph: AppGraph, val city: City, private val sum
                     city.isXiamen -> arrivals.await()
                     else -> live.arrivals
                 }
-                if (data.route == route && data.selected == station) update(data.copy(live = live, arrivals = estimates))
+                if (data.route == route && data.selected == station) {
+                    update(data.copy(live = live, arrivals = estimates))
+                    true
+                } else false
             }
+            succeeded = applied && data.route == route && data.selected == station
         } } finally { mutex.unlock() }
+        return succeeded
     }
     fun refresh() = action { refreshLive() }
     fun retry() { if (data.route == null || data.route?.direction != direction) load() else refresh() }

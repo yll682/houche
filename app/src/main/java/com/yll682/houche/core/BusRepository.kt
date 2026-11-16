@@ -1,18 +1,34 @@
 package com.yll682.houche.core
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import java.time.Instant
 
+private const val CACHE_CAPACITY = 512
+data class CacheStats(val entries: Int, val oldestAgeMillis: Long, val capacity: Int)
+
 class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient = ZsgjClient(), private val nanoTime: () -> Long = System::nanoTime) {
     private data class Entry(val created: Long, val value: Any)
     private val cache = LinkedHashMap<List<Any?>, Entry>(16, 0.75f, true)
     private val inFlight = mutableMapOf<List<Any?>, CompletableDeferred<Any>>()
+    private val mutableCacheEntries = MutableStateFlow(0)
+    val cacheEntries = mutableCacheEntries.asStateFlow()
     // 首页与详情共用请求预算；重试也占用同一个许可。
     private val stationRequests = Semaphore(3)
-    fun clearCache() = synchronized(cache) { cache.clear() }
+    fun stats(): CacheStats = synchronized(cache) {
+        val now = nanoTime()
+        CacheStats(cache.size, (cache.values.maxOfOrNull { (now - it.created).coerceAtLeast(0L) } ?: 0L) / 1_000_000L, CACHE_CAPACITY)
+    }
+    fun clearCache(): Int = synchronized(cache) {
+        val entries = cache.size
+        cache.clear()
+        mutableCacheEntries.value = 0
+        entries
+    }
     private suspend fun <T : Any> cached(vararg key: Any?, ttlNanos: Long = 15_000_000_000L, query: suspend () -> T): T = withContext(Dispatchers.IO) {
         val cacheKey = key.toList()
         var owner = false
@@ -22,6 +38,7 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
                 return@withContext it.value as T
             }
             cache.remove(cacheKey)
+            mutableCacheEntries.value = cache.size
             inFlight[cacheKey] ?: CompletableDeferred<Any>().also {
                 inFlight[cacheKey] = it
                 owner = true
@@ -40,7 +57,8 @@ class BusRepository(private val xmbus: XmbusClient, private val zsgj: ZsgjClient
         try {
             query().also { result -> synchronized(cache) {
                 cache[cacheKey] = Entry(nanoTime(), result)
-                while (cache.size > 512) cache.remove(cache.keys.first())
+                while (cache.size > CACHE_CAPACITY) cache.remove(cache.keys.first())
+                mutableCacheEntries.value = cache.size
             }; pending.complete(result) }
         } catch (error: Exception) {
             val wrapped = if (error is CancellationException) error else failure(error, "公交资料解析失败，请稍后重试")

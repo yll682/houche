@@ -94,19 +94,24 @@ class HomeViewModel(
             }
         }.also { locateJob = it }
     }
-    suspend fun refreshLive() {
-        if (locateJob?.isActive == true || !mutex.tryLock()) return
+    suspend fun refreshLive(): Boolean {
+        if (locateJob?.isActive == true || !mutex.tryLock()) return false
         val generation = ++liveGeneration
-        try { refreshLiveUnlocked(generation) } finally { mutex.unlock() }
+        try { return refreshLiveUnlocked(generation) } finally { mutex.unlock() }
     }
-    private suspend fun refreshLiveUnlocked(generation: Long) {
+    private suspend fun refreshLiveUnlocked(generation: Long): Boolean {
         val stations = data.stations.toList()
-        val previous = data.arrivals
-        update(data.copy(liveStates = stations.indices.associateWith { StationLiveState.Loading(previous[it].orEmpty()) },
+        val previous = data.liveStates
+        var succeeded = stations.isNotEmpty()
+        update(data.copy(liveStates = stations.indices.associateWith { StationLiveState.Loading(previous[it]?.arrivals.orEmpty(), previous[it]?.at) },
             liveErrors = emptyMap()), stations.isEmpty())
         liveLoader.loadAll(city, stations, previous) { index, result ->
             // 新定位可在旧刷新尚未完成时替换列表；旧下标不能写入新站点。
-            if (generation != liveGeneration || data.stations.getOrNull(index) != stations[index]) return@loadAll
+            if (generation != liveGeneration || data.stations.getOrNull(index) != stations[index]) {
+                succeeded = false
+                return@loadAll
+            }
+            if (result.state is StationLiveState.Failed) succeeded = false
             val current = data
             val resolved = result.station.copy(distance = result.station.distance ?: stations[index].distance)
             val updatedStations = current.stations.toMutableList().also { it[index] = resolved }
@@ -115,5 +120,6 @@ class HomeViewModel(
                 liveErrors = result.state.message?.let { current.liveErrors + (index to it) } ?: (current.liveErrors - index),
                 liveStates = current.liveStates + (index to result.state)), updatedStations.isEmpty())
         }
+        return succeeded && generation == liveGeneration
     }
 }

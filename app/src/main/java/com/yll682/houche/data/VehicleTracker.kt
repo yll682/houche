@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.yll682.houche.MainActivity
 import com.yll682.houche.HoucheApp
@@ -215,16 +216,29 @@ object VehicleTracker {
     suspend fun selectAlight(context: Context, target: TrackedVehicle, station: RouteStation?) = scope.async {
         commands.withLock {
             val prefs = Prefs(context)
-            prefs.setVehicleAlightSelection(station?.let {
-                VehicleAlightSelection(target.city.key, target.route.id, target.route.direction, target.plate, it)
-            })
+            if (station != null) {
+                prefs.setVehicleAlightSelection(VehicleAlightSelection(
+                    target.city.key, target.route.id, target.route.direction, target.plate, station
+                ))
+            } else {
+                val selection = prefs.vehicleAlightSelection.first()
+                if (selection?.cityKey == target.city.key && selection.routeId == target.route.id &&
+                    selection.direction == target.route.direction && selection.plate == target.plate) {
+                    prefs.setVehicleAlightSelection(null)
+                }
+            }
             val current = prefs.trackedVehicle.first() ?: return@withLock
             if (!current.matches(target.city, target.route, target.plate, target.boarding)) return@withLock
             if (station == null) {
-                // 清除已设的下车站就是结束本次跟踪；从未设站的普通跟踪仍可独立启动。
-                prefs.setTrackedVehicle(null)
-                mutableActive.value = null
-                context.applicationContext.stopService(Intent(context.applicationContext, VehicleTrackingService::class.java))
+                // 清除提醒不等于停止跟踪；递增版本让旧请求不能恢复提醒。
+                val updated = current.copy(
+                    alightName = null,
+                    alightOrder = null,
+                    revision = current.revision + 1,
+                    reminder = AlightReminderState()
+                )
+                prefs.setTrackedVehicle(updated)
+                mutableActive.value = updated
             } else if (current.alightOrder != station.order || current.alightName != station.name) {
                 val updated = current.copy(
                     alightName = station.name,
@@ -325,9 +339,10 @@ object VehicleTracker {
         return manager
     }
 
-    private fun canSendReminder(context: Context): Boolean {
-        val manager = createChannel(context.applicationContext)
-        return canNotify(context) && manager.areNotificationsEnabled() &&
+    fun canSendReminder(context: Context): Boolean {
+        val appContext = context.applicationContext
+        val manager = createChannel(appContext)
+        return canNotify(appContext) && NotificationManagerCompat.from(appContext).areNotificationsEnabled() &&
             manager.getNotificationChannel(CHANNEL_ID)?.importance != NotificationManager.IMPORTANCE_NONE
     }
 

@@ -8,12 +8,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.yll682.houche.core.City
+import com.yll682.houche.data.RefreshPolicy
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.HomeTab
+import com.yll682.houche.ui.components.LocalSheetHost
+import com.yll682.houche.ui.components.SheetHost
+import com.yll682.houche.ui.components.SheetHostLayer
 import com.yll682.houche.ui.screens.home.*
 import com.yll682.houche.ui.screens.search.*
 import com.yll682.houche.ui.screens.settings.*
 import com.yll682.houche.ui.theme.HoucheTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -128,15 +135,62 @@ class TelegramInteractionTest {
         var cities = 0
         var updates = 0
         compose.setContent {
-            var data by remember { mutableStateOf(SettingsData(city)) }
+            var data by remember { mutableStateOf(SettingsData(city, cacheEntries = 312)) }
+            val scope = rememberCoroutineScope()
+            var clearCacheJob by remember { mutableStateOf<Job?>(null) }
             HoucheTheme {
-                SettingsBody(UiState.Success(data), { cities++ }, { data = data.copy(cleared = true) }, checkUpdate = { updates++ })
+                SettingsBody(UiState.Success(data), { cities++ }, {
+                    clearCacheJob?.cancel()
+                    data = data.copy(cleared = true, cacheEntries = 0)
+                    clearCacheJob = scope.launch {
+                        delay(1200)
+                        data = data.copy(cleared = false, cacheEntries = 0)
+                    }
+                }, checkUpdate = { updates++ })
             }
         }
+        compose.onNodeWithText("312 条").assertIsDisplayed()
         compose.onNodeWithText("默认城市").performClick()
         compose.onNodeWithText("清除查询缓存").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("已清除").assertIsDisplayed()
+        compose.onNodeWithText("0 条").assertDoesNotExist()
+        compose.onNodeWithText("312 条").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(1300)
+        compose.waitForIdle()
+        compose.onNodeWithText("0 条").assertIsDisplayed()
+        compose.onNodeWithText("已清除").assertDoesNotExist()
         compose.onNodeWithText("检查更新").performClick()
         compose.runOnIdle { assertEquals(1, cities); assertEquals(1, updates) }
+    }
+
+    @Test fun manualRefreshUsesOptionLabel() {
+        val previous = RefreshPolicy.seconds
+        try {
+            RefreshPolicy.set(15)
+            val host = SheetHost()
+            compose.setContent {
+                HoucheTheme {
+                    CompositionLocalProvider(LocalSheetHost provides host) {
+                        Box(Modifier.fillMaxSize()) {
+                            SettingsBody(UiState.Success(SettingsData(city)), {}, {})
+                            SheetHostLayer(host)
+                        }
+                    }
+                }
+            }
+            compose.onNodeWithText("自动刷新间隔").performClick()
+            compose.waitForIdle()
+            compose.mainClock.advanceTimeBy(600)
+            compose.onNodeWithText("仅手动").assertIsDisplayed()
+            compose.onNodeWithText("5 秒").assertDoesNotExist()
+            compose.onNodeWithText("10 秒").assertDoesNotExist()
+            compose.onNodeWithText("仅手动").performClick()
+            compose.runOnIdle { assertEquals(0, RefreshPolicy.seconds) }
+            compose.onNodeWithText("仅手动").assertIsDisplayed()
+            compose.onNodeWithText("0 秒").assertDoesNotExist()
+            compose.onNodeWithText("每 0 秒", substring = true).assertDoesNotExist()
+            compose.onNodeWithText("数据来自", substring = true).assertDoesNotExist()
+        } finally { RefreshPolicy.set(previous) }
     }
 }

@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Looper
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.yll682.houche.AppGraph
 import com.yll682.houche.core.*
@@ -18,6 +19,7 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.*
@@ -108,14 +110,101 @@ class StationArrivalsViewModelsTest {
         home.locate()
         await { home.state.value.data!!.liveStates.size == 5 && home.state.value.data!!.liveStates.values.none { it is StationLiveState.Loading } }
         val data = home.state.value.data!!
-        assertSame(StationLiveState.Empty, data.liveStates.getValue(3))
+        assertTrue(data.liveStates.getValue(3) is StationLiveState.Empty)
+        assertTrue(data.liveStates.getValue(3).at!!.matches(Regex("\\d{2}:\\d{2}:\\d{2}")))
         val missing = data.liveStates.getValue(4)
         assertTrue(missing is StationLiveState.Partial)
         assertEquals("806", missing.unreportedLines.single().line.name)
         assertTrue(data.liveErrors.containsKey(4))
         val detail = keep("empty", StationViewModel(graph, city, data.stations[3], { repo }))
-        await { detail.state.value.data!!.liveState === StationLiveState.Empty }
+        await { detail.state.value.data!!.liveState is StationLiveState.Empty }
         assertTrue(detail.state.value.data!!.arrivals.isEmpty())
+        assertNotNull(detail.state.value.data!!.liveState.at)
+    }
+
+    @Test fun `首页刷新等待与连续失败均保留各站上次成功的数据和时间`() {
+        val failures = mutableSetOf<String>()
+        val server = Server(failures = failures)
+        val repo = repository(server)
+        val home = keep("home", HomeViewModel(AppGraph(app), city, { repo }, { Position(24.5, 118.1) }))
+        home.locate()
+        await { home.state.value.data!!.liveStates.size == 5 && home.state.value.data!!.liveStates.values.all { it is StationLiveState.Ready } }
+        val previous = home.state.value.data!!.liveStates
+        assertTrue(previous.values.all { it.at != null })
+        val gate = Gate()
+        server.gateNumber = "2"
+        server.gate = gate
+        failures.addAll(listOf("1", "2", "3", "4", "5", "6"))
+        repo.clearCache()
+        try {
+            var succeeded: Boolean? = null
+            val refresh = home.viewModelScope.launch { succeeded = home.refreshLive() }
+            await { gate.started.isCompleted }
+            val loading = home.state.value.data!!.liveStates.getValue(1)
+            assertTrue(loading is StationLiveState.Loading)
+            assertEquals(previous.getValue(1).arrivals, loading.arrivals)
+            assertEquals(previous.getValue(1).at, loading.at)
+            gate.release.complete(Unit)
+            await { refresh.isCompleted && home.state.value.data!!.liveStates.values.all { it is StationLiveState.Failed } }
+            assertEquals(false, succeeded)
+            repeat(2) {
+                previous.forEach { (index, old) ->
+                    val current = home.state.value.data!!.liveStates.getValue(index)
+                    assertTrue(current is StationLiveState.Failed)
+                    assertEquals(old.arrivals, current.arrivals)
+                    assertEquals(old.at, current.at)
+                    assertEquals(old.arrivals, home.state.value.data!!.arrivals.getValue(index))
+                }
+                if (it == 0) {
+                    val retry = home.viewModelScope.launch { home.refreshLive() }
+                    await { retry.isCompleted }
+                }
+            }
+        } finally { gate.release.complete(Unit) }
+    }
+
+    @Test fun `详情刷新与同站重载失败保留成功时间而切站不能借用旧数据`() {
+        val failures = mutableSetOf<String>()
+        val server = Server(failures = failures)
+        val repo = repository(server)
+        val vm = keep("detail", StationViewModel(AppGraph(app), city, Station("温头溪", "3"), { repo }))
+        await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+        val previous = vm.state.value.data!!.liveState
+        assertNotNull(previous.at)
+        val gate = Gate()
+        server.gateNumber = "3"
+        server.gate = gate
+        failures += "3"
+        repo.clearCache()
+        try {
+            var succeeded: Boolean? = null
+            val refresh = vm.viewModelScope.launch { succeeded = vm.refreshLive() }
+            await { gate.started.isCompleted }
+            val loading = vm.state.value.data!!.liveState
+            assertTrue(loading is StationLiveState.Loading)
+            assertEquals(previous.arrivals, loading.arrivals)
+            assertEquals(previous.at, loading.at)
+            gate.release.complete(Unit)
+            await { refresh.isCompleted && vm.state.value.data!!.liveState is StationLiveState.Failed }
+            assertEquals(false, succeeded)
+            assertEquals(previous.arrivals, vm.state.value.data!!.arrivals)
+            assertEquals(previous.at, vm.state.value.data!!.liveState.at)
+            vm.load()
+            assertTrue(vm.state.value.data!!.liveState is StationLiveState.Loading)
+            assertEquals(previous.at, vm.state.value.data!!.liveState.at)
+            await { vm.state.value.data!!.liveState is StationLiveState.Failed }
+            assertEquals(previous.arrivals, vm.state.value.data!!.arrivals)
+            assertEquals(previous.at, vm.state.value.data!!.liveState.at)
+            vm.load(Station("祥禾广场", "2"))
+            assertTrue(vm.state.value.data!!.arrivals.isEmpty())
+            assertNull(vm.state.value.data!!.liveState.at)
+            await { vm.state.value.data!!.liveState is StationLiveState.Ready }
+            assertEquals("2", vm.state.value.data!!.station.number)
+            assertNotNull(vm.state.value.data!!.liveState.at)
+            val retry = vm.viewModelScope.launch { succeeded = vm.refreshLive() }
+            await { retry.isCompleted }
+            assertEquals(true, succeeded)
+        } finally { gate.release.complete(Unit) }
     }
 
     @Test fun `慢站尚未完成时已有站点逐个更新且未完成站保留加载状态`() {
@@ -227,8 +316,8 @@ class StationArrivalsViewModelsTest {
         val failures: Set<String> = emptySet(),
         val empty: Set<String> = emptySet(),
         val noLines: Set<String> = emptySet(),
-        val gateNumber: String? = null,
-        val gate: Gate? = null,
+        var gateNumber: String? = null,
+        var gate: Gate? = null,
         val relocate: Boolean = false
     ) {
         val nativeRequests = ConcurrentLinkedQueue<String>()
@@ -263,9 +352,10 @@ class StationArrivalsViewModelsTest {
                     assertEquals("实时请求采用已解析的站台坐标", 24.5 + number.toInt() * 0.001,
                         request.url.parameters["stationLat"]!!.toDouble(), 0.000001)
                     if (number == server.gateNumber) withContext(NonCancellable) {
-                        server.gate!!.started.complete(Unit)
-                        server.gate.release.await()
-                        server.gate.finished.complete(Unit)
+                        val gate = checkNotNull(server.gate)
+                        gate.started.complete(Unit)
+                        gate.release.await()
+                        gate.finished.complete(Unit)
                     }
                     if (number in server.failures) """{"success":false,"code":1}"""
                     else {

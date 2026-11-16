@@ -3,6 +3,7 @@ package com.yll682.houche.ui.screens.vehicle
 import android.Manifest
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -11,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yll682.houche.data.VehicleTracker
-import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.PollEvery20Seconds
 
 @Composable
@@ -19,7 +19,7 @@ fun VehicleRoute(vm: VehicleViewModel, back: () -> Unit, share: (String, String)
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     SideEffect { vm.bindContext(context) }
-    PollEvery20Seconds(enabled = state !is UiState.Loading && state !is UiState.Error) { vm.refreshLive() }
+    PollEvery20Seconds(enabled = state.data != null) { vm.refreshLive() }
     // 用户从可见页面启动 FGS；Android 13+ 先申请提醒权限，拒绝后仍可仅跟踪。
     fun startTracking() {
         vm.startTracking()
@@ -32,8 +32,8 @@ fun VehicleRoute(vm: VehicleViewModel, back: () -> Unit, share: (String, String)
     // 「通知设置」：打开系统里本应用的通知设置页（不再发测试通知）。
     val notify: () -> Unit = {
         context.startActivity(
-            Intent("android.settings.APP_NOTIFICATION_SETTINGS")
-                .putExtra("android.provider.extra.APP_PACKAGE", context.packageName)
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
     }

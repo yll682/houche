@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.DirectionsBus
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.FilledTonalButton
@@ -52,16 +53,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.yll682.houche.R
 import com.yll682.houche.core.RouteStation
 import com.yll682.houche.core.Vehicle
 import com.yll682.houche.core.VehicleShareLink
+import com.yll682.houche.data.VehicleTracker
 import com.yll682.houche.ui.UiState
 import com.yll682.houche.ui.components.CardSurface
 import com.yll682.houche.ui.components.Hairline
@@ -93,6 +98,11 @@ fun VehicleContent(
     modifier: Modifier = Modifier
 ) {
     val data = state.data
+    val context = LocalContext.current
+    var canSendReminder by remember(context) { mutableStateOf(VehicleTracker.canSendReminder(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        canSendReminder = VehicleTracker.canSendReminder(context)
+    }
     val refreshLabel = stringResource(R.string.vehicle_refresh)
     val vehicles = data?.vehicles.orEmpty().sortedWith(
         compareBy<Vehicle> {
@@ -137,6 +147,7 @@ fun VehicleContent(
                             toggleTracking,
                             notify,
                             share,
+                            canSendReminder,
                             openAlight = { sheetPicker = true }
                         )
                     }
@@ -357,10 +368,6 @@ private fun RemainingCard(data: VehicleData) {
             } else {
                 RemainingStops(remaining.coerceAtLeast(0), color)
             }
-            // 只显示这辆车的上游短标签，不按站数估算分钟；上游没给就整行不出现，不写「未知」占位。
-            data.arrival?.timeText?.trim()?.takeIf { it.isNotEmpty() && it.length <= 6 }?.let { time ->
-                Text(time, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.tertiary)
-            }
         }
     }
 }
@@ -399,6 +406,7 @@ private fun VehicleActions(
     toggleTracking: () -> Unit,
     notify: () -> Unit,
     share: (String, String) -> Unit,
+    canSendReminder: Boolean,
     openAlight: () -> Unit
 ) {
     val trackingLabel = stringResource(if (data.tracking) R.string.vehicle_map_track_stop else R.string.vehicle_map_track_start)
@@ -422,7 +430,7 @@ private fun VehicleActions(
         stringResource(R.string.vehicle_share_text_link, data.plate, data.route.name, station, shareLink)
     }
     // 乘车站与下车提醒站都能作为跟踪目标，任一存在即可开启跟踪。
-    val canTrack = data.boarding != null || data.alight != null
+    val canTrack = data.tracking || data.boarding != null || data.alight != null
     val alightLabel = data.alight?.name ?: stringResource(R.string.vehicle_map_alight_unset)
     // 跟踪开启后文案与图标一起变成主色：一眼看得出「已经开着了」。
     val trackingLabelColor by animateColorAsState(
@@ -445,7 +453,12 @@ private fun VehicleActions(
         Hairline(Modifier.padding(start = 56.dp))
         ActionRow(Icons.Outlined.Flag, stringResource(R.string.vehicle_map_alight_title), data.route.stations.isNotEmpty(), openAlight, Icons.Outlined.ChevronRight, alightLabel)
         Hairline(Modifier.padding(start = 56.dp))
-        ActionRow(Icons.Outlined.Notifications, notifyLabel, true, notify, Icons.Outlined.ChevronRight)
+        ActionRow(
+            if (canSendReminder) Icons.Outlined.Notifications else Icons.Outlined.NotificationsOff,
+            notifyLabel, true, notify, Icons.Outlined.ChevronRight,
+            labelColor = if (canSendReminder) null else MaterialTheme.colorScheme.error,
+            iconColor = if (canSendReminder) null else MaterialTheme.colorScheme.error
+        )
         Hairline(Modifier.padding(start = 56.dp))
         ActionRow(Icons.Outlined.Share, shareLabel, true, { share(shareText, shareTitle) }, Icons.Outlined.ChevronRight)
     }
@@ -485,9 +498,11 @@ private fun ActionRow(
     value: String? = null,
     labelColor: Color? = null,
     animatedLabel: Boolean = false,
-    trailingContent: (@Composable () -> Unit)? = null
+    trailingContent: (@Composable () -> Unit)? = null,
+    iconColor: Color? = null
 ) {
-    val tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
+    val tint = iconColor
+        ?: if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
     val textColor = labelColor
         ?: if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f)
     Row(

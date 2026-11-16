@@ -58,9 +58,9 @@ class StationViewModel(
     private fun loadPlatform(station: Station, platforms: List<Station>, selected: Int) {
         val generation = ++liveGeneration
         job?.cancel()
-        val previous = data.arrivals.takeIf { same(data.station, station) }.orEmpty()
-        mutable.value = UiState.Loading(data.copy(station = station, arrivals = previous, platforms = platforms, selectedPlatform = selected,
-            liveState = StationLiveState.Loading(previous),
+        val previous = data.liveState.takeIf { same(data.station, station) } ?: StationLiveState.Loading()
+        mutable.value = UiState.Loading(data.copy(station = station, arrivals = previous.arrivals, platforms = platforms, selectedPlatform = selected,
+            liveState = StationLiveState.Loading(previous.arrivals, previous.at),
             favorite = data.favorite && same(data.station, station),
             metro = data.metro.takeIf { data.station.name == station.name }.orEmpty()))
         job = viewModelScope.launch {
@@ -79,22 +79,22 @@ class StationViewModel(
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 if (generation == liveGeneration) {
-                    val failed = StationLiveState.Failed(listOf((error as? BusException)?.message ?: "站点查询失败，请稍后重试"), previous)
-                    publish(data.copy(arrivals = previous, liveState = failed))
+                    val failed = StationLiveState.Failed(listOf((error as? BusException)?.message ?: "站点查询失败，请稍后重试"), previous.arrivals, at = previous.at)
+                    publish(data.copy(arrivals = previous.arrivals, liveState = failed))
                 }
             }
         }
     }
-    suspend fun refreshLive() {
-        if (job?.isActive == true || !mutex.tryLock()) return
+    suspend fun refreshLive(): Boolean {
+        if (job?.isActive == true || !mutex.tryLock()) return false
         val generation = ++liveGeneration
         val station = data.station
-        val previous = data.arrivals
+        val previous = data.liveState
         mutable.value = when (val old = mutable.value) {
-            is UiState.Error -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous)))
-            is UiState.Loading -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous)))
-            is UiState.Empty -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous)))
-            is UiState.Success -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous)))
+            is UiState.Error -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous.arrivals, previous.at)))
+            is UiState.Loading -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous.arrivals, previous.at)))
+            is UiState.Empty -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous.arrivals, previous.at)))
+            is UiState.Success -> old.copy(data = data.copy(liveState = StationLiveState.Loading(previous.arrivals, previous.at)))
         }
         try {
             val result = liveLoader.load(city, station, previous)
@@ -102,7 +102,9 @@ class StationViewModel(
                 val detail = result.station.copy(distance = result.station.distance ?: station.distance)
                 publish(data.copy(station = detail, arrivals = result.state.arrivals, liveState = result.state,
                     platforms = mergePlatforms(data.platforms, data.selectedPlatform, detail)))
+                return result.state !is StationLiveState.Failed
             }
+            return false
         } finally { mutex.unlock() }
     }
     private fun publish(value: StationData) {

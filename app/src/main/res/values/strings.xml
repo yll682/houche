@@ -76,6 +76,7 @@
     <string name="default_city">默认城市</string>
     <string name="clear_cache">清除查询缓存</string>
     <string name="cache_cleared">已清除</string>
+    <string name="cache_entries">%1$d 条</string>
     <string name="about">关于候车</string>
     <string name="about_text">数据来自公开的掌上公交与厦门公交查询服务，每 20 秒刷新，仅供个人参考，实际运营以公交公司为准。</string>
     <string name="version">版本 %1$s（%2$d）</string>
@@ -156,5 +157,6 @@
     <string name="refresh_interval">自动刷新间隔</string>
     <string name="refresh_interval_title">自动刷新间隔</string>
     <string name="refresh_interval_current">当前</string>
+    <string name="refresh_manual">仅手动</string>
     <string name="relocate">重新定位</string>
 </resources>

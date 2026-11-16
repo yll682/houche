@@ -1,0 +1,5 @@
+<resources>
+    <string name="cache_entries">%1$d entries</string>
+    <string name="cache_cleared">Cleared</string>
+    <string name="refresh_manual">Manual only</string>
+</resources>
